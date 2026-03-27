@@ -74,17 +74,17 @@ const DEPT_COLORS = [
 ];
 
 // ── Helpers ──
-const cost = p => p.usdM != null ? p.usdM : (p.cadY ? (p.cadY / 12) * CAD_TO_USD : 0);
-const fmt = n => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const fmtK = n => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n);
-const pct = n => `${(n * 100).toFixed(1)}%`;
-const ini = n => n.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+const cost = (p: any) => p.usdM != null ? p.usdM : (p.cadY ? (p.cadY / 12) * CAD_TO_USD : 0);
+const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmtK = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n);
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+const ini = (n: string) => n.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
 
 // Revenue attribution: lead gets 50% (or 100% if no support), support splits remaining 50% evenly
-const acctVal = a => a.retainer + a.project;
-const leadShare = a => a.supportIds.length > 0 ? acctVal(a) * 0.5 : acctVal(a);
-const supShare = a => a.supportIds.length > 0 ? (acctVal(a) * 0.5) / a.supportIds.length : 0;
-const personExposure = (personId, accounts) => {
+const acctVal = (a: any) => a.retainer + a.project;
+const leadShare = (a: any) => a.supportIds.length > 0 ? acctVal(a) * 0.5 : acctVal(a);
+const supShare = (a: any) => a.supportIds.length > 0 ? (acctVal(a) * 0.5) / a.supportIds.length : 0;
+const personExposure = (personId: string, accounts: any[]) => {
   let asLead = 0, asSupport = 0;
   accounts.forEach(a => {
     if (a.leadId === personId) asLead += leadShare(a);
