@@ -373,17 +373,32 @@ export default function App() {
     load();
   }, []);
 
-  const pods = useMemo(() => SERVICE_LINES.map(sl => {
-    const members = team.filter(p => p.sl === sl.id);
-    const accts = accounts.filter(a => a.sl === sl.id && ["Active", "Launch", "Growth"].includes(a.status));
-    const rev = accts.reduce((s, a) => s + a.retainer + a.project, 0);
-    const c = members.reduce((s, p) => s + cost(p), 0);
-    return { ...sl, members, accounts: accts, rev, cost: c, margin: rev - c, marginPct: rev > 0 ? (rev - c) / rev : (c > 0 ? -1 : 0) };
-  }).filter(p => p.members.length > 0 || p.accounts.length > 0), [team, accounts]);
+  const pods = useMemo(() => {
+    // Overhead = ops + leadership costs split equally across all active clients
+    const overheadCost = team
+      .filter(p => p.sl === "ops" || p.sl === "leadership")
+      .reduce((s, p) => s + cost(p), 0);
+    const allActiveAccts = accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
+    const totalClients = allActiveAccts.length;
+    const overheadPerClient = totalClients > 0 ? overheadCost / totalClients : 0;
+
+    return SERVICE_LINES
+      .filter(sl => sl.id !== "ops" && sl.id !== "leadership")
+      .map(sl => {
+        const members = team.filter(p => p.sl === sl.id);
+        const accts = allActiveAccts.filter(a => a.sl === sl.id);
+        const rev = accts.reduce((s, a) => s + a.retainer + a.project, 0);
+        const directCost = members.reduce((s, p) => s + cost(p), 0);
+        const overheadAlloc = overheadPerClient * accts.length;
+        const c = directCost + overheadAlloc;
+        return { ...sl, members, accounts: accts, rev, cost: c, directCost, overheadAlloc, margin: rev - c, marginPct: rev > 0 ? (rev - c) / rev : (c > 0 ? -1 : 0) };
+      })
+      .filter(p => p.members.length > 0 || p.accounts.length > 0);
+  }, [team, accounts]);
 
   const totals = useMemo(() => {
     const r = pods.reduce((s, p) => s + p.rev, 0);
-    const c = pods.reduce((s, p) => s + p.cost, 0);
+    const c = team.reduce((s, p) => s + cost(p), 0);
     return { rev: r, cost: c, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
   }, [pods, team, accounts]);
 
@@ -805,14 +820,14 @@ export default function App() {
                       <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
                     ))}
                   </div>
-                  {pods.filter(p => p.id !== "leadership").map(pd => (
+                  {pods.map(pd => (
                     <div key={pd.id} className="grid px-5 py-4 border-b border-gray-100 items-center hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 1fr 2fr" }}>
                       <div className="flex items-center gap-2.5">
                         <SlTag sl={pd.id} />
                       </div>
                       <div className="text-[13px] text-gray-500">{pd.members.length}</div>
                       <div className="text-sm font-semibold text-emerald-600">{fmtK(pd.rev)}</div>
-                      <div className="text-sm font-semibold text-red-500">{fmtK(pd.cost)}</div>
+                      <div className="text-sm font-semibold text-red-500" title={`Direct: ${fmtK(pd.directCost)} + Overhead: ${fmtK(pd.overheadAlloc)}`}>{fmtK(pd.cost)}</div>
                       <div className={`text-sm font-semibold ${pd.margin >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmtK(pd.margin)}</div>
                       <div className={`text-[13px] font-semibold ${pd.marginPct >= 0.3 ? "text-emerald-600" : pd.marginPct >= 0 ? "text-amber-500" : "text-red-500"}`}>{pd.rev > 0 ? pct(pd.marginPct) : "—"}</div>
                       <div className="flex items-center gap-2.5">
