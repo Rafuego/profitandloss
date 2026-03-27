@@ -866,9 +866,20 @@ export default function App() {
               <Inp label="Service Line" value={modal.data.sl} onChange={v => setModal({ ...modal, data: { ...modal.data, sl: v } })} opts={slOpts} />
               <Inp label="Type" value={modal.data.type} onChange={v => setModal({ ...modal, data: { ...modal.data, type: v } })} opts={["Partner", "Full-Time", "Contractor", "Project-Based"]} />
             </div>
+            <Inp label="Annual CAD" value={modal.data.cadY} onChange={v => setModal({ ...modal, data: { ...modal.data, cadY: v } })} type="number" ph="85000" />
             <div className="grid grid-cols-2 gap-3">
-              <Inp label="Annual CAD" value={modal.data.cadY} onChange={v => setModal({ ...modal, data: { ...modal.data, cadY: v } })} type="number" ph="85000" />
-              <Inp label="Monthly USD" value={modal.data.usdM} onChange={v => setModal({ ...modal, data: { ...modal.data, usdM: v } })} type="number" ph="Contractors only" />
+              <div>
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Monthly CAD</div>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-[14px] text-gray-500">
+                  {modal.data.cadY ? fmt(Math.round(Number(modal.data.cadY) / 12)) : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Monthly USD</div>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-[14px] text-gray-500">
+                  {modal.data.cadY ? fmt(Math.round((Number(modal.data.cadY) / 12) * CAD_TO_USD)) : "—"}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Inp label="Hours/Month" value={modal.data.hrs} onChange={v => setModal({ ...modal, data: { ...modal.data, hrs: v } })} type="number" />
