@@ -1,7 +1,13 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  fetchTeam, fetchAccounts, fetchDepartments,
+  upsertTeamMember, deleteTeamMember,
+  upsertAccount, deleteAccount,
+  upsertDepartment, deleteDepartment,
+} from "@/lib/supabase";
 
 const CAD_TO_USD = 0.69;
 
@@ -350,6 +356,22 @@ export default function App() {
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
   const [view, setView] = useState("workload");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [t, a, d] = await Promise.all([fetchTeam(), fetchAccounts(), fetchDepartments()]);
+        if (t.length > 0) setTeam(t);
+        if (a.length > 0) setAccounts(a);
+        if (d.length > 0) setDepts(d);
+      } catch (e) {
+        console.error("Failed to load from Supabase, using local data:", e);
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const pods = useMemo(() => SERVICE_LINES.map(sl => {
     const members = team.filter(p => p.sl === sl.id);
@@ -365,19 +387,26 @@ export default function App() {
     return { rev: r, cost: c, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
   }, [pods, team, accounts]);
 
-  const save = (type, d) => {
+  const save = async (type, d) => {
     if (type === "person") {
-      if (d.id) setTeam(t => t.map(x => x.id === d.id ? d : x));
-      else { setTeam(t => [...t, { ...d, id: `t${nid}` }]); setNid(n => n + 1); }
+      if (!d.id) { d = { ...d, id: `t${nid}` }; setNid(n => n + 1); }
+      setTeam(t => d.id && t.find(x => x.id === d.id) ? t.map(x => x.id === d.id ? d : x) : [...t, d]);
+      try { await upsertTeamMember(d); } catch (e) { console.error("Save person failed:", e); }
     } else {
-      if (d.id) setAccounts(a => a.map(x => x.id === d.id ? d : x));
-      else { setAccounts(a => [...a, { ...d, id: `a${nid}` }]); setNid(n => n + 1); }
+      if (!d.id) { d = { ...d, id: `a${nid}` }; setNid(n => n + 1); }
+      setAccounts(a => d.id && a.find(x => x.id === d.id) ? a.map(x => x.id === d.id ? d : x) : [...a, d]);
+      try { await upsertAccount(d); } catch (e) { console.error("Save account failed:", e); }
     }
     setModal(null);
   };
-  const del = (type, id) => {
-    if (type === "person") setTeam(t => t.filter(p => p.id !== id));
-    else setAccounts(a => a.filter(x => x.id !== id));
+  const del = async (type, id) => {
+    if (type === "person") {
+      setTeam(t => t.filter(p => p.id !== id));
+      try { await deleteTeamMember(id); } catch (e) { console.error("Delete person failed:", e); }
+    } else {
+      setAccounts(a => a.filter(x => x.id !== id));
+      try { await deleteAccount(id); } catch (e) { console.error("Delete account failed:", e); }
+    }
     setSelected(null); setModal(null);
   };
 
@@ -402,6 +431,12 @@ export default function App() {
   }), [team, accounts]);
 
   const unassigned = useMemo(() => accounts.filter(a => !a.leadId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
+
+  if (loading) return (
+    <div className="font-sans bg-white text-gray-900 h-screen flex items-center justify-center">
+      <div className="text-gray-400 text-sm">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="font-sans bg-white text-gray-900 h-screen flex flex-col">
@@ -991,22 +1026,23 @@ export default function App() {
             </div>
 
             <div className="flex gap-2 mt-2">
-              <button onClick={() => {
-                const d = modal.data;
+              <button onClick={async () => {
+                let d = modal.data;
                 if (!d.name.trim()) return;
                 if (d.id) {
-                  // Remove these members from other depts first
                   setDepts(prev => prev.map(dept => dept.id === d.id ? d : { ...dept, memberIds: dept.memberIds.filter(mid => !d.memberIds.includes(mid)) }));
                 } else {
                   const newId = `d${deptNid}`;
                   setDeptNid(n => n + 1);
-                  // Remove these members from other depts, then add new dept
-                  setDepts(prev => [...prev.map(dept => ({ ...dept, memberIds: dept.memberIds.filter(mid => !d.memberIds.includes(mid)) })), { ...d, id: newId }]);
+                  d = { ...d, id: newId };
+                  setDepts(prev => [...prev.map(dept => ({ ...dept, memberIds: dept.memberIds.filter(mid => !d.memberIds.includes(mid)) })), d]);
                 }
+                try { await upsertDepartment(d); } catch (e) { console.error("Save dept failed:", e); }
                 setModal(null);
               }} className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>
-              {modal.data.id && <button onClick={() => {
+              {modal.data.id && <button onClick={async () => {
                 setDepts(prev => prev.filter(d => d.id !== modal.data.id));
+                try { await deleteDepartment(modal.data.id); } catch (e) { console.error("Delete dept failed:", e); }
                 setModal(null);
               }} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Delete</button>}
             </div>
