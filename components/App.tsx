@@ -87,8 +87,31 @@ const fmtK = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n);
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const ini = (n: string) => n.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
 
+// ── Project amortization helpers ──
+const monthsBetween = (start: string, end: string) => {
+  const s = new Date(start), e = new Date(end);
+  const m = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+  return Math.max(1, m);
+};
+const monthlyProjectRev = (a: any) => {
+  if (!a.project) return 0;
+  // No dates = treat project fee as a straight monthly amount (backward compat)
+  if (!a.startDate || !a.endDate) return a.project;
+  const today = new Date();
+  const start = new Date(a.startDate);
+  const end = new Date(a.endDate);
+  // Outside the project window → contributes $0 to current MRR
+  if (today < start || today > end) return 0;
+  return a.project / monthsBetween(a.startDate, a.endDate);
+};
+const isProjectLive = (a: any) => {
+  if (!a.startDate || !a.endDate) return true;
+  const today = new Date();
+  return today >= new Date(a.startDate) && today <= new Date(a.endDate);
+};
+
 // Revenue attribution: lead gets 50% (or 100% if no support), support splits remaining 50% evenly
-const acctVal = (a: any) => a.retainer + a.project;
+const acctVal = (a: any) => a.retainer + monthlyProjectRev(a);
 const leadShare = (a: any) => a.supportIds.length > 0 ? acctVal(a) * 0.5 : acctVal(a);
 const supShare = (a: any) => a.supportIds.length > 0 ? (acctVal(a) * 0.5) / a.supportIds.length : 0;
 const personExposure = (personId: string, accounts: any[]) => {
@@ -766,31 +789,53 @@ export default function App() {
 
           {/* ══════════ ACCOUNTS VIEW ══════════ */}
           {view === "accounts" && (
-            <div className="grid overflow-auto" style={{ gridTemplateColumns: "1.5fr 1fr 1.5fr 1.2fr 0.8fr 1fr 1fr 1fr 2fr" }}>
-              {["Account", "Service Line", "Lead", "Support", "Status", "Retainer", "Project", "Total", "Scope"].map(h => (
+            <div className="grid overflow-auto" style={{ gridTemplateColumns: "1.5fr 1fr 1.5fr 1.2fr 0.8fr 1fr 1.4fr 1fr 2fr" }}>
+              {["Account", "Service Line", "Lead", "Support", "Status", "Retainer", "Flat Fee", "MRR", "Scope"].map(h => (
                 <div key={h} className="px-3 py-2 bg-gray-100 text-[9px] font-semibold tracking-wider uppercase text-gray-500 border-b border-gray-200 sticky top-0 z-10">{h}</div>
               ))}
-              {accounts.map((a, i) => (
-                <div key={a.id} className="contents cursor-pointer" onClick={() => setSelected({ type: "account", data: a })}>
-                  <div className={`px-3 py-2 text-xs font-semibold border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{a.name}</div>
-                  <div className={`px-3 py-2 border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}><SlTag sl={a.sl} small /></div>
-                  <div className={`px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                    {a.leadId && <Av name={getName(a.leadId)} size={24} sl={a.sl} lead />}
-                    <span className="text-xs">{getName(a.leadId)}</span>
+              {accounts.map((a, i) => {
+                const bg = i % 2 === 0 ? "bg-white" : "bg-gray-50";
+                const mpr = monthlyProjectRev(a);
+                const live = isProjectLive(a);
+                const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" }) : "";
+                return (
+                  <div key={a.id} className="contents cursor-pointer" onClick={() => setSelected({ type: "account", data: a })}>
+                    <div className={`px-3 py-2 text-xs font-semibold border-b border-gray-100 ${bg}`}>{a.name}</div>
+                    <div className={`px-3 py-2 border-b border-gray-100 ${bg}`}><SlTag sl={a.sl} small /></div>
+                    <div className={`px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 ${bg}`}>
+                      {a.leadId && <Av name={getName(a.leadId)} size={24} sl={a.sl} lead />}
+                      <span className="text-xs">{getName(a.leadId)}</span>
+                    </div>
+                    <div className={`px-3 py-2 border-b border-gray-100 text-[11px] text-gray-500 ${bg}`}>{a.supportIds.map(getName).join(", ") || "—"}</div>
+                    <div className={`px-3 py-2 border-b border-gray-100 ${bg}`}><StatusTag status={a.status} small /></div>
+                    <div className={`px-3 py-2 border-b border-gray-100 text-right text-xs ${a.retainer > 0 ? "text-gray-900" : "text-gray-300"} ${bg}`}>{a.retainer > 0 ? fmt(a.retainer) : "—"}</div>
+                    {/* Flat fee: show total + date range */}
+                    <div className={`px-3 py-2 border-b border-gray-100 text-right ${bg}`}>
+                      {a.project > 0 ? (
+                        <>
+                          <div className={`text-xs font-medium ${live ? "text-gray-900" : "text-gray-400"}`}>{fmt(a.project)}</div>
+                          {a.startDate && a.endDate && (
+                            <div className={`text-[9px] mt-0.5 ${live ? "text-violet-500" : "text-gray-400"}`}>
+                              {fmtDate(a.startDate)} – {fmtDate(a.endDate)}{!live ? " · ended" : ""}
+                            </div>
+                          )}
+                        </>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
+                    </div>
+                    {/* MRR: retainer + amortized project */}
+                    <div className={`px-3 py-2 border-b border-gray-100 text-right ${bg}`}>
+                      <div className="text-sm font-semibold text-emerald-600">{fmt(acctVal(a))}</div>
+                      {mpr > 0 && a.startDate && <div className="text-[9px] text-violet-500">{fmt(mpr)}/mo proj</div>}
+                    </div>
+                    <div className={`px-3 py-2 border-b border-gray-100 text-[11px] text-gray-400 truncate ${bg}`}>{a.notes || "—"}</div>
                   </div>
-                  <div className={`px-3 py-2 border-b border-gray-100 text-[11px] text-gray-500 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{a.supportIds.map(getName).join(", ") || "—"}</div>
-                  <div className={`px-3 py-2 border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}><StatusTag status={a.status} small /></div>
-                  <div className={`px-3 py-2 border-b border-gray-100 text-right text-xs ${a.retainer > 0 ? "text-gray-900" : "text-gray-300"} ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{a.retainer > 0 ? fmt(a.retainer) : "—"}</div>
-                  <div className={`px-3 py-2 border-b border-gray-100 text-right text-xs ${a.project > 0 ? "text-gray-900" : "text-gray-300"} ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{a.project > 0 ? fmt(a.project) : "—"}</div>
-                  <div className={`px-3 py-2 border-b border-gray-100 text-right text-sm font-semibold text-emerald-600 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{fmt(a.retainer + a.project)}</div>
-                  <div className={`px-3 py-2 border-b border-gray-100 text-[11px] text-gray-400 truncate ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{a.notes || "—"}</div>
-                </div>
-              ))}
+                );
+              })}
               {/* Totals */}
               <div className="px-3 py-2 bg-gray-100 text-[11px] font-bold text-gray-900 border-b border-gray-200" style={{ gridColumn: "1 / 6" }}>Total ({accounts.length} accounts · {accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length} active)</div>
               <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(accounts.reduce((s, a) => s + a.retainer, 0))}</div>
               <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(accounts.reduce((s, a) => s + a.project, 0))}</div>
-              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(accounts.reduce((s, a) => s + a.retainer + a.project, 0))}</div>
+              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(accounts.reduce((s, a) => s + acctVal(a), 0))}</div>
               <div className="px-3 py-2 bg-gray-100 border-b border-gray-200" />
             </div>
           )}
@@ -983,9 +1028,25 @@ export default function App() {
             </div>
             <Inp label="Contract Type" value={modal.data.type} onChange={v => setModal({ ...modal, data: { ...modal.data, type: v } })} opts={["Retainer", "Project", "Hybrid"]} />
             <div className="grid grid-cols-2 gap-3">
-              <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
-              <Inp label="Project Revenue (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
+              {modal.data.type !== "Project" && (
+                <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
+              )}
+              {modal.data.type !== "Retainer" && (
+                <Inp label="Flat Fee (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
+              )}
             </div>
+            {modal.data.type !== "Retainer" && (
+              <div className="grid grid-cols-2 gap-3">
+                <Inp label="Start Date" value={modal.data.startDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, startDate: v || null } })} type="date" />
+                <Inp label="End Date" value={modal.data.endDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, endDate: v || null } })} type="date" />
+              </div>
+            )}
+            {modal.data.type !== "Retainer" && modal.data.project > 0 && modal.data.startDate && modal.data.endDate && (
+              <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5 text-[12px] text-violet-700">
+                <span className="font-semibold">{fmt(Math.round(modal.data.project / monthsBetween(modal.data.startDate, modal.data.endDate)))}/mo</span>
+                <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
+              </div>
+            )}
             <Inp label="Notes" value={modal.data.notes} onChange={v => setModal({ ...modal, data: { ...modal.data, notes: v } })} ph="Scope, deliverables, etc." />
             <div className="flex gap-2 mt-2">
               <button onClick={() => save("account", modal.data)} className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>

@@ -35,7 +35,9 @@ export type Account = {
   status: "Launch" | "Growth" | "Active" | "Pipeline" | "Paused" | "Closed";
   type: "Retainer" | "Project" | "Hybrid";
   retainer: number;
-  project: number;
+  project: number;         // flat fee for Project/Hybrid types
+  startDate: string | null; // project start date (YYYY-MM-DD)
+  endDate: string | null;   // project end date (YYYY-MM-DD)
   notes: string;
 };
 
@@ -96,6 +98,8 @@ export async function fetchAccounts(): Promise<Account[]> {
     type: r.type,
     retainer: Number(r.retainer),
     project: Number(r.project),
+    startDate: r.start_date || null,
+    endDate: r.end_date || null,
     notes: r.notes || "",
   }));
 }
@@ -159,6 +163,8 @@ export async function upsertAccount(a: Account) {
     type: a.type,
     retainer: a.retainer,
     project: a.project,
+    start_date: a.startDate || null,
+    end_date: a.endDate || null,
     notes: a.notes,
   });
   if (acctErr) throw acctErr;
