@@ -1027,25 +1027,25 @@ export default function App() {
               </select>
             </div>
             <Inp label="Contract Type" value={modal.data.type} onChange={v => setModal({ ...modal, data: { ...modal.data, type: v } })} opts={["Retainer", "Project", "Hybrid"]} />
-            <div className="grid grid-cols-2 gap-3">
-              {modal.data.type !== "Project" && (
-                <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
-              )}
-              {modal.data.type !== "Retainer" && (
-                <Inp label="Flat Fee (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
-              )}
-            </div>
-            {modal.data.type !== "Retainer" && (
-              <div className="grid grid-cols-2 gap-3">
-                <Inp label="Start Date" value={modal.data.startDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, startDate: v || null } })} type="date" />
-                <Inp label="End Date" value={modal.data.endDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, endDate: v || null } })} type="date" />
-              </div>
+            {/* Retainer field — shown for Retainer and Hybrid */}
+            {(modal.data.type === "Retainer" || modal.data.type === "Hybrid") && (
+              <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
             )}
-            {modal.data.type !== "Retainer" && modal.data.project > 0 && modal.data.startDate && modal.data.endDate && (
-              <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5 text-[12px] text-violet-700">
-                <span className="font-semibold">{fmt(Math.round(modal.data.project / monthsBetween(modal.data.startDate, modal.data.endDate)))}/mo</span>
-                <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
-              </div>
+            {/* Flat fee + dates — shown for Project and Hybrid */}
+            {(modal.data.type === "Project" || modal.data.type === "Hybrid") && (
+              <>
+                <Inp label="Flat Fee (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
+                <div className="grid grid-cols-2 gap-3">
+                  <Inp label="Start Date" value={modal.data.startDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, startDate: v || null } })} type="date" />
+                  <Inp label="End Date" value={modal.data.endDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, endDate: v || null } })} type="date" />
+                </div>
+                {modal.data.project > 0 && modal.data.startDate && modal.data.endDate && (
+                  <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5 text-[12px] text-violet-700">
+                    <span className="font-semibold">{fmt(Math.round(modal.data.project / monthsBetween(modal.data.startDate, modal.data.endDate)))}/mo</span>
+                    <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
+                  </div>
+                )}
+              </>
             )}
             <Inp label="Notes" value={modal.data.notes} onChange={v => setModal({ ...modal, data: { ...modal.data, notes: v } })} ph="Scope, deliverables, etc." />
             <div className="flex gap-2 mt-2">
