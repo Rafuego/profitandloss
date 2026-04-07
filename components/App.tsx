@@ -823,7 +823,12 @@ export default function App() {
                 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" }) : "";
                 return (
                   <div key={a.id} className="contents cursor-pointer" onClick={() => setSelected({ type: "account", data: a })}>
-                    <div className={`px-3 py-2 text-xs font-semibold border-b border-gray-100 ${bg}`}>{a.name}</div>
+                    <div className={`px-3 py-2 text-xs font-semibold border-b border-gray-100 flex items-center gap-1.5 ${bg}`}>
+                      {a.name}
+                      {(a.type === "Project" || a.type === "Hybrid") && (!a.startDate || !a.endDate) && (
+                        <span title="Missing start/end dates — revenue not tracked in MRR" className="text-amber-500 text-[10px]">⚠</span>
+                      )}
+                    </div>
                     <div className={`px-3 py-2 border-b border-gray-100 ${bg}`}><SlTag sl={a.sl} small /></div>
                     <div className={`px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 ${bg}`}>
                       {a.leadId && <Av name={getName(a.leadId)} size={24} sl={a.sl} lead />}
@@ -1055,24 +1060,47 @@ export default function App() {
               <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
             )}
             {/* Flat fee + dates — shown for Project and Hybrid */}
-            {(modal.data.type === "Project" || modal.data.type === "Hybrid") && (
-              <>
-                <Inp label="Flat Fee (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
-                <div className="grid grid-cols-2 gap-3">
-                  <Inp label="Start Date" value={modal.data.startDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, startDate: v || null } })} type="date" />
-                  <Inp label="End Date" value={modal.data.endDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, endDate: v || null } })} type="date" />
-                </div>
-                {modal.data.project > 0 && modal.data.startDate && modal.data.endDate && (
-                  <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5 text-[12px] text-violet-700">
-                    <span className="font-semibold">{fmt(Math.round(modal.data.project / monthsBetween(modal.data.startDate, modal.data.endDate)))}/mo</span>
-                    <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
+            {(modal.data.type === "Project" || modal.data.type === "Hybrid") && (() => {
+              const missingDates = !modal.data.startDate || !modal.data.endDate;
+              return (
+                <>
+                  <Inp label="Flat Fee (USD)" value={modal.data.project} onChange={v => setModal({ ...modal, data: { ...modal.data, project: v } })} type="number" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Inp label="Start Date *" value={modal.data.startDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, startDate: v || null } })} type="date" />
+                    </div>
+                    <div>
+                      <Inp label="End Date *" value={modal.data.endDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, endDate: v || null } })} type="date" />
+                    </div>
                   </div>
-                )}
-              </>
-            )}
+                  {missingDates && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-[11px] text-amber-700">
+                      Start and end dates are required for flat rate projects — without them the revenue won't show in MRR.
+                    </div>
+                  )}
+                  {modal.data.project > 0 && modal.data.startDate && modal.data.endDate && (
+                    <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5 text-[12px] text-violet-700">
+                      <span className="font-semibold">{fmt(Math.round(modal.data.project / monthsBetween(modal.data.startDate, modal.data.endDate)))}/mo</span>
+                      <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <Inp label="Notes" value={modal.data.notes} onChange={v => setModal({ ...modal, data: { ...modal.data, notes: v } })} ph="Scope, deliverables, etc." />
             <div className="flex gap-2 mt-2">
-              <button onClick={() => save("account", modal.data)} className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>
+              {(() => {
+                const needsDates = (modal.data.type === "Project" || modal.data.type === "Hybrid") && (!modal.data.startDate || !modal.data.endDate);
+                return (
+                  <button
+                    onClick={() => { if (!needsDates) save("account", modal.data); }}
+                    disabled={needsDates}
+                    className={`flex-1 rounded-lg py-3 font-semibold text-[13px] transition-colors ${needsDates ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-gray-900 text-white hover:bg-gray-800"}`}
+                  >
+                    {needsDates ? "Add dates to save" : "Save"}
+                  </button>
+                );
+              })()}
               {modal.data.id && <button onClick={() => del("account", modal.data.id)} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Remove</button>}
             </div>
           </div>
