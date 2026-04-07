@@ -380,6 +380,7 @@ export default function App() {
   const [deptNid, setDeptNid] = useState(10);
   const [view, setView] = useState("workload");
   const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -426,24 +427,38 @@ export default function App() {
   }, [pods, team, accounts]);
 
   const save = async (type, d) => {
+    setSaveError(null);
     if (type === "person") {
       if (!d.id) { d = { ...d, id: `t${nid}` }; setNid(n => n + 1); }
       setTeam(t => d.id && t.find(x => x.id === d.id) ? t.map(x => x.id === d.id ? d : x) : [...t, d]);
-      try { await upsertTeamMember(d); } catch (e) { console.error("Save person failed:", e); }
+      try { await upsertTeamMember(d); } catch (e: any) {
+        console.error("Save person failed:", e);
+        setSaveError(`Save failed: ${e?.message || "Supabase error"}`);
+      }
     } else {
       if (!d.id) { d = { ...d, id: `a${nid}` }; setNid(n => n + 1); }
       setAccounts(a => d.id && a.find(x => x.id === d.id) ? a.map(x => x.id === d.id ? d : x) : [...a, d]);
-      try { await upsertAccount(d); } catch (e) { console.error("Save account failed:", e); }
+      try { await upsertAccount(d); } catch (e: any) {
+        console.error("Save account failed:", e);
+        setSaveError(`Save failed: ${e?.message || "Supabase error"}`);
+      }
     }
     setModal(null);
   };
   const del = async (type, id) => {
+    setSaveError(null);
     if (type === "person") {
       setTeam(t => t.filter(p => p.id !== id));
-      try { await deleteTeamMember(id); } catch (e) { console.error("Delete person failed:", e); }
+      try { await deleteTeamMember(id); } catch (e: any) {
+        console.error("Delete person failed:", e);
+        setSaveError(`Delete failed: ${e?.message || "Supabase error"}`);
+      }
     } else {
       setAccounts(a => a.filter(x => x.id !== id));
-      try { await deleteAccount(id); } catch (e) { console.error("Delete account failed:", e); }
+      try { await deleteAccount(id); } catch (e: any) {
+        console.error("Delete account failed:", e);
+        setSaveError(`Delete failed: ${e?.message || "Supabase error"}`);
+      }
     }
     setSelected(null); setModal(null);
   };
@@ -478,6 +493,14 @@ export default function App() {
 
   return (
     <div className="font-sans bg-white text-gray-900 h-screen flex flex-col">
+
+      {/* Save error banner */}
+      {saveError && (
+        <div className="bg-red-500 text-white text-xs px-6 py-2 flex items-center justify-between shrink-0">
+          <span>⚠️ {saveError} — this change won't persist on refresh.</span>
+          <button onClick={() => setSaveError(null)} className="ml-4 underline opacity-80 hover:opacity-100">Dismiss</button>
+        </div>
+      )}
 
       {/* Nav */}
       <div className="border-b border-gray-200 px-8 py-3 flex items-center justify-between shrink-0 bg-white">
