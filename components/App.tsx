@@ -381,6 +381,7 @@ export default function App() {
   const [view, setView] = useState("workload");
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [acctView, setAcctView] = useState<"list" | "pods">("pods");
 
   useEffect(() => {
     async function load() {
@@ -812,7 +813,6 @@ export default function App() {
 
           {/* ══════════ ACCOUNTS VIEW ══════════ */}
           {view === "accounts" && (() => {
-            const [acctView, setAcctView] = useState<"list" | "pods">("pods");
             const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" }) : "";
 
             if (acctView === "pods") return (
