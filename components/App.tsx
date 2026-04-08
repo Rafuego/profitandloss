@@ -811,8 +811,111 @@ export default function App() {
           )}
 
           {/* ══════════ ACCOUNTS VIEW ══════════ */}
-          {view === "accounts" && (
+          {view === "accounts" && (() => {
+            const [acctView, setAcctView] = useState<"list" | "pods">("pods");
+            const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" }) : "";
+
+            if (acctView === "pods") return (
+              <div className="p-8 pb-12">
+                <div className="flex items-center justify-between mb-7">
+                  <div>
+                    <div className="text-2xl font-semibold text-gray-900 mb-1">Accounts</div>
+                    <div className="text-xs text-gray-400">Each card is one client — their lead, support, and monthly value.</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAcctView("list")} className="text-[11px] font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">List</button>
+                    <button className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-gray-900 text-white">Pods</button>
+                  </div>
+                </div>
+                <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+                  {accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).map(a => {
+                    const lead = team.find(p => p.id === a.leadId);
+                    const sups = team.filter(p => a.supportIds.includes(p.id));
+                    const mrr = acctVal(a);
+                    const live = isProjectLive(a);
+                    const hasDates = a.startDate && a.endDate;
+                    const slColor = SL[a.sl]?.color || "bg-gray-100 text-gray-600";
+                    return (
+                      <div key={a.id} onClick={() => setSelected({ type: "account", data: a })}
+                        className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer">
+                        {/* Colour bar from service line */}
+                        <div className={`h-1 ${slColor.split(" ")[0]}`} />
+                        <div className="px-4 pt-4 pb-4">
+                          {/* Header */}
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                                {a.name}
+                                {(a.type === "Project" || a.type === "Hybrid") && !hasDates && (
+                                  <span title="Missing dates" className="text-amber-500 text-[10px]">⚠</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <SlTag sl={a.sl} small />
+                                <StatusTag status={a.status} small />
+                                {a.type !== "Retainer" && <span className="text-[9px] font-semibold px-2 py-0.5 bg-violet-50 text-violet-600 rounded-full">{a.type}</span>}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-base font-semibold text-emerald-600">{fmtK(mrr)}</div>
+                              <div className="text-[9px] text-gray-400">/mo</div>
+                            </div>
+                          </div>
+
+                          {/* Project date bar */}
+                          {(a.type === "Project" || a.type === "Hybrid") && hasDates && (
+                            <div className={`flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg text-[10px] font-medium ${live ? "bg-violet-50 text-violet-600" : "bg-gray-50 text-gray-400"}`}>
+                              <span>{fmtDate(a.startDate!)} → {fmtDate(a.endDate!)}</span>
+                              {!live && <span className="text-[9px]">· ended</span>}
+                            </div>
+                          )}
+
+                          {/* Divider */}
+                          <div className="h-px bg-gray-100 mb-3" />
+
+                          {/* Team */}
+                          <div className="flex flex-col gap-2">
+                            {lead && (
+                              <div className="flex items-center gap-2.5">
+                                <Av name={lead.name} size={28} sl={lead.sl} lead={lead.lead} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium text-gray-900 truncate">{lead.name}</div>
+                                  <div className="text-[9px] text-gray-400 truncate">{lead.role}</div>
+                                </div>
+                                <Tag small variant="green">Lead</Tag>
+                              </div>
+                            )}
+                            {sups.map(p => (
+                              <div key={p.id} className="flex items-center gap-2.5">
+                                <Av name={p.name} size={24} sl={p.sl} lead={false} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-gray-700 truncate">{p.name}</div>
+                                </div>
+                                <Tag small>Support</Tag>
+                              </div>
+                            ))}
+                            {!lead && sups.length === 0 && (
+                              <div className="text-[11px] text-gray-300 italic">No team assigned</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+
+            // LIST VIEW
+            return (
             <div className="grid overflow-auto" style={{ gridTemplateColumns: "1.5fr 1fr 1.5fr 1.2fr 0.8fr 1fr 1.4fr 1fr 2fr" }}>
+              <div className="col-span-9 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
+                <span className="text-xs font-semibold text-gray-900">All Accounts</span>
+                <div className="flex items-center gap-2">
+                  <button className="text-[11px] font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">Pods</button>
+                  <button onClick={() => setAcctView("pods")} className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-gray-900 text-white">List</button>
+                </div>
+              </div>
               {["Account", "Service Line", "Lead", "Support", "Status", "Retainer", "Flat Fee", "MRR", "Scope"].map(h => (
                 <div key={h} className="px-3 py-2 bg-gray-100 text-[9px] font-semibold tracking-wider uppercase text-gray-500 border-b border-gray-200 sticky top-0 z-10">{h}</div>
               ))}
@@ -866,7 +969,8 @@ export default function App() {
               <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(accounts.reduce((s, a) => s + acctVal(a), 0))}</div>
               <div className="px-3 py-2 bg-gray-100 border-b border-gray-200" />
             </div>
-          )}
+            );
+          })()}
 
           {/* ══════════ P&L DASHBOARD VIEW ══════════ */}
           {view === "pnl" && (
