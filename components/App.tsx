@@ -392,7 +392,7 @@ export default function App() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
-  const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "all">("leads");
+  const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "all">("leads");
 
   useEffect(() => {
     async function load() {
@@ -562,6 +562,7 @@ export default function App() {
                   {([
                     { id: "leads",    label: "Pod Leads",  count: personPods.filter(p => p.lead && p.sl !== "leadership" && p.sl !== "symphony").length },
                     { id: "symphony", label: "Symphony",   count: personPods.filter(p => p.sl === "symphony").length },
+                    { id: "product",  label: "Product",    count: personPods.filter(p => p.sl === "product").length },
                     { id: "all",      label: "Everyone",   count: personPods.filter(p => p.sl !== "leadership").length },
                   ] as const).map(t => (
                     <button key={t.id} onClick={() => setWorkloadTab(t.id)}
@@ -576,15 +577,27 @@ export default function App() {
               <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
                 {personPods.filter(p => {
                   if (p.sl === "leadership") return false;
-                  if (workloadTab === "leads") return p.lead && p.sl !== "symphony";
+                  if (workloadTab === "leads") return p.lead && p.sl !== "symphony" && p.sl !== "product";
                   if (workloadTab === "symphony") return p.sl === "symphony";
+                  if (workloadTab === "product") return p.sl === "product";
                   return true;
-                }).map(p => (
+                }).map(p => {
+                  // Capacity: each lead acct = 2 units, each support = 1 unit, max = 10 units feels "full"
+                  const leadCount = p.ledAccounts.length;
+                  const supCount = p.supAccounts.length;
+                  const totalClients = leadCount + supCount;
+                  const loadUnits = leadCount * 2 + supCount * 1;
+                  const maxUnits = 10;
+                  const loadPct = Math.min(100, Math.round((loadUnits / maxUnits) * 100));
+                  const loadColor = loadPct >= 80 ? "bg-red-400" : loadPct >= 50 ? "bg-amber-400" : "bg-emerald-400";
+                  const loadLabel = loadPct >= 80 ? "At capacity" : loadPct >= 50 ? "Busy" : totalClients === 0 ? "Available" : "Manageable";
+                  const loadLabelColor = loadPct >= 80 ? "text-red-500" : loadPct >= 50 ? "text-amber-500" : totalClients === 0 ? "text-gray-400" : "text-emerald-600";
+                  return (
                   <div key={p.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
                     <div className="h-0.5 bg-gray-200" />
                     <div className="px-4 pt-4 pb-3">
                       {/* Person header */}
-                      <div className="flex items-center gap-2.5 mb-1 cursor-pointer" onClick={() => setSelected({ type: "person", data: p })}>
+                      <div className="flex items-center gap-2.5 mb-3 cursor-pointer" onClick={() => setSelected({ type: "person", data: p })}>
                         <Av name={p.name} size={36} sl={p.sl} lead={p.lead} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold text-gray-900">{p.name}</div>
@@ -593,27 +606,21 @@ export default function App() {
                         <SlTag sl={p.sl} small />
                       </div>
 
-                      {/* Revenue + cost summary */}
-                      <div className="flex mt-3 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
-                        <div className="flex-1 text-center py-2.5 px-2">
-                          <div className="text-[8px] font-semibold tracking-wider uppercase text-gray-400">Exposure</div>
-                          <div className={`text-base font-medium mt-0.5 ${p.rev > 0 ? "text-emerald-600" : "text-gray-300"}`}>{p.rev > 0 ? fmtK(p.rev) : "—"}</div>
-                          {p.supRev > 0 && <div className="text-[9px] text-gray-400 mt-0.5">{fmtK(p.leadRev)} lead · {fmtK(p.supRev)} sup</div>}
+                      {/* Capacity bar */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400">{leadCount} lead · {supCount} support</span>
+                          </div>
+                          <span className={`text-[10px] font-semibold ${loadLabelColor}`}>{loadLabel}</span>
                         </div>
-                        <div className="w-px bg-gray-200" />
-                        <div className="flex-1 text-center py-2.5 px-2">
-                          <div className="text-[8px] font-semibold tracking-wider uppercase text-gray-400">Cost</div>
-                          <div className="text-base font-medium text-gray-900 mt-0.5">{fmtK(p.cost)}</div>
-                        </div>
-                        <div className="w-px bg-gray-200" />
-                        <div className="flex-1 text-center py-2.5 px-2">
-                          <div className="text-[8px] font-semibold tracking-wider uppercase text-gray-400">Ratio</div>
-                          <div className={`text-base font-semibold mt-0.5 ${p.ratio >= 1 ? "text-emerald-600" : p.ratio > 0 ? "text-amber-500" : "text-gray-300"}`}>{p.rev > 0 ? `${p.ratio.toFixed(1)}x` : "—"}</div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${loadColor}`} style={{ width: `${loadPct}%` }} />
                         </div>
                       </div>
 
                       {/* Accounts list */}
-                      <div className="border-t border-gray-100 pt-2.5 mt-3">
+                      <div className="border-t border-gray-100 pt-2.5">
                         {p.ledAccounts.length === 0 && p.supAccounts.length === 0 ? (
                           <div className="text-[11px] text-gray-300 italic text-center py-2">No accounts assigned</div>
                         ) : (<>
@@ -641,7 +648,8 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
 
               {/* Unassigned accounts */}
