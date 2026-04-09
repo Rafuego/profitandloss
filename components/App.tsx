@@ -55,7 +55,16 @@ const INIT_ACCOUNTS = [
   { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2250, project: 0, notes: "" },
   { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 4800, project: 0, notes: "" },
   { id: "a12", name: "Raspberry Ai", sl: "symphony", leadId: "t8", supportIds: [], status: "Growth", type: "Retainer", retainer: 8750, project: 0, notes: "" },
-  { id: "a13", name: "RBL", sl: "symphony", leadId: "t10", supportIds: [], status: "Launch", type: "Retainer", retainer: 3000, project: 0, notes: "" },
+  { id: "a13",  name: "RBL",          sl: "symphony", leadId: "t10", supportIds: [], status: "Launch",  type: "Retainer", retainer: 3000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a115", name: "Complify",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 2000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a117", name: "NeuralWatt",   sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a119", name: "Tempus Ai",    sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 1250, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a122", name: "Lucenia",      sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
