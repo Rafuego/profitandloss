@@ -609,23 +609,17 @@ export default function App() {
                           <div className="text-[11px] text-gray-300 italic text-center py-2">No accounts assigned</div>
                         ) : (<>
                           {p.ledAccounts.map(a => (
-                            <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex justify-between items-center px-2.5 py-1.5 rounded-lg mb-1 bg-gray-50 cursor-pointer border border-gray-100 hover:bg-gray-100 transition-colors">
-                              <div className="flex items-center gap-1.5">
-                                <div className={`w-1.5 h-1.5 rounded-full ${a.status === "Growth" ? "bg-emerald-500" : "bg-blue-400"}`} />
-                                <span className="text-xs font-medium text-gray-900">{a.name}</span>
-                                <Tag small variant="green">Lead</Tag>
-                              </div>
-                              <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(leadShare(a)))}</span>
+                            <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 bg-gray-50 cursor-pointer border border-gray-100 hover:bg-gray-100 transition-colors">
+                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.status === "Growth" ? "bg-emerald-500" : "bg-blue-400"}`} />
+                              <span className="text-xs font-medium text-gray-900 flex-1 truncate">{a.name}</span>
+                              <Tag small variant="green">Lead</Tag>
                             </div>
                           ))}
                           {p.supAccounts.map(a => (
-                            <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex justify-between items-center px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                                <span className="text-xs text-gray-500">{a.name}</span>
-                                <Tag small>Support</Tag>
-                              </div>
-                              <span className="text-[11px] text-gray-400">{fmt(Math.round(supShare(a)))}</span>
+                            <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                              <span className="text-xs text-gray-500 flex-1 truncate">{a.name}</span>
+                              <Tag small>Support</Tag>
                             </div>
                           ))}
                         </>)}
