@@ -256,24 +256,6 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit }) => {
         <div className="h-px bg-gray-200 w-full" />
 
         <div className="px-6 py-5">
-          <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-3.5">Revenue Exposure</div>
-          <div className="flex gap-4 mb-3.5">
-            <div><div className="text-[10px] text-gray-400">Total Exposure</div><div className="text-2xl font-medium text-emerald-600">{fmt(rev)}</div></div>
-            <div><div className="text-[10px] text-gray-400">Exp / Cost</div><div className={`text-2xl font-medium ${ratio >= 1 ? "text-emerald-600" : "text-red-500"}`}>{ratio.toFixed(1)}x</div></div>
-          </div>
-          {(leadRev > 0 || supRev > 0) && <div className="flex gap-4 mb-3.5">
-            <div><div className="text-[10px] text-gray-400">As Lead</div><div className="text-sm font-medium text-gray-900">{fmt(leadRev)}</div></div>
-            <div><div className="text-[10px] text-gray-400">As Support</div><div className="text-sm font-medium text-gray-500">{fmt(supRev)}</div></div>
-          </div>}
-          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-400 ${ratio >= 1 ? "bg-emerald-500" : "bg-red-400"}`}
-              style={{ width: `${Math.min(100, (ratio / 3) * 100)}%` }} />
-          </div>
-        </div>
-
-        <div className="h-px bg-gray-200 w-full" />
-
-        <div className="px-6 py-5">
           <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-2.5">Accounts</div>
           {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) }))].map(a => (
             <div key={a.id + a._role} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
@@ -392,7 +374,7 @@ export default function App() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
-  const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "all">("leads");
+  const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
 
   useEffect(() => {
     async function load() {
@@ -491,7 +473,7 @@ export default function App() {
     { id: "pnl", label: "P&L" },
   ];
 
-  const personPods = useMemo(() => team.filter(p => p.sl !== "ops").map(p => {
+  const personPods = useMemo(() => team.filter(p => p.sl !== "leadership").map(p => {
     const led = accounts.filter(a => a.leadId === p.id);
     const sup = accounts.filter(a => a.supportIds.includes(p.id));
     const exp = personExposure(p.id, accounts);
@@ -560,9 +542,10 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                   {([
-                    { id: "leads",    label: "Pod Leads",  count: personPods.filter(p => p.lead && p.sl !== "leadership" && p.sl !== "symphony").length },
+                    { id: "leads",    label: "Pod Leads",  count: personPods.filter(p => p.lead && p.sl !== "leadership" && p.sl !== "symphony" && p.sl !== "product").length },
                     { id: "symphony", label: "Symphony",   count: personPods.filter(p => p.sl === "symphony").length },
                     { id: "product",  label: "Product",    count: personPods.filter(p => p.sl === "product").length },
+                    { id: "pm",       label: "Project Mgmt", count: personPods.filter(p => p.sl === "ops").length },
                     { id: "all",      label: "Everyone",   count: personPods.filter(p => p.sl !== "leadership").length },
                   ] as const).map(t => (
                     <button key={t.id} onClick={() => setWorkloadTab(t.id)}
@@ -577,9 +560,10 @@ export default function App() {
               <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
                 {personPods.filter(p => {
                   if (p.sl === "leadership") return false;
-                  if (workloadTab === "leads") return p.lead && p.sl !== "symphony" && p.sl !== "product";
+                  if (workloadTab === "leads") return p.lead && p.sl !== "symphony" && p.sl !== "product" && p.sl !== "ops";
                   if (workloadTab === "symphony") return p.sl === "symphony";
                   if (workloadTab === "product") return p.sl === "product";
+                  if (workloadTab === "pm") return p.sl === "ops";
                   return true;
                 }).map(p => {
                   // Capacity: each lead acct = 2 units, each support = 1 unit, max = 10 units feels "full"
