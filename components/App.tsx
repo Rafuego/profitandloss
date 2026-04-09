@@ -392,6 +392,7 @@ export default function App() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
+  const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "all">("leads");
 
   useEffect(() => {
     async function load() {
@@ -552,11 +553,33 @@ export default function App() {
           {/* ══════════ WORKLOAD VIEW ══════════ */}
           {view === "workload" && (
             <div className="p-8 pb-12">
-              <div className="text-2xl font-semibold text-gray-900 mb-1">Workload</div>
-              <div className="text-xs text-gray-400 mb-7">Each card is one person — their assigned accounts and the revenue they drive.</div>
+              <div className="flex items-center justify-between mb-7">
+                <div>
+                  <div className="text-2xl font-semibold text-gray-900 mb-1">Workload</div>
+                  <div className="text-xs text-gray-400">Each card is one person — their assigned accounts and the revenue they drive.</div>
+                </div>
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                  {([
+                    { id: "leads",    label: "Pod Leads",  count: personPods.filter(p => p.lead && p.sl !== "leadership" && p.sl !== "symphony").length },
+                    { id: "symphony", label: "Symphony",   count: personPods.filter(p => p.sl === "symphony").length },
+                    { id: "all",      label: "Everyone",   count: personPods.filter(p => p.sl !== "leadership").length },
+                  ] as const).map(t => (
+                    <button key={t.id} onClick={() => setWorkloadTab(t.id)}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${workloadTab === t.id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                      {t.label}
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${workloadTab === t.id ? "bg-gray-100 text-gray-600" : "text-gray-400"}`}>{t.count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
-                {personPods.filter(p => p.sl !== "leadership").map(p => (
+                {personPods.filter(p => {
+                  if (p.sl === "leadership") return false;
+                  if (workloadTab === "leads") return p.lead && p.sl !== "symphony";
+                  if (workloadTab === "symphony") return p.sl === "symphony";
+                  return true;
+                }).map(p => (
                   <div key={p.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
                     <div className="h-0.5 bg-gray-200" />
                     <div className="px-4 pt-4 pb-3">
