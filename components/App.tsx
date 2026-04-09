@@ -437,23 +437,25 @@ export default function App() {
     return { rev: r, cost: c, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
   }, [pods, team, accounts]);
 
-  const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-
   const save = async (type, d) => {
     setSaveError(null);
     if (type === "person") {
-      if (!d.id) { d = { ...d, id: `t_${uid()}` }; }
-      setTeam(t => d.id && t.find(x => x.id === d.id) ? t.map(x => x.id === d.id ? d : x) : [...t, d]);
+      if (!d.id) { d = { ...d, id: crypto.randomUUID() }; }
+      const prev = team;
+      setTeam(t => t.find(x => x.id === d.id) ? t.map(x => x.id === d.id ? d : x) : [...t, d]);
       try { await upsertTeamMember(d); } catch (e: any) {
         console.error("Save person failed:", e);
-        setSaveError(`Save failed: ${e?.message || "Supabase error"}`);
+        setSaveError(`Save failed: ${e?.message || "Supabase error"} — change was not saved.`);
+        setTeam(prev); // revert on failure
       }
     } else {
-      if (!d.id) { d = { ...d, id: `a_${uid()}` }; }
-      setAccounts(a => d.id && a.find(x => x.id === d.id) ? a.map(x => x.id === d.id ? d : x) : [...a, d]);
+      if (!d.id) { d = { ...d, id: crypto.randomUUID() }; }
+      const prev = accounts;
+      setAccounts(a => a.find(x => x.id === d.id) ? a.map(x => x.id === d.id ? d : x) : [...a, d]);
       try { await upsertAccount(d); } catch (e: any) {
         console.error("Save account failed:", e);
-        setSaveError(`Save failed: ${e?.message || "Supabase error"}`);
+        setSaveError(`Save failed: ${e?.message || "Supabase error"} — change was not saved.`);
+        setAccounts(prev); // revert on failure
       }
     }
     setModal(null);

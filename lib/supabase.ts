@@ -136,13 +136,13 @@ export async function upsertTeamMember(p: TeamMember) {
   const { error } = await supabase.from("team_members").upsert({
     id: p.id,
     name: p.name,
-    role: p.role,
-    sl: p.sl,
+    role: p.role || "",
+    sl: p.sl || null,          // empty string → null to avoid FK violation
     type: p.type,
-    cad_yearly: p.cadY,
-    usd_monthly: p.usdM,
-    hours_per_month: p.hrs,
-    is_lead: p.lead,
+    cad_yearly: p.cadY || null,
+    usd_monthly: p.usdM || null,
+    hours_per_month: p.hrs || 160,
+    is_lead: p.lead || false,
   });
   if (error) throw error;
 }
