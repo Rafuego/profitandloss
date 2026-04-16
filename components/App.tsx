@@ -583,9 +583,9 @@ export default function App() {
                   const supCount = p.supAccounts.length;
                   const totalClients = leadCount + supCount;
                   const loadPct = Math.min(100, Math.round((totalLoad / maxCapacity) * 100));
-                  const loadColor = loadPct >= 80 ? "bg-red-400" : loadPct >= 50 ? "bg-amber-400" : "bg-emerald-400";
-                  const loadLabel = loadPct >= 80 ? "At capacity" : loadPct >= 50 ? "Busy" : totalClients === 0 ? "Available" : "Manageable";
-                  const loadLabelColor = loadPct >= 80 ? "text-red-500" : loadPct >= 50 ? "text-amber-500" : totalClients === 0 ? "text-gray-400" : "text-emerald-600";
+                  const loadColor = totalLoad >= 5 ? "bg-red-400" : totalLoad >= 4 ? "bg-amber-400" : "bg-emerald-400";
+                  const loadLabel = totalLoad >= 5 ? "At capacity" : totalLoad >= 4 ? "Near capacity" : totalClients === 0 ? "Available" : "Manageable";
+                  const loadLabelColor = totalLoad >= 5 ? "text-red-500" : totalLoad >= 4 ? "text-amber-500" : totalClients === 0 ? "text-gray-400" : "text-emerald-600";
                   return (
                   <div key={p.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
                     <div className="h-0.5 bg-gray-200" />
