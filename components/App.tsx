@@ -43,28 +43,28 @@ const INIT_TEAM = [
 ];
 
 const INIT_ACCOUNTS = [
-  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 3000, project: 0, notes: "" },
-  { id: "a2", name: "Attio", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, notes: "" },
-  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, notes: "" },
-  { id: "a4", name: "Envoy", sl: "symphony", leadId: "t10", supportIds: [], status: "Launch", type: "Retainer", retainer: 1500, project: 0, notes: "" },
-  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, notes: "" },
-  { id: "a6", name: "Lumen", sl: "symphony", leadId: "t13", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, notes: "" },
-  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, notes: "" },
-  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 3000, project: 0, notes: "" },
-  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, notes: "" },
-  { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2250, project: 0, notes: "" },
-  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 4800, project: 0, notes: "" },
-  { id: "a12", name: "Raspberry Ai", sl: "symphony", leadId: "t8", supportIds: [], status: "Growth", type: "Retainer", retainer: 8750, project: 0, notes: "" },
-  { id: "a13",  name: "RBL",          sl: "symphony", leadId: "t10", supportIds: [], status: "Launch",  type: "Retainer", retainer: 3000, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a115", name: "Complify",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 2000, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a117", name: "NeuralWatt",   sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a119", name: "Tempus Ai",    sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 1250, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, startDate: null, endDate: null, notes: "" },
-  { id: "a122", name: "Lucenia",      sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, startDate: null, endDate: null, notes: "" },
+  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
+  { id: "a2", name: "Attio", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
+  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
+  { id: "a4", name: "Envoy", sl: "symphony", leadId: "t10", supportIds: [], status: "Launch", type: "Retainer", retainer: 1500, project: 0, weight: 3, notes: "" },
+  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
+  { id: "a6", name: "Lumen", sl: "symphony", leadId: "t13", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
+  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
+  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
+  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
+  { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2250, project: 0, weight: 3, notes: "" },
+  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 4800, project: 0, weight: 3, notes: "" },
+  { id: "a12", name: "Raspberry Ai", sl: "symphony", leadId: "t8", supportIds: [], status: "Growth", type: "Retainer", retainer: 8750, project: 0, weight: 3, notes: "" },
+  { id: "a13",  name: "RBL",          sl: "symphony", leadId: "t10", supportIds: [], status: "Launch",  type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a115", name: "Complify",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 2000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a117", name: "NeuralWatt",   sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a119", name: "Tempus Ai",    sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 1250, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a122", name: "Lucenia",      sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
@@ -523,7 +523,7 @@ export default function App() {
         <div className="flex gap-2">
           <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
-          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, notes: "" } })}
+          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, notes: "" } })}
             className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
         </div>
       </div>
@@ -566,13 +566,23 @@ export default function App() {
                   if (workloadTab === "pm") return p.sl === "ops";
                   return true;
                 }).map(p => {
-                  // Capacity: each lead acct = 2 units, each support = 1 unit, max = 10 units feels "full"
+                  // Weight-based capacity: each account has a weight (1–5 pts)
+                  // Lead gets 70% of weight (100% if no support), each support gets equal share of remaining 30%
+                  const maxCapacity = 5;
+                  const leadLoad = p.ledAccounts.reduce((sum, a) => {
+                    const w = a.weight ?? 3;
+                    return sum + (a.supportIds.length > 0 ? w * 0.7 : w);
+                  }, 0);
+                  const supLoad = p.supAccounts.reduce((sum, a) => {
+                    const w = a.weight ?? 3;
+                    const numSup = a.supportIds.length;
+                    return sum + (numSup > 0 ? (w * 0.3) / numSup : 0);
+                  }, 0);
+                  const totalLoad = Math.round((leadLoad + supLoad) * 10) / 10;
                   const leadCount = p.ledAccounts.length;
                   const supCount = p.supAccounts.length;
                   const totalClients = leadCount + supCount;
-                  const loadUnits = leadCount * 2 + supCount * 1;
-                  const maxUnits = 10;
-                  const loadPct = Math.min(100, Math.round((loadUnits / maxUnits) * 100));
+                  const loadPct = Math.min(100, Math.round((totalLoad / maxCapacity) * 100));
                   const loadColor = loadPct >= 80 ? "bg-red-400" : loadPct >= 50 ? "bg-amber-400" : "bg-emerald-400";
                   const loadLabel = loadPct >= 80 ? "At capacity" : loadPct >= 50 ? "Busy" : totalClients === 0 ? "Available" : "Manageable";
                   const loadLabelColor = loadPct >= 80 ? "text-red-500" : loadPct >= 50 ? "text-amber-500" : totalClients === 0 ? "text-gray-400" : "text-emerald-600";
@@ -594,7 +604,9 @@ export default function App() {
                       <div className="mb-3">
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-gray-400">{leadCount} lead · {supCount} support</span>
+                            <span className="text-[10px] text-gray-400">{totalLoad} <span className="text-gray-300">/</span> 5 pts</span>
+                            <span className="text-[10px] text-gray-300">·</span>
+                            <span className="text-[10px] text-gray-400">{leadCount} lead · {supCount} sup</span>
                           </div>
                           <span className={`text-[10px] font-semibold ${loadLabelColor}`}>{loadLabel}</span>
                         </div>
@@ -608,20 +620,30 @@ export default function App() {
                         {p.ledAccounts.length === 0 && p.supAccounts.length === 0 ? (
                           <div className="text-[11px] text-gray-300 italic text-center py-2">No accounts assigned</div>
                         ) : (<>
-                          {p.ledAccounts.map(a => (
+                          {p.ledAccounts.map(a => {
+                            const w = a.weight ?? 3;
+                            const myLoad = a.supportIds.length > 0 ? w * 0.7 : w;
+                            return (
                             <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 bg-gray-50 cursor-pointer border border-gray-100 hover:bg-gray-100 transition-colors">
                               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.status === "Growth" ? "bg-emerald-500" : "bg-blue-400"}`} />
                               <span className="text-xs font-medium text-gray-900 flex-1 truncate">{a.name}</span>
+                              <span className="text-[9px] text-gray-400 font-medium">{Math.round(myLoad * 10) / 10}pt</span>
                               <Tag small variant="green">Lead</Tag>
                             </div>
-                          ))}
-                          {p.supAccounts.map(a => (
+                          )})}
+                          {p.supAccounts.map(a => {
+                            const w = a.weight ?? 3;
+                            const numSup = a.supportIds.length;
+                            const myLoad = numSup > 0 ? (w * 0.3) / numSup : 0;
+                            return (
                             <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
                               <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
                               <span className="text-xs text-gray-500 flex-1 truncate">{a.name}</span>
+                              <span className="text-[9px] text-gray-400 font-medium">{Math.round(myLoad * 10) / 10}pt</span>
                               <Tag small>Support</Tag>
                             </div>
-                          ))}
+                          )})}
+
                         </>)}
                       </div>
                     </div>
@@ -1211,6 +1233,19 @@ export default function App() {
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
+            </div>
+            {/* Designer weight */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Designer Weight (1–5 pts)</label>
+              <div className="flex items-center gap-3">
+                <input type="range" min={1} max={5} step={1} value={modal.data.weight ?? 3}
+                  onChange={e => setModal({ ...modal, data: { ...modal.data, weight: Number(e.target.value) } })}
+                  className="flex-1 accent-gray-800" />
+                <span className="text-sm font-semibold text-gray-900 w-6 text-center">{modal.data.weight ?? 3}</span>
+              </div>
+              <div className="flex justify-between text-[9px] text-gray-300 px-0.5">
+                <span>Light</span><span>Medium</span><span>Heavy</span>
+              </div>
             </div>
             <Inp label="Contract Type" value={modal.data.type} onChange={v => setModal({ ...modal, data: { ...modal.data, type: v } })} opts={["Retainer", "Project", "Hybrid"]} />
             {/* Retainer field — shown for Retainer and Hybrid */}

@@ -38,6 +38,7 @@ export type Account = {
   project: number;         // flat fee for Project/Hybrid types
   startDate: string | null; // project start date (YYYY-MM-DD)
   endDate: string | null;   // project end date (YYYY-MM-DD)
+  weight: number;           // designer capacity weight (1–5 pts, default 3)
   notes: string;
 };
 
@@ -100,6 +101,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     project: Number(r.project),
     startDate: r.start_date || null,
     endDate: r.end_date || null,
+    weight: r.weight != null ? Number(r.weight) : 3,
     notes: r.notes || "",
   }));
 }
@@ -165,6 +167,7 @@ export async function upsertAccount(a: Account) {
     project: a.project,
     start_date: a.startDate || null,
     end_date: a.endDate || null,
+    weight: a.weight ?? 3,
     notes: a.notes,
   });
   if (acctErr) throw acctErr;
