@@ -206,118 +206,114 @@ const Modal = ({ title, onClose, children }) => (
 );
 
 // ── Sidebar ──
+// ── Person sidebar panel (own component so hooks are at top level) ──
+const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
+  const [assignRole, setAssignRole] = useState("lead");
+  const [assignAcctId, setAssignAcctId] = useState("");
+  const [showAssign, setShowAssign] = useState(false);
+
+  const c = cost(p);
+  const led = accounts.filter(a => a.leadId === p.id);
+  const sup = accounts.filter(a => a.supportIds.includes(p.id));
+  const exp = personExposure(p.id, accounts);
+  const available = accounts.filter(a =>
+    !["Closed"].includes(a.status) &&
+    a.leadId !== p.id &&
+    !a.supportIds.includes(p.id)
+  );
+
+  return (
+    <div className="w-96 min-w-[384px] border-l border-gray-200 bg-gray-50 overflow-auto h-full">
+      <div className="px-6 pt-7 pb-5">
+        <div className="flex justify-between items-start">
+          <div className="flex gap-3.5 items-center">
+            <Av name={p.name} size={52} sl={p.sl} lead={p.lead} />
+            <div>
+              <div className="text-lg font-medium text-gray-900">{p.name}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{p.role}</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <div className="flex gap-1.5 mt-3.5">
+          <SlTag sl={p.sl} />
+          <Tag>{p.type}</Tag>
+          {p.lead && <Tag variant="dark">Pod Lead</Tag>}
+        </div>
+      </div>
+
+      <div className="h-px bg-gray-200 w-full" />
+
+      <div className="px-6 py-5">
+        <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-3.5">Compensation</div>
+        <div className="grid grid-cols-2 gap-4">
+          {p.cadY && <div><div className="text-[10px] text-gray-400 mb-0.5">Annual CAD</div><div className="text-xl font-medium text-gray-900">{fmt(p.cadY)}</div></div>}
+          <div><div className="text-[10px] text-gray-400 mb-0.5">Monthly USD</div><div className="text-xl font-medium text-gray-900">{fmt(Math.round(c))}</div></div>
+          <div><div className="text-[10px] text-gray-400 mb-0.5">Annual USD</div><div className="text-base text-gray-500">{fmt(Math.round(c * 12))}</div></div>
+          {p.hrs > 0 && <div><div className="text-[10px] text-gray-400 mb-0.5">Effective $/hr</div><div className="text-base text-gray-500">{fmt(Math.round(c / p.hrs))}</div></div>}
+        </div>
+      </div>
+
+      <div className="h-px bg-gray-200 w-full" />
+
+      <div className="px-6 py-5">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">Accounts</div>
+          <button onClick={() => { setShowAssign(v => !v); setAssignAcctId(""); }}
+            className="text-[10px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors">
+            {showAssign ? "Cancel" : "+ Assign"}
+          </button>
+        </div>
+
+        {showAssign && (
+          <div className="bg-white border border-gray-200 rounded-xl p-3.5 mb-3">
+            <div className="flex gap-1.5 mb-2.5">
+              {["lead", "support"].map(r => (
+                <button key={r} onClick={() => setAssignRole(r)}
+                  className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg capitalize transition-colors ${assignRole === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <select value={assignAcctId} onChange={e => setAssignAcctId(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 outline-none mb-2.5">
+              <option value="">Pick an account…</option>
+              {available.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <button
+              onClick={() => { if (assignAcctId) { onAssign(p.id, assignAcctId, assignRole); setShowAssign(false); setAssignAcctId(""); } }}
+              disabled={!assignAcctId}
+              className={`w-full py-2 rounded-lg text-[11px] font-semibold transition-colors ${assignAcctId ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+              Assign to {p.name.split(" ")[0]}
+            </button>
+          </div>
+        )}
+
+        {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) }))].map(a => (
+          <div key={a.id + a._role} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-gray-900">{a.name}</span>
+              <Tag small variant={a._role === "Lead" ? "green" : "default"}>{a._role}</Tag>
+            </div>
+            <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(a._share))}</span>
+          </div>
+        ))}
+        {led.length + sup.length === 0 && !showAssign && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
+      </div>
+
+      <div className="px-6 pb-6 pt-3">
+        <button onClick={() => onEdit("person", p)} className="w-full bg-gray-900 rounded-lg py-3 text-white text-xs font-semibold tracking-wide hover:bg-gray-800 transition-colors">Edit Person</button>
+      </div>
+    </div>
+  );
+};
+
 const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
   if (!selected) return null;
   const { type, data } = selected;
 
   if (type === "person") {
-    const p = data;
-    const c = cost(p);
-    const led = accounts.filter(a => a.leadId === p.id);
-    const sup = accounts.filter(a => a.supportIds.includes(p.id));
-    const exp = personExposure(p.id, accounts);
-    const rev = exp.total;
-    const leadRev = exp.asLead;
-    const supRev = exp.asSupport;
-    const ratio = c > 0 ? rev / c : 0;
-
-    const [assignRole, setAssignRole] = useState("lead");
-    const [assignAcctId, setAssignAcctId] = useState("");
-    const [showAssign, setShowAssign] = useState(false);
-
-    const available = accounts.filter(a =>
-      !["Closed"].includes(a.status) &&
-      a.leadId !== p.id &&
-      !a.supportIds.includes(p.id)
-    );
-
-    return (
-      <div className="w-96 min-w-[384px] border-l border-gray-200 bg-gray-50 overflow-auto h-full">
-        <div className="px-6 pt-7 pb-5">
-          <div className="flex justify-between items-start">
-            <div className="flex gap-3.5 items-center">
-              <Av name={p.name} size={52} sl={p.sl} lead={p.lead} />
-              <div>
-                <div className="text-lg font-medium text-gray-900">{p.name}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{p.role}</div>
-              </div>
-            </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
-          </div>
-          <div className="flex gap-1.5 mt-3.5">
-            <SlTag sl={p.sl} />
-            <Tag>{p.type}</Tag>
-            {p.lead && <Tag variant="dark">Pod Lead</Tag>}
-          </div>
-        </div>
-
-        <div className="h-px bg-gray-200 w-full" />
-
-        <div className="px-6 py-5">
-          <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-3.5">Compensation</div>
-          <div className="grid grid-cols-2 gap-4">
-            {p.cadY && <div><div className="text-[10px] text-gray-400 mb-0.5">Annual CAD</div><div className="text-xl font-medium text-gray-900">{fmt(p.cadY)}</div></div>}
-            <div><div className="text-[10px] text-gray-400 mb-0.5">Monthly USD</div><div className="text-xl font-medium text-gray-900">{fmt(Math.round(c))}</div></div>
-            <div><div className="text-[10px] text-gray-400 mb-0.5">Annual USD</div><div className="text-base text-gray-500">{fmt(Math.round(c * 12))}</div></div>
-            {p.hrs > 0 && <div><div className="text-[10px] text-gray-400 mb-0.5">Effective $/hr</div><div className="text-base text-gray-500">{fmt(Math.round(c / p.hrs))}</div></div>}
-          </div>
-        </div>
-
-        <div className="h-px bg-gray-200 w-full" />
-
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">Accounts</div>
-            <button onClick={() => { setShowAssign(v => !v); setAssignAcctId(""); }}
-              className="text-[10px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors">
-              {showAssign ? "Cancel" : "+ Assign"}
-            </button>
-          </div>
-
-          {/* Quick assign panel */}
-          {showAssign && (
-            <div className="bg-white border border-gray-200 rounded-xl p-3.5 mb-3">
-              <div className="flex gap-1.5 mb-2.5">
-                {["lead", "support"].map(r => (
-                  <button key={r} onClick={() => setAssignRole(r)}
-                    className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg capitalize transition-colors ${assignRole === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-                    {r}
-                  </button>
-                ))}
-              </div>
-              <select value={assignAcctId} onChange={e => setAssignAcctId(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 outline-none mb-2.5">
-                <option value="">Pick an account…</option>
-                {available.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => { if (assignAcctId) { onAssign(p.id, assignAcctId, assignRole); setShowAssign(false); setAssignAcctId(""); } }}
-                disabled={!assignAcctId}
-                className={`w-full py-2 rounded-lg text-[11px] font-semibold transition-colors ${assignAcctId ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
-                Assign to {p.name.split(" ")[0]}
-              </button>
-            </div>
-          )}
-
-          {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) }))].map(a => (
-            <div key={a.id + a._role} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] font-medium text-gray-900">{a.name}</span>
-                <Tag small variant={a._role === "Lead" ? "green" : "default"}>{a._role}</Tag>
-              </div>
-              <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(a._share))}</span>
-            </div>
-          ))}
-          {led.length + sup.length === 0 && !showAssign && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
-        </div>
-
-        <div className="px-6 pb-6 pt-3">
-          <button onClick={() => onEdit("person", p)} className="w-full bg-gray-900 rounded-lg py-3 text-white text-xs font-semibold tracking-wide hover:bg-gray-800 transition-colors">Edit Person</button>
-        </div>
-      </div>
-    );
+    return <PersonSidebar p={data} accounts={accounts} onClose={onClose} onEdit={onEdit} onAssign={onAssign} />;
   }
 
   if (type === "account") {
