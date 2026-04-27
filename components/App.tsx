@@ -375,6 +375,7 @@ export default function App() {
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
   const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
+  const [quickAssign, setQuickAssign] = useState<{ personId: string; role: "lead" | "support"; acctId: string } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -459,6 +460,25 @@ export default function App() {
       }
     }
     setSelected(null); setModal(null);
+  };
+
+  const assignAccount = async (personId, acctId, role) => {
+    const acct = accounts.find(a => a.id === acctId);
+    if (!acct) return;
+    let updated;
+    if (role === "lead") {
+      updated = { ...acct, leadId: personId };
+    } else {
+      const ids = acct.supportIds.includes(personId) ? acct.supportIds : [...acct.supportIds, personId];
+      updated = { ...acct, supportIds: ids };
+    }
+    const prev = accounts;
+    setAccounts(a => a.map(x => x.id === acctId ? updated : x));
+    try { await upsertAccount(updated); } catch (e: any) {
+      setSaveError(`Save failed: ${e?.message || "Supabase error"} — change was not saved.`);
+      setAccounts(prev);
+    }
+    setQuickAssign(null);
   };
 
   const getName = id => team.find(p => p.id === id)?.name || "—";
@@ -646,6 +666,47 @@ export default function App() {
 
                         </>)}
                       </div>
+
+                      {/* Quick-assign panel */}
+                      {quickAssign?.personId === p.id ? (
+                        <div className="border-t border-gray-100 pt-2.5 mt-1" onClick={e => e.stopPropagation()}>
+                          <div className="flex gap-1.5 mb-2">
+                            {(["lead", "support"] as const).map(r => (
+                              <button key={r} onClick={() => setQuickAssign({ ...quickAssign, role: r })}
+                                className={`flex-1 text-[10px] font-semibold py-1 rounded-md capitalize transition-colors ${quickAssign.role === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                          <select value={quickAssign.acctId} onChange={e => setQuickAssign({ ...quickAssign, acctId: e.target.value })}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-900 outline-none mb-2">
+                            <option value="">Pick an account…</option>
+                            {accounts.filter(a =>
+                              !["Closed"].includes(a.status) &&
+                              a.leadId !== p.id &&
+                              !a.supportIds.includes(p.id)
+                            ).map(a => (
+                              <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                          </select>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => { if (quickAssign.acctId) assignAccount(p.id, quickAssign.acctId, quickAssign.role); }}
+                              disabled={!quickAssign.acctId}
+                              className={`flex-1 text-[11px] font-semibold py-1.5 rounded-lg transition-colors ${quickAssign.acctId ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+                              Assign
+                            </button>
+                            <button onClick={() => setQuickAssign(null)}
+                              className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setQuickAssign({ personId: p.id, role: "lead", acctId: "" })}
+                          className="mt-2 w-full text-[10px] font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg py-1.5 transition-colors border border-dashed border-gray-200 hover:border-gray-300">
+                          + Assign account
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
