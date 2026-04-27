@@ -206,7 +206,7 @@ const Modal = ({ title, onClose, children }) => (
 );
 
 // ── Sidebar ──
-const Sidebar = ({ selected, team, accounts, onClose, onEdit }) => {
+const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
   if (!selected) return null;
   const { type, data } = selected;
 
@@ -220,6 +220,16 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit }) => {
     const leadRev = exp.asLead;
     const supRev = exp.asSupport;
     const ratio = c > 0 ? rev / c : 0;
+
+    const [assignRole, setAssignRole] = useState("lead");
+    const [assignAcctId, setAssignAcctId] = useState("");
+    const [showAssign, setShowAssign] = useState(false);
+
+    const available = accounts.filter(a =>
+      !["Closed"].includes(a.status) &&
+      a.leadId !== p.id &&
+      !a.supportIds.includes(p.id)
+    );
 
     return (
       <div className="w-96 min-w-[384px] border-l border-gray-200 bg-gray-50 overflow-auto h-full">
@@ -256,7 +266,41 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit }) => {
         <div className="h-px bg-gray-200 w-full" />
 
         <div className="px-6 py-5">
-          <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-2.5">Accounts</div>
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">Accounts</div>
+            <button onClick={() => { setShowAssign(v => !v); setAssignAcctId(""); }}
+              className="text-[10px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors">
+              {showAssign ? "Cancel" : "+ Assign"}
+            </button>
+          </div>
+
+          {/* Quick assign panel */}
+          {showAssign && (
+            <div className="bg-white border border-gray-200 rounded-xl p-3.5 mb-3">
+              <div className="flex gap-1.5 mb-2.5">
+                {["lead", "support"].map(r => (
+                  <button key={r} onClick={() => setAssignRole(r)}
+                    className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg capitalize transition-colors ${assignRole === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+              <select value={assignAcctId} onChange={e => setAssignAcctId(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 outline-none mb-2.5">
+                <option value="">Pick an account…</option>
+                {available.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => { if (assignAcctId) { onAssign(p.id, assignAcctId, assignRole); setShowAssign(false); setAssignAcctId(""); } }}
+                disabled={!assignAcctId}
+                className={`w-full py-2 rounded-lg text-[11px] font-semibold transition-colors ${assignAcctId ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+                Assign to {p.name.split(" ")[0]}
+              </button>
+            </div>
+          )}
+
           {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) }))].map(a => (
             <div key={a.id + a._role} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
               <div className="flex items-center gap-2">
@@ -266,7 +310,7 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit }) => {
               <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(a._share))}</span>
             </div>
           ))}
-          {led.length + sup.length === 0 && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
+          {led.length + sup.length === 0 && !showAssign && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
         </div>
 
         <div className="px-6 pb-6 pt-3">
@@ -1217,7 +1261,7 @@ export default function App() {
         </div>
 
         {/* Sidebar */}
-        <Sidebar selected={selected} team={team} accounts={accounts} onClose={() => setSelected(null)} onEdit={(type, data) => setModal({ type, data })} />
+        <Sidebar selected={selected} team={team} accounts={accounts} onClose={() => setSelected(null)} onEdit={(type, data) => setModal({ type, data })} onAssign={assignAccount} />
       </div>
 
       {/* Edit modals */}
