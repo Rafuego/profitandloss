@@ -1067,8 +1067,8 @@ export default function App() {
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <div className={`text-base font-semibold ${isClosed || (isProject && !live) ? "text-gray-400" : "text-emerald-600"}`}>{fmtK(mrr)}</div>
-                              <div className="text-[9px] text-gray-400">/mo</div>
+                              <div className={`text-base font-semibold ${isClosed || (isProject && !live) ? "text-gray-400" : "text-emerald-600"}`}>{fmtK(isProject ? a.project : mrr)}</div>
+                              {!isProject && <div className="text-[9px] text-gray-400">/mo</div>}
                             </div>
                           </div>
 
