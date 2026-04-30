@@ -89,6 +89,9 @@ const INIT_ACCOUNTS = [
   { id: "a217", name: "Tarlton Automotive", sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 5000,  weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a218", name: "Narya VC (Deck)",    sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a219", name: "Basis (Deck)",       sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
+
+  // ── Active flat rate project ──
+  { id: "a220", name: "Saris AI", sl: "brand", leadId: "t4", supportIds: ["t15", "t12"], status: "Active", type: "Project", retainer: 0, project: 30000, weight: 4, startDate: "2026-04-01", endDate: "2026-05-21", notes: "Brand + web. $15K paid, $15K on completion. PM: Daniel (assign when in system)." },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
