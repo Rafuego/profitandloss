@@ -560,13 +560,15 @@ export default function App() {
     { id: "pnl", label: "P&L" },
   ];
 
+  const activeAccounts = useMemo(() => accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
+
   const personPods = useMemo(() => team.filter(p => p.sl !== "leadership").map(p => {
-    const led = accounts.filter(a => a.leadId === p.id);
-    const sup = accounts.filter(a => a.supportIds.includes(p.id));
+    const led = activeAccounts.filter(a => a.leadId === p.id);
+    const sup = activeAccounts.filter(a => a.supportIds.includes(p.id));
     const exp = personExposure(p.id, accounts);
     const c = cost(p);
     return { ...p, ledAccounts: led, supAccounts: sup, leadRev: exp.asLead, supRev: exp.asSupport, rev: exp.total, cost: c, ratio: c > 0 ? exp.total / c : 0 };
-  }), [team, accounts]);
+  }), [team, accounts, activeAccounts]);
 
   const unassigned = useMemo(() => accounts.filter(a => !a.leadId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
 
