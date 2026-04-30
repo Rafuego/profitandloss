@@ -993,7 +993,7 @@ export default function App() {
             // Tab filtering
             const tabFiltered = accounts.filter(a => {
               if (acctTab === "retainer") return a.type === "Retainer" && ["Active", "Launch", "Growth"].includes(a.status);
-              if (acctTab === "projects") return (a.type === "Project" || a.type === "Hybrid");
+              if (acctTab === "projects") return (a.type === "Project" || a.type === "Hybrid") && a.status !== "Closed";
               if (acctTab === "closed") return a.status === "Closed" || a.status === "Paused" || a.status === "Pipeline";
               return true;
             });
