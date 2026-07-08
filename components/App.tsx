@@ -453,6 +453,7 @@ export default function App() {
         if (d.length > 0) setDepts(d);
       } catch (e) {
         console.error("Failed to load from Supabase, using local data:", e);
+        setSaveError(`Couldn't load from the database (${e?.message || "Supabase error"}) — showing built-in fallback data. Edits won't persist.`);
       }
       setLoading(false);
     }
@@ -584,7 +585,7 @@ export default function App() {
       {/* Save error banner */}
       {saveError && (
         <div className="bg-red-500 text-white text-xs px-6 py-2 flex items-center justify-between shrink-0">
-          <span>⚠️ {saveError} — this change won't persist on refresh.</span>
+          <span>⚠️ {saveError}</span>
           <button onClick={() => setSaveError(null)} className="ml-4 underline opacity-80 hover:opacity-100">Dismiss</button>
         </div>
       )}
