@@ -78,27 +78,28 @@ const INIT_ACCOUNTS = [
   { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a202", name: "Atlas Rd",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
-  // ── Flat-rate projects (from Notion, 2026-07-09 — fees/dates pending) ──
-  { id: "a500", name: "Alcove (Project)",    sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a501", name: "Ansa",                sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a502", name: "Blair Health",        sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a503", name: "Ciridae",             sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a504", name: "Fortastra",           sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a505", name: "Giant Step VC",       sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a506", name: "Homemade Method",     sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a507", name: "Inference Health",    sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 5, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Formerly Blair AI." },
-  { id: "a508", name: "Kunin",               sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a509", name: "Narya",               sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson. Will convert to Symphony, then primarily on Josh." },
-  { id: "a510", name: "OG Venture Partners", sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a511", name: "Ops Companion",       sl: "deck", leadId: null,  supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "No PM assigned yet" },
-  { id: "a512", name: "Revenant VC",         sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a513", name: "Slang Ventures",      sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a514", name: "Spice VC",            sl: "site", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Web scope." },
-  { id: "a515", name: "Steel Atlas",         sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
-  { id: "a516", name: "Twine Ventures",      sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a517", name: "VistaShares",         sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
-  { id: "a518", name: "Axle Access",         sl: "deck", leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
-  { id: "a519", name: "Interlude Capital",   sl: "deck", leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  // ── Flat-rate projects (from Notion 2026-07-09; fees set, dates pending) ──
+  { id: "a500", name: "Alcove — Product Pilot", sl: "product", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 6000,  weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Product pilot engagement." },
+  { id: "a520", name: "Alcove — Website",       sl: "site",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 15000, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Website build." },
+  { id: "a501", name: "Ansa",                   sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a502", name: "Blair Health",           sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a503", name: "Ciridae",                sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 60000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a504", name: "Fortastra",              sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a505", name: "Giant Step VC",          sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a506", name: "Homemade Method",        sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a507", name: "Inference Health",       sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 25000, weight: 5, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Formerly Blair AI." },
+  { id: "a508", name: "Kunin",                  sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a509", name: "Narya",                  sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson. Will convert to Symphony, then primarily on Josh." },
+  { id: "a510", name: "OG Venture Partners",    sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a511", name: "Ops Companion",          sl: "deck",    leadId: null,  supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "No PM assigned yet" },
+  { id: "a512", name: "Revenant VC",            sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 5000,  weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a513", name: "Slang Ventures",         sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a514", name: "Spice VC",               sl: "site",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 16000, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Web scope. $10K original + $6K extra animation." },
+  { id: "a515", name: "Steel Atlas",            sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 1000,  weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a516", name: "Twine Ventures",         sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8500,  weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a517", name: "VistaShares",            sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 35000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a518", name: "Axle Access",            sl: "deck",    leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 15000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  { id: "a519", name: "Interlude Capital",      sl: "deck",    leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 40000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
@@ -138,8 +139,9 @@ const monthsBetween = (start: string, end: string) => {
 };
 const monthlyProjectRev = (a: any) => {
   if (!a.project) return 0;
-  // No dates = treat project fee as a straight monthly amount (backward compat)
-  if (!a.startDate || !a.endDate) return a.project;
+  // No dates = $0 toward MRR — a flat fee only amortizes across a known
+  // window. (Counting the full fee monthly inflated P&L revenue wildly.)
+  if (!a.startDate || !a.endDate) return 0;
   const today = new Date();
   const start = new Date(a.startDate);
   const end = new Date(a.endDate);

@@ -200,28 +200,29 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a202', 'Atlas Rd',         'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, '')
 on conflict (id) do nothing;
 
--- Flat-rate projects (from Notion, 2026-07-09 — fees/dates pending)
+-- Flat-rate projects (from Notion 2026-07-09; fees set, dates pending)
 insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
-  ('a500', 'Alcove (Project)',    'deck', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel'),
-  ('a501', 'Ansa',                'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
-  ('a502', 'Blair Health',        'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
-  ('a503', 'Ciridae',             'deck', 't20', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Carson'),
-  ('a504', 'Fortastra',           'deck', 't20', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Carson'),
-  ('a505', 'Giant Step VC',       'deck', 't18', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Daniel'),
-  ('a506', 'Homemade Method',     'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
-  ('a507', 'Inference Health',    'deck', 't18', 'Active',   'Project', 0, 0, 5, null, null, 'PM: Daniel. Formerly Blair AI.'),
-  ('a508', 'Kunin',               'deck', 't20', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Carson'),
-  ('a509', 'Narya',               'deck', 't20', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Carson. Will convert to Symphony, then primarily on Josh.'),
-  ('a510', 'OG Venture Partners', 'deck', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel'),
-  ('a511', 'Ops Companion',       'deck', null,  'Active',   'Project', 0, 0, 3, null, null, 'No PM assigned yet'),
-  ('a512', 'Revenant VC',         'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
-  ('a513', 'Slang Ventures',      'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
-  ('a514', 'Spice VC',            'site', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel. Web scope.'),
-  ('a515', 'Steel Atlas',         'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
-  ('a516', 'Twine Ventures',      'deck', 't18', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Daniel'),
-  ('a517', 'VistaShares',         'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
-  ('a518', 'Axle Access',         'deck', null,  'Pipeline', 'Project', 0, 0, 3, null, null, 'Planning'),
-  ('a519', 'Interlude Capital',   'deck', null,  'Pipeline', 'Project', 0, 0, 3, null, null, 'Planning')
+  ('a500', 'Alcove — Product Pilot', 'product', 't18', 'Active',   'Project', 0, 6000,  2, null, null, 'PM: Daniel. Product pilot engagement.'),
+  ('a520', 'Alcove — Website',       'site',    't18', 'Active',   'Project', 0, 15000, 2, null, null, 'PM: Daniel. Website build.'),
+  ('a501', 'Ansa',                   'deck',    't18', 'Active',   'Project', 0, 7500,  4, null, null, 'PM: Daniel'),
+  ('a502', 'Blair Health',           'deck',    't18', 'Active',   'Project', 0, 20000, 4, null, null, 'PM: Daniel'),
+  ('a503', 'Ciridae',                'deck',    't20', 'Active',   'Project', 0, 60000, 4, null, null, 'PM: Carson'),
+  ('a504', 'Fortastra',              'deck',    't20', 'Active',   'Project', 0, 7500,  3, null, null, 'PM: Carson'),
+  ('a505', 'Giant Step VC',          'deck',    't18', 'Active',   'Project', 0, 8000,  3, null, null, 'PM: Daniel'),
+  ('a506', 'Homemade Method',        'deck',    't20', 'Active',   'Project', 0, 8000,  2, null, null, 'PM: Carson'),
+  ('a507', 'Inference Health',       'deck',    't18', 'Active',   'Project', 0, 25000, 5, null, null, 'PM: Daniel. Formerly Blair AI.'),
+  ('a508', 'Kunin',                  'deck',    't20', 'Active',   'Project', 0, 20000, 4, null, null, 'PM: Carson'),
+  ('a509', 'Narya',                  'deck',    't20', 'Active',   'Project', 0, 10000, 3, null, null, 'PM: Carson. Will convert to Symphony, then primarily on Josh.'),
+  ('a510', 'OG Venture Partners',    'deck',    't18', 'Active',   'Project', 0, 20000, 2, null, null, 'PM: Daniel'),
+  ('a511', 'Ops Companion',          'deck',    null,  'Active',   'Project', 0, 10000, 3, null, null, 'No PM assigned yet'),
+  ('a512', 'Revenant VC',            'deck',    't20', 'Active',   'Project', 0, 5000,  2, null, null, 'PM: Carson'),
+  ('a513', 'Slang Ventures',         'deck',    't18', 'Active',   'Project', 0, 7500,  4, null, null, 'PM: Daniel'),
+  ('a514', 'Spice VC',               'site',    't18', 'Active',   'Project', 0, 16000, 2, null, null, 'PM: Daniel. Web scope. $10K original + $6K extra animation.'),
+  ('a515', 'Steel Atlas',            'deck',    't20', 'Active',   'Project', 0, 1000,  2, null, null, 'PM: Carson'),
+  ('a516', 'Twine Ventures',         'deck',    't18', 'Active',   'Project', 0, 8500,  3, null, null, 'PM: Daniel'),
+  ('a517', 'VistaShares',            'deck',    't18', 'Active',   'Project', 0, 35000, 4, null, null, 'PM: Daniel'),
+  ('a518', 'Axle Access',            'deck',    null,  'Pipeline', 'Project', 0, 15000, 3, null, null, 'Planning'),
+  ('a519', 'Interlude Capital',      'deck',    null,  'Pipeline', 'Project', 0, 40000, 3, null, null, 'Planning')
 on conflict (id) do nothing;
 
 -- Departments (for org chart)

@@ -83,7 +83,7 @@ try { await upsertAccount(d); } catch (e) {
 ```js
 monthlyProjectRev(a) // returns project fee / months(start→end), or 0 outside window
 ```
-Projects with no dates return the full fee as monthly (backward compat).
+Projects with no dates contribute $0 to MRR — a fee only amortizes across a known window.
 Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the raw fee.
 
 **Flat-rate project cost allocation (Projects tab, see `projectTeam`/`projectEcon`):**
