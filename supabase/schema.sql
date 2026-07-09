@@ -142,38 +142,41 @@ insert into service_lines (id, name, color) values
 on conflict (id) do nothing;
 
 -- Team Members
+-- Pay synced to Humi payroll 2026-07-09 — stored as USD/month
+-- (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
 insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hours_per_month, is_lead) values
-  ('t1',  'Rafay Iqbal',          'Partner',                                    'leadership', 'Partner',       110000, null, 160, true),
-  ('t2',  'Matthew Good',         'Partner',                                    'leadership', 'Partner',       110000, null, 160, true),
-  ('t3',  'Vicky Huynh',          'Senior Project Manager',                     'ops',        'Full-Time',      90000, null, 160, true),
-  ('t4',  'Andrew del Rizzo',     'Digital Site Designer / Animations',          'site',       'Full-Time',     100000, null, 160, true),
-  ('t5',  'Sylvia Han',           'Senior Digital Designer (Brand & Decks)',     'deck',       'Full-Time',     120000, null, 160, true),
-  ('t6',  'Nicole Chou',          'Staff Product Designer',                     'product',    'Full-Time',      85000, null, 160, true),
-  ('t7',  'Robyn Dang',           'Staff Product Designer',                     'product',    'Full-Time',      80000, null, 160, false),
-  ('t8',  'Sabrina Wen',          'Staff Product Designer',                     'product',    'Full-Time',      75000, null, 160, false),
-  ('t9',  'Deseree Lau',          'Digital Designer',                           'brand',      'Full-Time',      85000, null, 160, false),
-  ('t10', 'Victor Wong',          'Junior Digital Designer',                    'brand',      'Full-Time',      85000, null, 160, false),
-  ('t11', 'Emily Chung',          'Contractor',                                'brand',      'Contractor',    102000, null,  40, true),
-  ('t12', 'Vencho',               'Brand Lead',                                'brand',      'Contractor',      null, 3500,  40, false),
-  ('t13', 'Candy Cho',            'Contractor',                                'symphony',   'Contractor',      null, 1800,  40, false),
-  ('t14', 'Ivy',                  'Contractor',                                'symphony',   'Contractor',      null, 1800,  40, false),
-  ('t15', 'Joshua Ramkhelawan',   'Webflow Developer',                         'site',       'Contractor',     24000, null,  40, false),
-  ('t16', 'Igor Katcha',          'Webflow Developer',                         'site',       'Contractor',      null, 2000,  40, false),
-  ('t17', 'Talha',                'Webflow Developer',                         'site',       'Project-Based',   null,    0,   0, false)
+  ('t1',  'Rafay Iqbal',        'Partner',                                 'leadership', 'Partner',      null, 5711, 160, true),
+  ('t2',  'Matthew Good',       'Partner',                                 'leadership', 'Partner',      null, 5711, 160, true),
+  ('t3',  'Vicky Huynh',        'Senior Project Manager',                  'ops',        'Full-Time',    null, 4739, 160, true),
+  ('t4',  'Andrew del Rizzo',   'Digital Site Designer / Animations',      'site',       'Full-Time',    null, 4067, 160, true),
+  ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',    null, 4953, 160, true),
+  ('t6',  'Nicole Chou',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, true),
+  ('t7',  'Robyn Dang',         'Staff Product Designer',                  'product',    'Full-Time',    null, 3344, 160, false),
+  ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, false),
+  ('t9',  'Deseree Lau',        'Digital Designer',                        'brand',      'Full-Time',    null, 3525, 160, false),
+  ('t10', 'Victor Wong',        'Junior Digital Designer',                 'brand',      'Full-Time',    null, 3344, 160, false),
+  ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor', 102000, null,  40, true),
+  ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 3500,  40, false),
+  ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
+  ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 2000,  40, false),
+  -- New hires (2026-07) — roles/service lines TBD
+  ('t18', 'Dong-soo Shin',      '',                                        null,         'Full-Time',    null, 3162, 160, false),
+  ('t19', 'Christine Chow',     '',                                        null,         'Full-Time',    null, 3811, 160, false),
+  ('t20', 'Carson',             '',                                        null,         'Full-Time',    null, 6000, 160, false)
 on conflict (id) do nothing;
 
--- Client Accounts (see supabase/repair.sql for the upsert version used to refresh an existing DB)
+-- Client Accounts
 insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
   -- Active retainers (synced to billing platform 2026-07-09)
   ('a1',   '1AU Technologies', 'symphony', 't15', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a2',   'Attio',            'symphony', 't13', 'Active', 'Retainer', 1375, 0, 3, null, null, ''),
+  ('a2',   'Attio',            'symphony', null,  'Active', 'Retainer', 1375, 0, 3, null, null, ''),
   ('a3',   'Basis',            'symphony', 't10', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
   ('a5',   'Highrise',         'symphony', 't15', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a6',   'Lumen',            'symphony', 't13', 'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  ('a6',   'Lumen',            'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
   ('a7',   'Portal Space',     'symphony', 't10', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
   ('a8',   'Vuecason',         'symphony', 't9',  'Active', 'Retainer', 3000, 0, 3, null, null, ''),
   ('a9',   'Applecart',        'symphony', 't15', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a10',  'Cytora',           'symphony', 't13', 'Active', 'Retainer', 3500, 0, 3, null, null, ''),
+  ('a10',  'Cytora',           'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a11',  'Goody',            'symphony', 't9',  'Active', 'Retainer', 4800, 0, 3, null, null, ''),
   ('a13',  'RBL',              'symphony', 't10', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
   ('a115', 'Complify',         'symphony', null,  'Active', 'Retainer', 8500, 0, 3, null, null, ''),
@@ -233,8 +236,7 @@ on conflict (id) do nothing;
 -- Department Members
 insert into department_members (department_id, member_id) values
   ('d1', 't5'),
-  ('d2', 't4'),  ('d2', 't15'), ('d2', 't16'), ('d2', 't17'),
+  ('d2', 't4'),  ('d2', 't15'), ('d2', 't16'),
   ('d3', 't9'),  ('d3', 't10'), ('d3', 't11'), ('d3', 't12'),
-  ('d4', 't6'),  ('d4', 't7'),  ('d4', 't8'),
-  ('d5', 't13'), ('d5', 't14')
+  ('d4', 't6'),  ('d4', 't7'),  ('d4', 't8')
 on conflict do nothing;

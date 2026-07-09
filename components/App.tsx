@@ -22,37 +22,40 @@ const SERVICE_LINES = [
 ];
 const SL = Object.fromEntries(SERVICE_LINES.map(s => [s.id, s]));
 
+// Pay synced to Humi payroll 2026-07-09 — all figures stored as USD/month
+// (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
 const INIT_TEAM = [
-  { id: "t1", name: "Rafay Iqbal", role: "Partner", sl: "leadership", type: "Partner", cadY: 110000, usdM: null, hrs: 160, lead: true },
-  { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: 110000, usdM: null, hrs: 160, lead: true },
-  { id: "t3", name: "Vicky Huynh", role: "Senior Project Manager", sl: "ops", type: "Full-Time", cadY: 90000, usdM: null, hrs: 160, lead: true },
-  { id: "t4", name: "Andrew del Rizzo", role: "Digital Site Designer / Animations", sl: "site", type: "Full-Time", cadY: 100000, usdM: null, hrs: 160, lead: true },
-  { id: "t5", name: "Sylvia Han", role: "Senior Digital Designer (Brand & Decks)", sl: "deck", type: "Full-Time", cadY: 120000, usdM: null, hrs: 160, lead: true },
-  { id: "t6", name: "Nicole Chou", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: 85000, usdM: null, hrs: 160, lead: true },
-  { id: "t7", name: "Robyn Dang", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: 80000, usdM: null, hrs: 160, lead: false },
-  { id: "t8", name: "Sabrina Wen", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: 75000, usdM: null, hrs: 160, lead: false },
-  { id: "t9", name: "Deseree Lau", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: 85000, usdM: null, hrs: 160, lead: false },
-  { id: "t10", name: "Victor Wong", role: "Junior Digital Designer", sl: "brand", type: "Full-Time", cadY: 85000, usdM: null, hrs: 160, lead: false },
+  { id: "t1", name: "Rafay Iqbal", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 5711, hrs: 160, lead: true },
+  { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 5711, hrs: 160, lead: true },
+  { id: "t3", name: "Vicky Huynh", role: "Senior Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 4739, hrs: 160, lead: true },
+  { id: "t4", name: "Andrew del Rizzo", role: "Digital Site Designer / Animations", sl: "site", type: "Full-Time", cadY: null, usdM: 4067, hrs: 160, lead: true },
+  { id: "t5", name: "Sylvia Han", role: "Senior Digital Designer (Brand & Decks)", sl: "deck", type: "Full-Time", cadY: null, usdM: 4953, hrs: 160, lead: true },
+  { id: "t6", name: "Nicole Chou", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: true },
+  { id: "t7", name: "Robyn Dang", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3344, hrs: 160, lead: false },
+  { id: "t8", name: "Sabrina Wen", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
+  { id: "t9", name: "Deseree Lau", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
+  { id: "t10", name: "Victor Wong", role: "Junior Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3344, hrs: 160, lead: false },
   { id: "t11", name: "Emily Chung", role: "Contractor", sl: "brand", type: "Contractor", cadY: 102000, usdM: null, hrs: 40, lead: true },
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 3500, hrs: 40, lead: false },
-  { id: "t13", name: "Candy Cho", role: "Contractor", sl: "symphony", type: "Contractor", cadY: null, usdM: 1800, hrs: 40, lead: false },
-  { id: "t14", name: "Ivy", role: "Contractor", sl: "symphony", type: "Contractor", cadY: null, usdM: 1800, hrs: 40, lead: false },
-  { id: "t15", name: "Joshua Ramkhelawan", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: 24000, usdM: null, hrs: 40, lead: false },
+  { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3267, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },
-  { id: "t17", name: "Talha", role: "Webflow Developer", sl: "site", type: "Project-Based", cadY: null, usdM: 0, hrs: 0, lead: false },
+  // New hires (2026-07) — roles/service lines TBD, assign in Team view
+  { id: "t18", name: "Dong-soo Shin", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 3162, hrs: 160, lead: false },
+  { id: "t19", name: "Christine Chow", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 3811, hrs: 160, lead: false },
+  { id: "t20", name: "Carson", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 6000, hrs: 160, lead: false },
 ];
 
 const INIT_ACCOUNTS = [
   // ── Active retainers (synced to billing platform 2026-07-09) ──
   { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
-  { id: "a2", name: "Attio", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 1375, project: 0, weight: 3, notes: "" },
+  { id: "a2", name: "Attio", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 1375, project: 0, weight: 3, notes: "" },
   { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
   { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
-  { id: "a6", name: "Lumen", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
+  { id: "a6", name: "Lumen", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
   { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
   { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
   { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, notes: "" },
+  { id: "a10", name: "Cytora", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, notes: "" },
   { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 4800, project: 0, weight: 3, notes: "" },
   { id: "a13",  name: "RBL",              sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a115", name: "Complify",         sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 8500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
@@ -100,10 +103,10 @@ const INIT_ACCOUNTS = [
 // ── Org Chart Departments (independent of service lines) ──
 const INIT_DEPTS = [
   { id: "d1", name: "Deck", memberIds: ["t5"], color: "bg-amber-100 text-amber-700" },
-  { id: "d2", name: "Web Development", memberIds: ["t4", "t15", "t16", "t17"], color: "bg-teal-100 text-teal-700" },
+  { id: "d2", name: "Web Development", memberIds: ["t4", "t15", "t16"], color: "bg-teal-100 text-teal-700" },
   { id: "d3", name: "Brand", memberIds: ["t9", "t10", "t11", "t12"], color: "bg-rose-100 text-rose-700" },
   { id: "d4", name: "Product", memberIds: ["t6", "t7", "t8"], color: "bg-blue-100 text-blue-700" },
-  { id: "d5", name: "Symphony", memberIds: ["t13", "t14"], color: "bg-violet-100 text-violet-700" },
+  { id: "d5", name: "Symphony", memberIds: [], color: "bg-violet-100 text-violet-700" },
 ];
 
 const DEPT_COLORS = [
