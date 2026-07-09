@@ -39,7 +39,7 @@ const INIT_TEAM = [
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 3500, hrs: 40, lead: false },
   { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3267, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },
-  { id: "t18", name: "Dong-soo Shin", role: "Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 3162, hrs: 160, lead: false },
+  { id: "t18", name: "Daniel Shin", role: "Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 3162, hrs: 160, lead: false },
   { id: "t19", name: "Christine Chow", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3811, hrs: 160, lead: false },
   { id: "t20", name: "Carson", role: "Chief of Staff", sl: "ops", type: "Full-Time", cadY: null, usdM: 6000, hrs: 160, lead: false },
 ];
@@ -77,6 +77,28 @@ const INIT_ACCOUNTS = [
   { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a202", name: "Atlas Rd",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+
+  // ── Flat-rate projects (from Notion, 2026-07-09 — fees/dates pending) ──
+  { id: "a500", name: "Alcove (Project)",    sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a501", name: "Ansa",                sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a502", name: "Blair Health",        sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a503", name: "Ciridae",             sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a504", name: "Fortastra",           sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a505", name: "Giant Step VC",       sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a506", name: "Homemade Method",     sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a507", name: "Inference Health",    sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 5, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Formerly Blair AI." },
+  { id: "a508", name: "Kunin",               sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a509", name: "Narya",               sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson. Will convert to Symphony, then primarily on Josh." },
+  { id: "a510", name: "OG Venture Partners", sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a511", name: "Ops Companion",       sl: "deck", leadId: null,  supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "No PM assigned yet" },
+  { id: "a512", name: "Revenant VC",         sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a513", name: "Slang Ventures",      sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a514", name: "Spice VC",            sl: "site", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel. Web scope." },
+  { id: "a515", name: "Steel Atlas",         sl: "deck", leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 2, depositPaid: false, startDate: null, endDate: null, notes: "PM: Carson" },
+  { id: "a516", name: "Twine Ventures",      sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a517", name: "VistaShares",         sl: "deck", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "PM: Daniel" },
+  { id: "a518", name: "Axle Access",         sl: "deck", leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  { id: "a519", name: "Interlude Capital",   sl: "deck", leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
@@ -1219,9 +1241,10 @@ export default function App() {
           {/* ══════════ FLAT-RATE PROJECTS VIEW ══════════ */}
           {view === "projects" && (() => {
             const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "";
-            const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && a.project > 0);
+            const flat = accounts.filter(a => a.type === "Project" || a.type === "Hybrid");
             const inFlight = flat.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
+            const planning = flat.filter(a => a.status === "Pipeline");
 
             const econOf = (a: any) => projectEcon(a, team);
             const inFlightEcon = inFlight.map(a => ({ a, e: econOf(a) }));
@@ -1266,6 +1289,7 @@ export default function App() {
                       <div>
                         <div className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
                           {a.name}
+                          {a.project <= 0 && <span title="No fee set — edit the account to add it" className="text-amber-500 text-[10px]">⚠ no fee</span>}
                           {!e.hasDates && <span title="No timeline set" className="text-amber-500 text-[10px]">⚠ no dates</span>}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -1391,6 +1415,32 @@ export default function App() {
                 <div className="grid gap-4 mb-10" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
                   {inFlight.map(a => <ProjectCard key={a.id} a={a} done={false} />)}
                 </div>
+
+                {/* Planning / pipeline */}
+                {planning.length > 0 && (
+                  <div className="mb-10">
+                    <div className="text-xl font-semibold text-gray-900 mb-1">Planning</div>
+                    <div className="text-xs text-gray-400 mb-4">Not yet started — not counted in revenue or workload.</div>
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      {planning.map((a, i) => (
+                        <div key={a.id} onClick={() => setSelected({ type: "account", data: a })}
+                          className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50 transition-colors ${i < planning.length - 1 ? "border-b border-gray-100" : ""}`}>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{a.name}</span>
+                            <SlTag sl={a.sl} small />
+                            <StatusTag status={a.status} small />
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-[11px] text-gray-400">{a.leadId ? `PM: ${getName(a.leadId)}` : "No PM"}</span>
+                            <span className={`text-sm font-semibold ${a.project > 0 ? "text-gray-900" : "text-gray-300"}`}>{a.project > 0 ? fmtK(a.project) : "no fee set"}</span>
+                            <button onClick={ev => { ev.stopPropagation(); save("account", { ...a, status: "Active" }); }}
+                              className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">Start →</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Employee mileage */}
                 {mileage.length > 0 && (

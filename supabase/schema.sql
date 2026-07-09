@@ -160,7 +160,7 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 3500,  40, false),
   ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 2000,  40, false),
-  ('t18', 'Dong-soo Shin',      'Project Manager',                         'ops',        'Full-Time',    null, 3162, 160, false),
+  ('t18', 'Daniel Shin',        'Project Manager',                         'ops',        'Full-Time',    null, 3162, 160, false),
   ('t19', 'Christine Chow',     'Digital Designer',                        'brand',      'Full-Time',    null, 3811, 160, false),
   ('t20', 'Carson',             'Chief of Staff',                          'ops',        'Full-Time',    null, 6000, 160, false)
 on conflict (id) do nothing;
@@ -198,6 +198,30 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a120', 'Guardrail Ai',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a121', 'Kevin Morris',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a202', 'Atlas Rd',         'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, '')
+on conflict (id) do nothing;
+
+-- Flat-rate projects (from Notion, 2026-07-09 — fees/dates pending)
+insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
+  ('a500', 'Alcove (Project)',    'deck', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel'),
+  ('a501', 'Ansa',                'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
+  ('a502', 'Blair Health',        'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
+  ('a503', 'Ciridae',             'deck', 't20', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Carson'),
+  ('a504', 'Fortastra',           'deck', 't20', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Carson'),
+  ('a505', 'Giant Step VC',       'deck', 't18', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Daniel'),
+  ('a506', 'Homemade Method',     'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
+  ('a507', 'Inference Health',    'deck', 't18', 'Active',   'Project', 0, 0, 5, null, null, 'PM: Daniel. Formerly Blair AI.'),
+  ('a508', 'Kunin',               'deck', 't20', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Carson'),
+  ('a509', 'Narya',               'deck', 't20', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Carson. Will convert to Symphony, then primarily on Josh.'),
+  ('a510', 'OG Venture Partners', 'deck', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel'),
+  ('a511', 'Ops Companion',       'deck', null,  'Active',   'Project', 0, 0, 3, null, null, 'No PM assigned yet'),
+  ('a512', 'Revenant VC',         'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
+  ('a513', 'Slang Ventures',      'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
+  ('a514', 'Spice VC',            'site', 't18', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Daniel. Web scope.'),
+  ('a515', 'Steel Atlas',         'deck', 't20', 'Active',   'Project', 0, 0, 2, null, null, 'PM: Carson'),
+  ('a516', 'Twine Ventures',      'deck', 't18', 'Active',   'Project', 0, 0, 3, null, null, 'PM: Daniel'),
+  ('a517', 'VistaShares',         'deck', 't18', 'Active',   'Project', 0, 0, 4, null, null, 'PM: Daniel'),
+  ('a518', 'Axle Access',         'deck', null,  'Pipeline', 'Project', 0, 0, 3, null, null, 'Planning'),
+  ('a519', 'Interlude Capital',   'deck', null,  'Pipeline', 'Project', 0, 0, 3, null, null, 'Planning')
 on conflict (id) do nothing;
 
 -- Departments (for org chart)
