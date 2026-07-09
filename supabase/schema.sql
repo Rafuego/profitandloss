@@ -217,7 +217,7 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a511', 'Ops Companion',          'deck',    null,  'Active',   'Project', 0, 10000, 3, null, null, 'No PM assigned yet'),
   ('a512', 'Revenant VC',            'deck',    't20', 'Active',   'Project', 0, 5000,  2, null, null, 'PM: Carson'),
   ('a513', 'Slang Ventures',         'deck',    't18', 'Active',   'Project', 0, 7500,  4, null, null, 'PM: Daniel'),
-  ('a514', 'Spice VC',               'site',    't18', 'Active',   'Project', 0, 16000, 2, null, null, 'PM: Daniel. Web scope. $10K original + $6K extra animation.'),
+  ('a514', 'Spice VC',               'site',    't18', 'Active',   'Project', 0, 16000, 2, null, null, 'PM: Daniel. $10K original site + $6K expanded scope (animation) worked into the existing site.'),
   ('a515', 'Steel Atlas',            'deck',    't20', 'Active',   'Project', 0, 1000,  2, null, null, 'PM: Carson'),
   ('a516', 'Twine Ventures',         'deck',    't18', 'Active',   'Project', 0, 8500,  3, null, null, 'PM: Daniel'),
   ('a517', 'VistaShares',            'deck',    't18', 'Active',   'Project', 0, 35000, 4, null, null, 'PM: Daniel'),
