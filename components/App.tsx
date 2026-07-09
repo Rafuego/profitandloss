@@ -39,10 +39,9 @@ const INIT_TEAM = [
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 3500, hrs: 40, lead: false },
   { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3267, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },
-  // New hires (2026-07) — roles/service lines TBD, assign in Team view
-  { id: "t18", name: "Dong-soo Shin", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 3162, hrs: 160, lead: false },
-  { id: "t19", name: "Christine Chow", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 3811, hrs: 160, lead: false },
-  { id: "t20", name: "Carson", role: "", sl: null, type: "Full-Time", cadY: null, usdM: 6000, hrs: 160, lead: false },
+  { id: "t18", name: "Dong-soo Shin", role: "Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 3162, hrs: 160, lead: false },
+  { id: "t19", name: "Christine Chow", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3811, hrs: 160, lead: false },
+  { id: "t20", name: "Carson", role: "Chief of Staff", sl: "ops", type: "Full-Time", cadY: null, usdM: 6000, hrs: 160, lead: false },
 ];
 
 const INIT_ACCOUNTS = [
@@ -105,7 +104,7 @@ const INIT_ACCOUNTS = [
 const INIT_DEPTS = [
   { id: "d1", name: "Deck", memberIds: ["t5"], color: "bg-amber-100 text-amber-700" },
   { id: "d2", name: "Web Development", memberIds: ["t4", "t15", "t16"], color: "bg-teal-100 text-teal-700" },
-  { id: "d3", name: "Brand", memberIds: ["t9", "t10", "t11", "t12"], color: "bg-rose-100 text-rose-700" },
+  { id: "d3", name: "Brand", memberIds: ["t9", "t10", "t11", "t12", "t19"], color: "bg-rose-100 text-rose-700" },
   { id: "d4", name: "Product", memberIds: ["t6", "t7", "t8"], color: "bg-blue-100 text-blue-700" },
   { id: "d5", name: "Symphony", memberIds: [], color: "bg-violet-100 text-violet-700" },
 ];

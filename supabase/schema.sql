@@ -159,10 +159,9 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 3500,  40, false),
   ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 2000,  40, false),
-  -- New hires (2026-07) — roles/service lines TBD
-  ('t18', 'Dong-soo Shin',      '',                                        null,         'Full-Time',    null, 3162, 160, false),
-  ('t19', 'Christine Chow',     '',                                        null,         'Full-Time',    null, 3811, 160, false),
-  ('t20', 'Carson',             '',                                        null,         'Full-Time',    null, 6000, 160, false)
+  ('t18', 'Dong-soo Shin',      'Project Manager',                         'ops',        'Full-Time',    null, 3162, 160, false),
+  ('t19', 'Christine Chow',     'Digital Designer',                        'brand',      'Full-Time',    null, 3811, 160, false),
+  ('t20', 'Carson',             'Chief of Staff',                          'ops',        'Full-Time',    null, 6000, 160, false)
 on conflict (id) do nothing;
 
 -- Client Accounts
@@ -238,6 +237,6 @@ on conflict (id) do nothing;
 insert into department_members (department_id, member_id) values
   ('d1', 't5'),
   ('d2', 't4'),  ('d2', 't15'), ('d2', 't16'),
-  ('d3', 't9'),  ('d3', 't10'), ('d3', 't11'), ('d3', 't12'),
+  ('d3', 't9'),  ('d3', 't10'), ('d3', 't11'), ('d3', 't12'), ('d3', 't19'),
   ('d4', 't6'),  ('d4', 't7'),  ('d4', 't8')
 on conflict do nothing;
