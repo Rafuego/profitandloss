@@ -35,7 +35,7 @@ const INIT_TEAM = [
   { id: "t8", name: "Sabrina Wen", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
   { id: "t9", name: "Deseree Lau", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
   { id: "t10", name: "Victor Wong", role: "Junior Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3344, hrs: 160, lead: false },
-  { id: "t11", name: "Emily Chung", role: "Contractor", sl: "brand", type: "Contractor", cadY: 102000, usdM: null, hrs: 40, lead: true },
+  { id: "t11", name: "Emily Chung", role: "Contractor", sl: "brand", type: "Contractor", cadY: null, usdM: 4278, hrs: 40, lead: true },
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 3500, hrs: 40, lead: false },
   { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3267, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },

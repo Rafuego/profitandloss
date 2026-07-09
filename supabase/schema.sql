@@ -156,7 +156,7 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, false),
   ('t9',  'Deseree Lau',        'Digital Designer',                        'brand',      'Full-Time',    null, 3525, 160, false),
   ('t10', 'Victor Wong',        'Junior Digital Designer',                 'brand',      'Full-Time',    null, 3344, 160, false),
-  ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor', 102000, null,  40, true),
+  ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor',   null, 4278,  40, true),
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 3500,  40, false),
   ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 2000,  40, false),
