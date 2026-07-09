@@ -115,14 +115,9 @@ Tables in Supabase (all with open RLS policies — no auth):
 
 **`account_support` sync:** `upsertAccount` deletes all support rows then re-inserts — full replace, not patch.
 
-## Environment Variables
+## Supabase Connection
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-```
-
-Set in Vercel dashboard. Local dev uses `.env.local`.
+The Supabase URL and anon key are **hardcoded in `lib/supabase.ts`** (not env vars). The Vercel env vars point at a deleted project and are intentionally ignored — do not switch back to `process.env` without also updating Vercel. The anon key is public by design (it ships in the browser bundle); access control is RLS, not key secrecy. If the Supabase project changes, update the two constants at the top of `lib/supabase.ts`.
 
 ## Account ID Convention
 

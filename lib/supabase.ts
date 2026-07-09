@@ -1,10 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Supabase connection — hardcoded on purpose.
+// The Vercel env vars still point at a deleted Supabase project, so they are
+// intentionally ignored. The anon key is public by design (it ships in the
+// browser bundle either way); access control comes from RLS, not key secrecy.
+// If the Supabase project ever changes again, update these two constants.
+const SUPABASE_URL = "https://dhutggfdiajxyxdipxta.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRodXRnZ2ZkaWFqeHl4ZGlweHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NDIwNjUsImV4cCI6MjA5OTExODA2NX0.fKb4Ja1u4xlNH-i6O8mnCQ4iabe4_3hiF1RR-dHoNYA";
+
 // Client-side Supabase client (uses anon key, respects RLS)
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── Type definitions matching the DB schema ──
 
