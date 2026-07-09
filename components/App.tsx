@@ -67,6 +67,7 @@ const INIT_ACCOUNTS = [
   { id: "a400", name: "ARK Invest",       sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 6000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a401", name: "Axle Energy",      sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a402", name: "Chart R",          sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a403", name: "Alcove",           sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 6000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
   // ── Churned retainers (kept for history) ──
   { id: "a4",   name: "Envoy",        sl: "symphony", leadId: "t10", supportIds: [], status: "Closed", type: "Retainer", retainer: 1500, project: 0, weight: 3, notes: "" },

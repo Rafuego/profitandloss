@@ -188,6 +188,7 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a400', 'ARK Invest',       'symphony', null,  'Active', 'Retainer', 6000, 0, 3, null, null, ''),
   ('a401', 'Axle Energy',      'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
   ('a402', 'Chart R',          'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  ('a403', 'Alcove',           'symphony', null,  'Active', 'Retainer', 6000, 0, 3, null, null, ''),
   -- Churned retainers (kept for history)
   ('a4',   'Envoy',            'symphony', 't10', 'Closed', 'Retainer', 1500, 0, 3, null, null, ''),
   ('a12',  'Raspberry Ai',     'symphony', 't8',  'Closed', 'Retainer', 8750, 0, 3, null, null, ''),
