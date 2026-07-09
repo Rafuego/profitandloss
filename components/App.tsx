@@ -166,6 +166,54 @@ const personExposure = (personId: string, accounts: any[]) => {
   return { asLead, asSupport, total: asLead + asSupport };
 };
 
+// ── Flat-rate project economics ──
+// Cost allocation reuses the workload capacity model: a person's slice of a
+// project = their capacity points on it / 5 (lead w/ support = weight×0.7,
+// solo lead = weight, support = weight×0.3 / #support). Monthly cost × slice
+// = what the project spends on them per month.
+const projectTeam = (a: any, team: any[]) => {
+  const w = a.weight ?? 3;
+  const rows: any[] = [];
+  const lead = team.find((p: any) => p.id === a.leadId);
+  if (lead) rows.push({ p: lead, role: "Lead", pts: a.supportIds.length > 0 ? w * 0.7 : w });
+  a.supportIds.forEach((id: string) => {
+    const p = team.find((x: any) => x.id === id);
+    if (p) rows.push({ p, role: "Support", pts: (w * 0.3) / a.supportIds.length });
+  });
+  return rows.map(r => ({ ...r, alloc: r.pts / 5, monthlyCost: cost(r.p) * (r.pts / 5) }));
+};
+
+// Revenue attribution on a project's total fee (lead 50% / support splits 50%,
+// same model as retainer attribution above)
+const projFeeShare = (a: any, personId: string) => {
+  if (a.leadId === personId) return a.supportIds.length > 0 ? a.project * 0.5 : a.project;
+  if (a.supportIds.includes(personId)) return (a.project * 0.5) / a.supportIds.length;
+  return 0;
+};
+
+// How far through the project window we are, 0→1 (null if no dates)
+const projElapsed = (a: any) => {
+  if (!a.startDate || !a.endDate) return null;
+  const s = new Date(a.startDate).getTime(), e = new Date(a.endDate).getTime(), now = Date.now();
+  if (e <= s) return 1;
+  return Math.min(1, Math.max(0, (now - s) / (e - s)));
+};
+
+// Full economics for one flat-rate project
+const projectEcon = (a: any, team: any[]) => {
+  const members = projectTeam(a, team);
+  const teamMonthly = members.reduce((s, m) => s + m.monthlyCost, 0);
+  const hasDates = !!(a.startDate && a.endDate);
+  const months = hasDates ? monthsBetween(a.startDate, a.endDate) : null;
+  const totalCost = months != null ? teamMonthly * months : null;
+  const profit = totalCost != null ? a.project - totalCost : null;
+  const marginPct = profit != null && a.project > 0 ? profit / a.project : null;
+  const elapsed = projElapsed(a);
+  return { members, teamMonthly, hasDates, months, totalCost, profit, marginPct, elapsed,
+    costToDate: totalCost != null && elapsed != null ? totalCost * elapsed : null,
+    revToDate: elapsed != null ? a.project * elapsed : null };
+};
+
 // ── Components ──
 const Av = ({ name, size = 36, sl, lead }) => {
   const bg = lead ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-600";
@@ -481,7 +529,10 @@ export default function App() {
       .map(sl => {
         const members = team.filter(p => p.sl === sl.id);
         const accts = allActiveAccts.filter(a => a.sl === sl.id);
-        const rev = accts.reduce((s, a) => s + a.retainer + a.project, 0);
+        // acctVal = retainer + amortized project revenue (full fee ÷ project
+        // months, $0 outside the window) — not the raw fee, which would
+        // inflate MRR for the whole life of a flat-rate project
+        const rev = accts.reduce((s, a) => s + acctVal(a), 0);
         const directCost = members.reduce((s, p) => s + cost(p), 0);
         const overheadAlloc = overheadPerClient * accts.length;
         const c = directCost + overheadAlloc;
@@ -565,6 +616,7 @@ export default function App() {
     { id: "org", label: "Org Chart" },
     { id: "team", label: "Team" },
     { id: "accounts", label: "Accounts" },
+    { id: "projects", label: "Projects" },
     { id: "pnl", label: "P&L" },
   ];
 
@@ -1183,6 +1235,197 @@ export default function App() {
               <div className="px-3 py-2 bg-gray-100 border-b border-gray-200" />
             </div>
             </div>
+            );
+          })()}
+
+          {/* ══════════ FLAT-RATE PROJECTS VIEW ══════════ */}
+          {view === "projects" && (() => {
+            const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "";
+            const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && a.project > 0);
+            const inFlight = flat.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
+            const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
+
+            const econOf = (a: any) => projectEcon(a, team);
+            const inFlightEcon = inFlight.map(a => ({ a, e: econOf(a) }));
+            const kpiFee = inFlight.reduce((s, a) => s + a.project, 0);
+            const kpiMrr = inFlight.reduce((s, a) => s + monthlyProjectRev(a), 0);
+            const withCost = inFlightEcon.filter(x => x.e.profit != null);
+            const kpiProfit = withCost.reduce((s, x) => s + x.e.profit, 0);
+            const kpiCostedFee = withCost.reduce((s, x) => s + x.a.project, 0);
+
+            // Employee mileage across ALL flat-rate work (in-flight + completed)
+            const mileage = team.map(p => {
+              let rev = 0, costTotal = 0, monthly = 0, n = 0, unknownCost = false;
+              flat.forEach(a => {
+                const share = projFeeShare(a, p.id);
+                if (share <= 0) return;
+                n++;
+                rev += share;
+                const m = projectTeam(a, team).find(r => r.p.id === p.id);
+                if (m) {
+                  monthly += m.monthlyCost;
+                  const months = a.startDate && a.endDate ? monthsBetween(a.startDate, a.endDate) : null;
+                  if (months != null) costTotal += m.monthlyCost * months; else unknownCost = true;
+                }
+              });
+              return { p, n, rev, costTotal, monthly, unknownCost, multiple: costTotal > 0 ? rev / costTotal : null };
+            }).filter(m => m.n > 0).sort((x, y) => y.rev - x.rev);
+
+            const ProjectCard = ({ a, done }: any) => {
+              const e = econOf(a);
+              const overdue = !done && e.elapsed === 1;
+              return (
+                <div onClick={() => setSelected({ type: "account", data: a })}
+                  className={`bg-white border rounded-xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer ${done ? "border-gray-200" : "border-violet-200"}`}>
+                  <div className={`h-1 ${done ? "bg-gray-300" : "bg-violet-400"}`} />
+                  <div className="px-5 pt-4 pb-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                          {a.name}
+                          {!e.hasDates && <span title="No timeline set" className="text-amber-500 text-[10px]">⚠ no dates</span>}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <SlTag sl={a.sl} small />
+                          <StatusTag status={a.status} small />
+                          {overdue && <Tag small variant="amber">Past end date</Tag>}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-lg font-semibold text-gray-900">{fmtK(a.project)}</div>
+                        <div className="text-[9px] text-gray-400">flat fee{a.type === "Hybrid" ? ` + ${fmtK(a.retainer)}/mo ret.` : ""}</div>
+                      </div>
+                    </div>
+
+                    {/* Timeline */}
+                    {e.hasDates && (
+                      <div className="mb-3.5">
+                        <div className="flex items-center justify-between text-[10px] font-medium text-gray-400 mb-1.5">
+                          <span>{fmtDate(a.startDate)} → {fmtDate(a.endDate)}</span>
+                          <span>{e.months} mo · {Math.round((e.elapsed ?? 0) * 100)}% elapsed</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${done ? "bg-gray-300" : overdue ? "bg-amber-400" : "bg-violet-400"}`}
+                            style={{ width: `${(e.elapsed ?? 0) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Economics */}
+                    <div className="grid grid-cols-4 gap-2 mb-3.5">
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2">
+                        <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Rev /mo</div>
+                        <div className="text-xs font-semibold text-emerald-600 mt-0.5">{done ? "—" : fmtK(monthlyProjectRev(a))}</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2">
+                        <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Team /mo</div>
+                        <div className="text-xs font-semibold text-red-500 mt-0.5">{e.members.length ? fmtK(e.teamMonthly) : "—"}</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2">
+                        <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Profit</div>
+                        <div className={`text-xs font-semibold mt-0.5 ${e.profit == null ? "text-gray-300" : e.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>{e.profit != null ? fmtK(e.profit) : "—"}</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2">
+                        <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Margin</div>
+                        <div className={`text-xs font-semibold mt-0.5 ${e.marginPct == null ? "text-gray-300" : e.marginPct >= 0.3 ? "text-emerald-600" : e.marginPct >= 0 ? "text-amber-500" : "text-red-500"}`}>{e.marginPct != null ? pct(e.marginPct) : "—"}</div>
+                      </div>
+                    </div>
+
+                    {/* Burn to date — only meaningful mid-flight */}
+                    {!done && e.hasDates && e.costToDate != null && e.elapsed > 0 && e.elapsed < 1 && (
+                      <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-violet-50 mb-3.5 text-[10px] font-medium">
+                        <span className="text-violet-600">Burn to date: <span className="font-semibold">{fmtK(e.costToDate)}</span> spent vs {fmtK(e.revToDate)} earned</span>
+                        <span className={`font-semibold ${e.costToDate <= e.revToDate ? "text-emerald-600" : "text-red-500"}`}>{e.costToDate <= e.revToDate ? "On track" : "Burning hot"}</span>
+                      </div>
+                    )}
+
+                    {/* Team allocation rows */}
+                    {e.members.length > 0 ? (
+                      <div className="border-t border-gray-100 pt-2.5">
+                        {e.members.map(m => (
+                          <div key={m.p.id + m.role} className="flex items-center gap-2 py-1">
+                            <Av name={m.p.name} size={22} sl={m.p.sl} lead={m.role === "Lead"} />
+                            <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{m.p.name}</span>
+                            <Tag small variant={m.role === "Lead" ? "green" : "default"}>{m.role}</Tag>
+                            <span className="text-[10px] text-gray-400 w-10 text-right">{Math.round(m.alloc * 100)}%</span>
+                            <span className="text-[10px] font-semibold text-red-500 w-16 text-right">{fmtK(m.monthlyCost)}/mo</span>
+                            <span className="text-[10px] text-gray-500 w-14 text-right">{e.months != null ? fmtK(m.monthlyCost * e.months) : "—"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-t border-gray-100 pt-2.5 text-[11px] text-gray-300 italic">No team attached — cost unknown</div>
+                    )}
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <div className="p-8 pb-12">
+                <div className="mb-7">
+                  <div className="text-2xl font-semibold text-gray-900 mb-1">Flat Rate Projects</div>
+                  <div className="text-xs text-gray-400">Budget vs. team cost over each project's timeline. Team cost = each person's monthly cost × their capacity share on the project.</div>
+                </div>
+
+                {/* KPIs */}
+                <div className="flex gap-4 flex-wrap mb-9">
+                  <KpiCard label="In Flight" value={inFlight.length} sub={`${fmtK(kpiFee)} contracted`} />
+                  <KpiCard label="Project MRR" value={fmt(Math.round(kpiMrr))} sub="amortized this month" color="text-emerald-600" />
+                  <KpiCard label="Projected Profit" value={withCost.length ? fmt(Math.round(kpiProfit)) : "—"} sub={withCost.length ? `across ${withCost.length} costed project${withCost.length !== 1 ? "s" : ""}` : "needs team + dates"} color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
+                  <KpiCard label="Blended Margin" value={kpiCostedFee > 0 ? pct(kpiProfit / kpiCostedFee) : "—"} sub="profit ÷ contracted fees" color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
+                </div>
+
+                {/* In flight */}
+                <div className="text-xl font-semibold text-gray-900 mb-4">In Flight</div>
+                {inFlight.length === 0 && <div className="text-sm text-gray-400 italic mb-8">No active flat-rate projects. Add one with “+ Account” → type Project (or Hybrid) with dates and a team.</div>}
+                <div className="grid gap-4 mb-10" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
+                  {inFlight.map(a => <ProjectCard key={a.id} a={a} done={false} />)}
+                </div>
+
+                {/* Employee mileage */}
+                {mileage.length > 0 && (
+                  <div className="mb-10">
+                    <div className="text-xl font-semibold text-gray-900 mb-1">Employee Mileage</div>
+                    <div className="text-xs text-gray-400 mb-4">Across all flat-rate work — the project value each person delivers vs. what their time on those projects costs.</div>
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
+                        {["Person", "Projects", "Value Delivered", "Cost on Projects", "Contribution", "Multiple"].map(h => (
+                          <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
+                        ))}
+                      </div>
+                      {mileage.map(m => (
+                        <div key={m.p.id} onClick={() => setSelected({ type: "person", data: m.p })} className="grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
+                          <div className="flex items-center gap-2.5">
+                            <Av name={m.p.name} size={28} sl={m.p.sl} lead={m.p.lead} />
+                            <div>
+                              <div className="text-[13px] font-semibold text-gray-900">{m.p.name}</div>
+                              <div className="text-[10px] text-gray-400">{m.p.role}</div>
+                            </div>
+                          </div>
+                          <div className="text-[13px] text-gray-500">{m.n}</div>
+                          <div className="text-sm font-semibold text-emerald-600">{fmt(Math.round(m.rev))}</div>
+                          <div className="text-sm font-semibold text-red-500">{m.costTotal > 0 ? fmt(Math.round(m.costTotal)) : "—"}{m.unknownCost && <span title="Some projects have no dates — cost not counted" className="text-amber-500 text-[10px] ml-1">⚠</span>}</div>
+                          <div className={`text-sm font-semibold ${m.rev - m.costTotal >= 0 ? "text-emerald-600" : "text-red-500"}`}>{m.costTotal > 0 ? fmt(Math.round(m.rev - m.costTotal)) : "—"}</div>
+                          <div className={`text-base font-semibold ${m.multiple == null ? "text-gray-300" : m.multiple >= 1 ? "text-emerald-600" : "text-red-500"}`}>{m.multiple != null ? `${m.multiple.toFixed(1)}x` : "—"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Completed */}
+                {completed.length > 0 && (
+                  <div>
+                    <div className="text-xl font-semibold text-gray-900 mb-1">Completed</div>
+                    <div className="text-xs text-gray-400 mb-4">{completed.length} project{completed.length !== 1 ? "s" : ""} · {fmtK(completed.reduce((s, a) => s + a.project, 0))} lifetime fees</div>
+                    <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
+                      {completed.map(a => <ProjectCard key={a.id} a={a} done={true} />)}
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })()}
 

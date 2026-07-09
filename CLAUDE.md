@@ -65,6 +65,7 @@ try { await upsertAccount(d); } catch (e) {
 | Org Chart | `depts` state |
 | Team | static, reads `team` |
 | Accounts | `acctTab`: `"retainer" \| "projects" \| "closed"`, `acctView`: `"list" \| "pods"` |
+| Projects | flat-rate project economics — computed inline via `projectEcon` |
 | P&L | computed via `pods` and `totals` useMemo |
 
 ## Financial Model
@@ -73,16 +74,24 @@ try { await upsertAccount(d); } catch (e) {
 
 **Monthly cost per person:** `usdM` if set, otherwise CAD conversion.
 
-**Revenue attribution (lead/support split):**
+**Revenue attribution (lead/support split — see `leadShare`/`supShare`):**
 - Lead with no support → 100% of account value
-- Lead with support → 70% of account value
-- Each support member → 30% / number of support members
+- Lead with support → 50% of account value
+- Support members split the remaining 50% evenly
 
 **Flat rate / project amortization:**
 ```js
 monthlyProjectRev(a) // returns project fee / months(start→end), or 0 outside window
 ```
 Projects with no dates return the full fee as monthly (backward compat).
+Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the raw fee.
+
+**Flat-rate project cost allocation (Projects tab, see `projectTeam`/`projectEcon`):**
+- A person's allocation to a project = their capacity points on it ÷ 5
+  (lead w/ support = weight×0.7, solo lead = weight, support = weight×0.3 ÷ #support)
+- Monthly cost to project = person's monthly cost × allocation
+- Total project cost = team monthly × `monthsBetween(start, end)`; profit = fee − total cost
+- Projects without dates or team show "—" (unknown) rather than fake numbers
 
 **Overhead distribution:** ops + leadership costs split equally across all active clients, allocated proportionally to each pod.
 
