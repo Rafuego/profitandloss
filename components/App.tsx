@@ -43,33 +43,37 @@ const INIT_TEAM = [
 ];
 
 const INIT_ACCOUNTS = [
-  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
-  { id: "a2", name: "Attio", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 2000, project: 0, weight: 3, notes: "" },
-  { id: "a4", name: "Envoy", sl: "symphony", leadId: "t10", supportIds: [], status: "Launch", type: "Retainer", retainer: 1500, project: 0, weight: 3, notes: "" },
-  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a6", name: "Lumen", sl: "symphony", leadId: "t13", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
-  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Growth", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
-  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
-  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Launch", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Launch", type: "Retainer", retainer: 3500, project: 0, weight: 3, notes: "" },
-  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Growth", type: "Retainer", retainer: 4800, project: 0, weight: 3, notes: "" },
-  { id: "a12", name: "Raspberry Ai", sl: "symphony", leadId: "t8", supportIds: [], status: "Growth", type: "Retainer", retainer: 8750, project: 0, weight: 3, notes: "" },
-  { id: "a13",  name: "RBL",          sl: "symphony", leadId: "t10", supportIds: [], status: "Launch",  type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a115", name: "Complify",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 2000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a117", name: "NeuralWatt",   sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a119", name: "Tempus Ai",    sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 1250, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a122", name: "Lucenia",      sl: "symphony", leadId: null,  supportIds: [], status: "Active",  type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  // ── Active retainers (synced to billing platform 2026-07-09) ──
+  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
+  { id: "a2", name: "Attio", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 1375, project: 0, weight: 3, notes: "" },
+  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
+  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
+  { id: "a6", name: "Lumen", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
+  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
+  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
+  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
+  { id: "a10", name: "Cytora", sl: "symphony", leadId: "t13", supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, notes: "" },
+  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 4800, project: 0, weight: 3, notes: "" },
+  { id: "a13",  name: "RBL",              sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a115", name: "Complify",         sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 8500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a117", name: "NeuralWatt",       sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a119", name: "Tempus Ai",        sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 1250, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a122", name: "Lucenia",          sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a200", name: "Anthro Energy",    sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a201", name: "Voyager Ventures", sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 1500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a400", name: "ARK Invest",       sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 6000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a401", name: "Axle Energy",      sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a402", name: "Chart R",          sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
-  // ── New retainers ──
-  { id: "a200", name: "Anthro Energy",   sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a201", name: "Voyager VC",      sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 1500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a202", name: "Atlas Rd",        sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  // ── Churned retainers (kept for history) ──
+  { id: "a4",   name: "Envoy",        sl: "symphony", leadId: "t10", supportIds: [], status: "Closed", type: "Retainer", retainer: 1500, project: 0, weight: 3, notes: "" },
+  { id: "a12",  name: "Raspberry Ai", sl: "symphony", leadId: "t8",  supportIds: [], status: "Closed", type: "Retainer", retainer: 8750, project: 0, weight: 3, notes: "" },
+  { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 2000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a202", name: "Atlas Rd",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
   // ── Closed flat rate projects ──
   { id: "a203", name: "Giant Step Capital", sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 8000,  weight: 3, startDate: null, endDate: null, notes: "" },
@@ -90,8 +94,7 @@ const INIT_ACCOUNTS = [
   { id: "a312", name: "Narya VC (Deck)",    sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a313", name: "Basis (Deck)",       sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
 
-  // ── Active flat rate project ──
-  { id: "a220", name: "Saris AI", sl: "brand", leadId: "t4", supportIds: ["t15", "t12"], status: "Active", type: "Project", retainer: 0, project: 30000, weight: 4, startDate: "2026-04-01", endDate: "2026-05-21", notes: "Brand + web. $15K paid, $15K on completion. PM: Daniel (assign when in system)." },
+  { id: "a220", name: "Saris AI", sl: "brand", leadId: "t4", supportIds: ["t15", "t12"], status: "Closed", type: "Project", retainer: 0, project: 30000, weight: 4, startDate: "2026-04-01", endDate: "2026-05-21", notes: "Brand + web. $15K paid, $15K on completion. Delivered May 2026." },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──

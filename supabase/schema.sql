@@ -164,33 +164,36 @@ on conflict (id) do nothing;
 
 -- Client Accounts (see supabase/repair.sql for the upsert version used to refresh an existing DB)
 insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
-  -- Symphony retainers
-  ('a1',   '1AU Technologies', 'symphony', 't15', 'Launch', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a2',   'Attio',            'symphony', 't13', 'Launch', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a3',   'Basis',            'symphony', 't10', 'Growth', 'Retainer', 2000, 0, 3, null, null, ''),
-  ('a4',   'Envoy',            'symphony', 't10', 'Launch', 'Retainer', 1500, 0, 3, null, null, ''),
-  ('a5',   'Highrise',         'symphony', 't15', 'Launch', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a6',   'Lumen',            'symphony', 't13', 'Growth', 'Retainer', 4500, 0, 3, null, null, ''),
-  ('a7',   'Portal Space',     'symphony', 't10', 'Growth', 'Retainer', 4500, 0, 3, null, null, ''),
-  ('a8',   'Vuecason',         'symphony', 't9',  'Growth', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a9',   'Applecart',        'symphony', 't15', 'Launch', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a10',  'Cytora',           'symphony', 't13', 'Launch', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a11',  'Goody',            'symphony', 't9',  'Growth', 'Retainer', 4800, 0, 3, null, null, ''),
-  ('a12',  'Raspberry Ai',     'symphony', 't8',  'Growth', 'Retainer', 8750, 0, 3, null, null, ''),
-  ('a13',  'RBL',              'symphony', 't10', 'Launch', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a114', 'Tocaro Blue',      'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a115', 'Complify',         'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a116', 'Narya VC',         'symphony', null,  'Active', 'Retainer', 2000, 0, 3, null, null, ''),
+  -- Active retainers (synced to billing platform 2026-07-09)
+  ('a1',   '1AU Technologies', 'symphony', 't15', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
+  ('a2',   'Attio',            'symphony', 't13', 'Active', 'Retainer', 1375, 0, 3, null, null, ''),
+  ('a3',   'Basis',            'symphony', 't10', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
+  ('a5',   'Highrise',         'symphony', 't15', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
+  ('a6',   'Lumen',            'symphony', 't13', 'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  ('a7',   'Portal Space',     'symphony', 't10', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
+  ('a8',   'Vuecason',         'symphony', 't9',  'Active', 'Retainer', 3000, 0, 3, null, null, ''),
+  ('a9',   'Applecart',        'symphony', 't15', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
+  ('a10',  'Cytora',           'symphony', 't13', 'Active', 'Retainer', 3500, 0, 3, null, null, ''),
+  ('a11',  'Goody',            'symphony', 't9',  'Active', 'Retainer', 4800, 0, 3, null, null, ''),
+  ('a13',  'RBL',              'symphony', 't10', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
+  ('a115', 'Complify',         'symphony', null,  'Active', 'Retainer', 8500, 0, 3, null, null, ''),
   ('a117', 'NeuralWatt',       'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a118', 'SirenOpt',         'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
   ('a119', 'Tempus Ai',        'symphony', null,  'Active', 'Retainer', 1250, 0, 3, null, null, ''),
-  ('a120', 'Guardrail Ai',     'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a121', 'Kevin Morris',     'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a122', 'Lucenia',          'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  -- New retainers
   ('a200', 'Anthro Energy',    'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a201', 'Voyager VC',       'symphony', null,  'Active', 'Retainer', 1500, 0, 3, null, null, ''),
-  ('a202', 'Atlas Rd',         'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
+  ('a201', 'Voyager Ventures', 'symphony', null,  'Active', 'Retainer', 1500, 0, 3, null, null, ''),
+  ('a400', 'ARK Invest',       'symphony', null,  'Active', 'Retainer', 6000, 0, 3, null, null, ''),
+  ('a401', 'Axle Energy',      'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  ('a402', 'Chart R',          'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  -- Churned retainers (kept for history)
+  ('a4',   'Envoy',            'symphony', 't10', 'Closed', 'Retainer', 1500, 0, 3, null, null, ''),
+  ('a12',  'Raspberry Ai',     'symphony', 't8',  'Closed', 'Retainer', 8750, 0, 3, null, null, ''),
+  ('a114', 'Tocaro Blue',      'symphony', null,  'Closed', 'Retainer', 5000, 0, 3, null, null, ''),
+  ('a116', 'Narya VC',         'symphony', null,  'Closed', 'Retainer', 2000, 0, 3, null, null, ''),
+  ('a118', 'SirenOpt',         'symphony', null,  'Closed', 'Retainer', 5000, 0, 3, null, null, ''),
+  ('a120', 'Guardrail Ai',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
+  ('a121', 'Kevin Morris',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
+  ('a202', 'Atlas Rd',         'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
   -- Closed flat-rate projects
   ('a203', 'Giant Step Capital', 'deck', null, 'Closed', 'Project', 0, 8000,  3, null, null, ''),
   ('a205', 'Slang Ventures',     'deck', null, 'Closed', 'Project', 0, 7500,  3, null, null, ''),
@@ -209,8 +212,7 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a311', 'Tarlton Automotive', 'deck', null, 'Closed', 'Project', 0, 5000,  3, null, null, ''),
   ('a312', 'Narya VC (Deck)',    'deck', null, 'Closed', 'Project', 0, 10000, 3, null, null, ''),
   ('a313', 'Basis (Deck)',       'deck', null, 'Closed', 'Project', 0, 10000, 3, null, null, ''),
-  -- Active flat-rate project
-  ('a220', 'Saris AI', 'brand', 't4', 'Active', 'Project', 0, 30000, 4, '2026-04-01', '2026-05-21', 'Brand + web. $15K paid, $15K on completion. PM: Daniel (assign when in system).')
+  ('a220', 'Saris AI', 'brand', 't4', 'Closed', 'Project', 0, 30000, 4, '2026-04-01', '2026-05-21', 'Brand + web. $15K paid, $15K on completion. Delivered May 2026.')
 on conflict (id) do nothing;
 
 -- Account support members
