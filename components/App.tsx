@@ -77,27 +77,6 @@ const INIT_ACCOUNTS = [
   { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a202", name: "Atlas Rd",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-
-  // ── Closed flat rate projects ──
-  { id: "a203", name: "Giant Step Capital", sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 8000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a205", name: "Slang Ventures",     sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 7500,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a207", name: "Kunin",              sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 20000, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a300", name: "Wetstone",           sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 7500,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a301", name: "NVP Capital",        sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 8000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a302", name: "Blair AI",           sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 25000, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a303", name: "Twelve Below",       sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 2000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a304", name: "Iris Finance",       sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 3000,  weight: 3, startDate: null, endDate: null, notes: "Fired — collected 50% ($3K of $6K)" },
-  { id: "a305", name: "Zingage",            sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 6500,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a306", name: "Symbio",             sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 6000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a307", name: "Unknown Capital",    sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 6000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a308", name: "Cargo Robotics",     sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 3500,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a309", name: "Homemade Method",    sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 8000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a310", name: "Antares Space",      sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 7500,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a311", name: "Tarlton Automotive", sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 5000,  weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a312", name: "Narya VC (Deck)",    sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a313", name: "Basis (Deck)",       sl: "deck", leadId: null, supportIds: [], status: "Closed", type: "Project", retainer: 0, project: 10000, weight: 3, startDate: null, endDate: null, notes: "" },
-
-  { id: "a220", name: "Saris AI", sl: "brand", leadId: "t4", supportIds: ["t15", "t12"], status: "Closed", type: "Project", retainer: 0, project: 30000, weight: 4, startDate: "2026-04-01", endDate: "2026-05-21", notes: "Brand + web. $15K paid, $15K on completion. Delivered May 2026." },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
@@ -671,7 +650,7 @@ export default function App() {
         <div className="flex gap-2">
           <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
-          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, notes: "" } })}
+          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
             className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
         </div>
       </div>
@@ -1270,9 +1249,13 @@ export default function App() {
               return { p, n, rev, costTotal, monthly, unknownCost, multiple: costTotal > 0 ? rev / costTotal : null };
             }).filter(m => m.n > 0).sort((x, y) => y.rev - x.rev);
 
+            // Collected: completed = full fee, else 50% if the deposit invoice is in
+            const collectedOf = (a: any) => a.status === "Closed" ? a.project : (a.depositPaid ? a.project * 0.5 : 0);
+
             const ProjectCard = ({ a, done }: any) => {
               const e = econOf(a);
               const overdue = !done && e.elapsed === 1;
+              const collected = collectedOf(a);
               return (
                 <div onClick={() => setSelected({ type: "account", data: a })}
                   className={`bg-white border rounded-xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer ${done ? "border-gray-200" : "border-violet-200"}`}>
@@ -1331,6 +1314,31 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* Invoicing — 50% up front, 50% on completion */}
+                    {!done ? (
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 mb-3.5" onClick={ev => ev.stopPropagation()}>
+                        <div className="text-[10px] font-medium text-gray-500">
+                          Collected <span className={`font-semibold ${collected > 0 ? "text-emerald-600" : "text-gray-400"}`}>{fmtK(collected)}</span> of {fmtK(a.project)}
+                          {a.project - collected > 0 && <span className="text-gray-400"> · {fmtK(a.project - collected)} outstanding</span>}
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button onClick={() => save("account", { ...a, depositPaid: !a.depositPaid })}
+                            className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md transition-colors ${a.depositPaid ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"}`}>
+                            {a.depositPaid ? "✓ 50% collected" : "Collect 50%"}
+                          </button>
+                          <button onClick={() => save("account", { ...a, status: "Closed" })}
+                            className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">
+                            ✓ Complete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 mb-3.5">
+                        <span className="text-[10px] font-medium text-emerald-700">Fully collected — {fmtK(a.project)} paid out</span>
+                        <span className="text-[10px] font-semibold text-emerald-600">✓ Complete</span>
+                      </div>
+                    )}
+
                     {/* Burn to date — only meaningful mid-flight */}
                     {!done && e.hasDates && e.costToDate != null && e.elapsed > 0 && e.elapsed < 1 && (
                       <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-violet-50 mb-3.5 text-[10px] font-medium">
@@ -1371,6 +1379,7 @@ export default function App() {
                 {/* KPIs */}
                 <div className="flex gap-4 flex-wrap mb-9">
                   <KpiCard label="In Flight" value={inFlight.length} sub={`${fmtK(kpiFee)} contracted`} />
+                  <KpiCard label="Collected" value={fmt(Math.round(inFlight.reduce((s, a) => s + collectedOf(a), 0)))} sub={`${fmt(Math.round(inFlight.reduce((s, a) => s + a.project - collectedOf(a), 0)))} outstanding`} color="text-emerald-600" />
                   <KpiCard label="Project MRR" value={fmt(Math.round(kpiMrr))} sub="amortized this month" color="text-emerald-600" />
                   <KpiCard label="Projected Profit" value={withCost.length ? fmt(Math.round(kpiProfit)) : "—"} sub={withCost.length ? `across ${withCost.length} costed project${withCost.length !== 1 ? "s" : ""}` : "needs team + dates"} color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
                   <KpiCard label="Blended Margin" value={kpiCostedFee > 0 ? pct(kpiProfit / kpiCostedFee) : "—"} sub="profit ÷ contracted fees" color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
@@ -1657,6 +1666,10 @@ export default function App() {
                       <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
                     </div>
                   )}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={modal.data.depositPaid || false} onChange={ev => setModal({ ...modal, data: { ...modal.data, depositPaid: ev.target.checked } })} />
+                    <span className="text-[13px] text-gray-500">50% deposit invoice collected{modal.data.project > 0 ? ` (${fmt(modal.data.project * 0.5)})` : ""}</span>
+                  </label>
                 </>
               );
             })()}

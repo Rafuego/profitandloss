@@ -46,6 +46,7 @@ create table if not exists accounts (
   weight numeric not null default 3,   -- designer capacity weight (1–5 pts)
   start_date date,                     -- project amortization window
   end_date date,
+  deposit_paid boolean not null default false,  -- 50% upfront invoice collected (flat-rate projects)
   notes text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -196,33 +197,8 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a118', 'SirenOpt',         'symphony', null,  'Closed', 'Retainer', 5000, 0, 3, null, null, ''),
   ('a120', 'Guardrail Ai',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a121', 'Kevin Morris',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a202', 'Atlas Rd',         'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
-  -- Closed flat-rate projects
-  ('a203', 'Giant Step Capital', 'deck', null, 'Closed', 'Project', 0, 8000,  3, null, null, ''),
-  ('a205', 'Slang Ventures',     'deck', null, 'Closed', 'Project', 0, 7500,  3, null, null, ''),
-  ('a207', 'Kunin',              'deck', null, 'Closed', 'Project', 0, 20000, 3, null, null, ''),
-  ('a300', 'Wetstone',           'deck', null, 'Closed', 'Project', 0, 7500,  3, null, null, ''),
-  ('a301', 'NVP Capital',        'deck', null, 'Closed', 'Project', 0, 8000,  3, null, null, ''),
-  ('a302', 'Blair AI',           'deck', null, 'Closed', 'Project', 0, 25000, 3, null, null, ''),
-  ('a303', 'Twelve Below',       'deck', null, 'Closed', 'Project', 0, 2000,  3, null, null, ''),
-  ('a304', 'Iris Finance',       'deck', null, 'Closed', 'Project', 0, 3000,  3, null, null, 'Fired — collected 50% ($3K of $6K)'),
-  ('a305', 'Zingage',            'deck', null, 'Closed', 'Project', 0, 6500,  3, null, null, ''),
-  ('a306', 'Symbio',             'deck', null, 'Closed', 'Project', 0, 6000,  3, null, null, ''),
-  ('a307', 'Unknown Capital',    'deck', null, 'Closed', 'Project', 0, 6000,  3, null, null, ''),
-  ('a308', 'Cargo Robotics',     'deck', null, 'Closed', 'Project', 0, 3500,  3, null, null, ''),
-  ('a309', 'Homemade Method',    'deck', null, 'Closed', 'Project', 0, 8000,  3, null, null, ''),
-  ('a310', 'Antares Space',      'deck', null, 'Closed', 'Project', 0, 7500,  3, null, null, ''),
-  ('a311', 'Tarlton Automotive', 'deck', null, 'Closed', 'Project', 0, 5000,  3, null, null, ''),
-  ('a312', 'Narya VC (Deck)',    'deck', null, 'Closed', 'Project', 0, 10000, 3, null, null, ''),
-  ('a313', 'Basis (Deck)',       'deck', null, 'Closed', 'Project', 0, 10000, 3, null, null, ''),
-  ('a220', 'Saris AI', 'brand', 't4', 'Closed', 'Project', 0, 30000, 4, '2026-04-01', '2026-05-21', 'Brand + web. $15K paid, $15K on completion. Delivered May 2026.')
+  ('a202', 'Atlas Rd',         'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, '')
 on conflict (id) do nothing;
-
--- Account support members
-insert into account_support (account_id, member_id) values
-  ('a220', 't15'),
-  ('a220', 't12')
-on conflict do nothing;
 
 -- Departments (for org chart)
 insert into departments (id, name, color, sort_order) values
