@@ -25,8 +25,8 @@ const SL = Object.fromEntries(SERVICE_LINES.map(s => [s.id, s]));
 // Pay synced to Humi payroll 2026-07-09 — all figures stored as USD/month
 // (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
 const INIT_TEAM = [
-  { id: "t1", name: "Rafay Iqbal", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 5711, hrs: 160, lead: true },
-  { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 5711, hrs: 160, lead: true },
+  { id: "t1", name: "Rafay Iqbal", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 9166.67, hrs: 160, lead: true },
+  { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 9166.67, hrs: 160, lead: true },
   { id: "t3", name: "Vicky Huynh", role: "Senior Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 4739, hrs: 160, lead: true },
   { id: "t4", name: "Andrew del Rizzo", role: "Digital Site Designer / Animations", sl: "site", type: "Full-Time", cadY: null, usdM: 4067, hrs: 160, lead: true },
   { id: "t5", name: "Sylvia Han", role: "Senior Digital Designer (Brand & Decks)", sl: "deck", type: "Full-Time", cadY: null, usdM: 4953, hrs: 160, lead: true },
@@ -35,7 +35,7 @@ const INIT_TEAM = [
   { id: "t8", name: "Sabrina Wen", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
   { id: "t9", name: "Deseree Lau", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
   { id: "t10", name: "Victor Wong", role: "Junior Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3344, hrs: 160, lead: false },
-  { id: "t11", name: "Emily Chung", role: "Contractor", sl: "brand", type: "Contractor", cadY: null, usdM: 4278, hrs: 40, lead: true },
+  { id: "t11", name: "Emily Chung", role: "Contractor", sl: "brand", type: "Contractor", cadY: null, usdM: 6200, hrs: 40, lead: true },
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 3500, hrs: 40, lead: false },
   { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3267, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },

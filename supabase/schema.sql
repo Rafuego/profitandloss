@@ -146,8 +146,8 @@ on conflict (id) do nothing;
 -- Pay synced to Humi payroll 2026-07-09 — stored as USD/month
 -- (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
 insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hours_per_month, is_lead) values
-  ('t1',  'Rafay Iqbal',        'Partner',                                 'leadership', 'Partner',      null, 5711, 160, true),
-  ('t2',  'Matthew Good',       'Partner',                                 'leadership', 'Partner',      null, 5711, 160, true),
+  ('t1',  'Rafay Iqbal',        'Partner',                                 'leadership', 'Partner',      null, 9166.67, 160, true),
+  ('t2',  'Matthew Good',       'Partner',                                 'leadership', 'Partner',      null, 9166.67, 160, true),
   ('t3',  'Vicky Huynh',        'Senior Project Manager',                  'ops',        'Full-Time',    null, 4739, 160, true),
   ('t4',  'Andrew del Rizzo',   'Digital Site Designer / Animations',      'site',       'Full-Time',    null, 4067, 160, true),
   ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',    null, 4953, 160, true),
@@ -156,7 +156,7 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, false),
   ('t9',  'Deseree Lau',        'Digital Designer',                        'brand',      'Full-Time',    null, 3525, 160, false),
   ('t10', 'Victor Wong',        'Junior Digital Designer',                 'brand',      'Full-Time',    null, 3344, 160, false),
-  ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor',   null, 4278,  40, true),
+  ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor',   null, 6200,  40, true),
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 3500,  40, false),
   ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 2000,  40, false),
