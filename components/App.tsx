@@ -22,8 +22,8 @@ const SERVICE_LINES = [
 ];
 const SL = Object.fromEntries(SERVICE_LINES.map(s => [s.id, s]));
 
-// Pay synced to Humi payroll 2026-07-09 — all figures stored as USD/month
-// (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
+// Pay basis (2026-07-14): bi-weekly CAD payroll × 2 = monthly, × 0.69 = USD/month.
+// Partners set directly at $110K USD/yr; contractors set directly in USD.
 const INIT_TEAM = [
   { id: "t1", name: "Rafay Iqbal", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 9166.67, hrs: 160, lead: true },
   { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 9166.67, hrs: 160, lead: true },
