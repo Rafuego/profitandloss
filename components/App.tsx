@@ -315,7 +315,7 @@ const Modal = ({ title, onClose, children }) => (
 // ── Sidebar ──
 // ── Person sidebar panel (own component so hooks are at top level) ──
 const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
-  const [assignRole, setAssignRole] = useState("lead");
+  const [assignRole, setAssignRole] = useState(p.lead ? "lead" : "support");
   const [assignAcctId, setAssignAcctId] = useState("");
   const [showAssign, setShowAssign] = useState(false);
 
@@ -375,7 +375,7 @@ const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
         {showAssign && (
           <div className="bg-white border border-gray-200 rounded-xl p-3.5 mb-3">
             <div className="flex gap-1.5 mb-2.5">
-              {["lead", "support"].map(r => (
+              {(p.lead ? ["lead", "support"] : ["support"]).map(r => (
                 <button key={r} onClick={() => setAssignRole(r)}
                   className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg capitalize transition-colors ${assignRole === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
                   {r}
@@ -654,6 +654,8 @@ export default function App() {
   const getName = id => team.find(p => p.id === id)?.name || "—";
   const slOpts = SERVICE_LINES.map(s => ({ value: s.id, label: s.name }));
   const teamOpts = team.map(p => ({ value: p.id, label: p.name }));
+  // Lead candidates = people with the Pod Lead tag (is_lead)
+  const leadOpts = team.filter(p => p.lead).map(p => ({ value: p.id, label: p.name }));
   // PM candidates = Operations people; Dev candidates = Web Development department members
   const pmOpts = team.filter(p => p.sl === "ops").map(p => ({ value: p.id, label: p.name }));
   const webDept = depts.find(d => d.name.toLowerCase().includes("web dev"));
@@ -869,7 +871,7 @@ export default function App() {
                       {quickAssign?.personId === p.id ? (
                         <div className="border-t border-gray-100 pt-2.5 mt-1" onClick={e => e.stopPropagation()}>
                           <div className="flex gap-1.5 mb-2">
-                            {(["lead", "support"] as const).map(r => (
+                            {((p.lead ? ["lead", "support"] : ["support"]) as const).map(r => (
                               <button key={r} onClick={() => setQuickAssign({ ...quickAssign, role: r })}
                                 className={`flex-1 text-[10px] font-semibold py-1 rounded-md capitalize transition-colors ${quickAssign.role === r ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
                                 {r}
@@ -900,7 +902,7 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => setQuickAssign({ personId: p.id, role: "lead", acctId: "" })}
+                        <button onClick={() => setQuickAssign({ personId: p.id, role: p.lead ? "lead" : "support", acctId: "" })}
                           className="mt-2 w-full text-[10px] font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg py-1.5 transition-colors border border-dashed border-gray-200 hover:border-gray-300">
                           + Assign account
                         </button>
@@ -1758,7 +1760,7 @@ export default function App() {
               <Inp label="Status" value={modal.data.status} onChange={v => setModal({ ...modal, data: { ...modal.data, status: v } })} opts={["Launch", "Growth", "Active", "Pipeline", "Paused", "Closed"]} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={teamOpts} />
+              <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={leadOpts} />
               <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={pmOpts} />
             </div>
             <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={devOpts} />
