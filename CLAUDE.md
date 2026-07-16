@@ -131,11 +131,14 @@ Tables in Supabase (all with open RLS policies — no auth):
 | `team_members` | `id`, `name`, `role`, `sl` (FK→service_lines), `type`, `cad_yearly`, `usd_monthly`, `hours_per_month`, `is_lead` |
 | `accounts` | `id`, `name`, `sl`, `lead_id` (main designer), `pm_id` (project manager), `dev_id` (optional developer), `status`, `type`, `retainer`, `project`, `start_date`, `end_date`, `weight`, `deposit_paid`, `notes` |
 | `account_support` | `account_id`, `member_id` (many-to-many) |
+| `account_service_lines` | `account_id`, `sl` (many-to-many; `accounts.sl` = primary line, kept in sync) |
 | `departments` | `id`, `name`, `color`, `sort_order` |
 | `department_members` | `department_id`, `member_id` |
 | `service_lines` | `id`, `name`, `color` |
 
 **Critical:** `sl` field on `team_members` is a FK to `service_lines.id`. Empty string `""` violates the constraint — always coerce to `null`: `sl: p.sl || null`.
+
+**Multi service lines:** accounts can span several lines (`sls` array in app, `account_service_lines` junction). Pod P&L splits an account's value evenly across its lines (`acctVal(a) / acctSls(a).length`) — never double-counts. `acctSls(a)` falls back to legacy single `sl`.
 
 **`account_support` sync:** `upsertAccount` deletes all support rows then re-inserts — full replace, not patch.
 

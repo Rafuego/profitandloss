@@ -35,7 +35,8 @@ export type TeamMember = {
 export type Account = {
   id: string;
   name: string;
-  sl: string;
+  sl: string;              // legacy primary service line (= sls[0])
+  sls: string[];           // all service lines, from account_service_lines join
   leadId: string | null;   // lead_id — main designer on the account
   pmId: string | null;     // pm_id — project manager (cost spreads across their book)
   devId: string | null;    // dev_id — designated developer (optional; support-style math)
@@ -92,16 +93,28 @@ export async function fetchAccounts(): Promise<Account[]> {
     .select("*");
   if (supErr) throw supErr;
 
+  const { data: slRows, error: slErr } = await supabase
+    .from("account_service_lines")
+    .select("*");
+  if (slErr) throw slErr;
+
   const supportMap: Record<string, string[]> = {};
   (support || []).forEach((r: any) => {
     if (!supportMap[r.account_id]) supportMap[r.account_id] = [];
     supportMap[r.account_id].push(r.member_id);
   });
 
+  const slMap: Record<string, string[]> = {};
+  (slRows || []).forEach((r: any) => {
+    if (!slMap[r.account_id]) slMap[r.account_id] = [];
+    slMap[r.account_id].push(r.sl);
+  });
+
   return (accts || []).map((r: any) => ({
     id: r.id,
     name: r.name,
     sl: r.sl,
+    sls: slMap[r.id] || (r.sl ? [r.sl] : []),
     leadId: r.lead_id,
     pmId: r.pm_id ?? null,
     devId: r.dev_id ?? null,
@@ -167,11 +180,12 @@ export async function deleteTeamMember(id: string) {
 }
 
 export async function upsertAccount(a: Account) {
+  const sls = a.sls && a.sls.length ? a.sls : (a.sl ? [a.sl] : []);
   // Upsert the account row
   const { error: acctErr } = await supabase.from("accounts").upsert({
     id: a.id,
     name: a.name,
-    sl: a.sl,
+    sl: sls[0] || null,   // legacy primary line stays in sync
     lead_id: a.leadId,
     pm_id: a.pmId ?? null,
     dev_id: a.devId ?? null,
@@ -193,6 +207,14 @@ export async function upsertAccount(a: Account) {
     const rows = a.supportIds.map(mid => ({ account_id: a.id, member_id: mid }));
     const { error: supErr } = await supabase.from("account_support").insert(rows);
     if (supErr) throw supErr;
+  }
+
+  // Sync service lines: delete all, then re-insert (same pattern as support)
+  await supabase.from("account_service_lines").delete().eq("account_id", a.id);
+  if (sls.length > 0) {
+    const rows = sls.map(s => ({ account_id: a.id, sl: s }));
+    const { error: slErr } = await supabase.from("account_service_lines").insert(rows);
+    if (slErr) throw slErr;
   }
 }
 

@@ -61,6 +61,13 @@ create table if not exists account_support (
   primary key (account_id, member_id)
 );
 
+-- Account ↔ Service Line (many-to-many; accounts.sl stays in sync as the primary line)
+create table if not exists account_service_lines (
+  account_id text not null references accounts(id) on delete cascade,
+  sl text not null references service_lines(id),
+  primary key (account_id, sl)
+);
+
 -- Org Chart Departments (independent of service lines)
 create table if not exists departments (
   id text primary key default 'd' || floor(random() * 100000)::text,
@@ -256,3 +263,12 @@ insert into accounts (id, name, sl, pm_id, status, type, retainer, project, weig
   ('a523', 'Atria',        'deck', 't18', 'Paused',   'Project', 0, 0, 1, ''),
   ('a524', 'Neru Health',  'deck', 't18', 'Paused',   'Project', 0, 0, 1, '')
 on conflict (id) do nothing;
+
+-- Backfill service-line junction from the legacy single sl column
+insert into account_service_lines (account_id, sl)
+  select id, sl from accounts where sl is not null
+on conflict do nothing;
+
+-- Open RLS for the junction table
+alter table account_service_lines enable row level security;
+create policy "Authenticated full access" on account_service_lines for all using (true) with check (true);

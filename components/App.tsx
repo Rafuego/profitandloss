@@ -131,6 +131,8 @@ const DEPT_COLORS = [
 
 // ── Helpers ──
 const cost = (p: any) => p.usdM != null ? p.usdM : (p.cadY ? (p.cadY / 12) * CAD_TO_USD : 0);
+// Accounts can span multiple service lines (sls array); fall back to legacy single sl
+const acctSls = (a: any) => (a.sls && a.sls.length ? a.sls : (a.sl ? [a.sl] : []));
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const fmtK = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n);
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -270,6 +272,9 @@ const SlTag = ({ sl, small }) => {
   const base = small ? "text-[9px] px-2 py-0.5" : "text-[10px] px-2.5 py-1";
   return <span className={`font-semibold rounded-full tracking-wide ${base} ${s.color}`}>{s.name}</span>;
 };
+
+// All of an account's service line tags
+const SlTags = ({ a, small }) => <>{acctSls(a).map((s: string) => <SlTag key={s} sl={s} small={small} />)}</>;
 
 const StatusTag = ({ status, small }) => {
   const base = small ? "text-[9px] px-2 py-0.5" : "text-[10px] px-2.5 py-1";
@@ -437,7 +442,7 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
             <div>
               <div className="text-xl font-medium text-gray-900">{a.name}</div>
               <div className="flex gap-1.5 mt-2.5">
-                <SlTag sl={a.sl} />
+                <SlTags a={a} />
                 <StatusTag status={a.status} />
                 <Tag>{a.type}</Tag>
               </div>
@@ -572,13 +577,15 @@ export default function App() {
       .filter(sl => sl.id !== "ops" && sl.id !== "leadership")
       .map(sl => {
         const members = team.filter(p => p.sl === sl.id);
-        const accts = allActiveAccts.filter(a => a.sl === sl.id);
+        const accts = allActiveAccts.filter(a => acctSls(a).includes(sl.id));
         // acctVal = retainer + amortized project revenue (full fee ÷ project
         // months, $0 outside the window) — not the raw fee, which would
-        // inflate MRR for the whole life of a flat-rate project
-        const rev = accts.reduce((s, a) => s + acctVal(a), 0);
+        // inflate MRR for the whole life of a flat-rate project.
+        // Multi-line accounts split their value evenly across their lines
+        // so pod revenue never double-counts.
+        const rev = accts.reduce((s, a) => s + acctVal(a) / acctSls(a).length, 0);
         const directCost = members.reduce((s, p) => s + cost(p), 0);
-        const overheadAlloc = overheadPerClient * accts.length;
+        const overheadAlloc = overheadPerClient * accts.reduce((s, a) => s + 1 / acctSls(a).length, 0);
         const c = directCost + overheadAlloc;
         return { ...sl, members, accounts: accts, rev, cost: c, directCost, overheadAlloc, margin: rev - c, marginPct: rev > 0 ? (rev - c) / rev : (c > 0 ? -1 : 0) };
       })
@@ -604,6 +611,8 @@ export default function App() {
       }
     } else {
       if (!d.id) { d = { ...d, id: crypto.randomUUID() }; }
+      // Keep legacy single sl in sync with the multi-select (first line = primary)
+      d = { ...d, sls: acctSls(d), sl: acctSls(d)[0] || "" };
       const prev = accounts;
       setAccounts(a => a.find(x => x.id === d.id) ? a.map(x => x.id === d.id ? d : x) : [...a, d]);
       try { await upsertAccount(d); } catch (e: any) {
@@ -724,7 +733,7 @@ export default function App() {
         <div className="flex gap-2">
           <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
-          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, pmId: null, devId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
+          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", sls: [], leadId: null, pmId: null, devId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
             className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
         </div>
       </div>
@@ -926,7 +935,7 @@ export default function App() {
                       <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-red-100 transition-colors ${i < unassigned.length - 1 ? "border-b border-red-100" : ""}`}>
                         <div className="flex items-center gap-2.5">
                           <span className="text-[13px] font-semibold text-gray-900">{a.name}</span>
-                          <SlTag sl={a.sl} small />
+                          <SlTags a={a} small />
                           <StatusTag status={a.status} small />
                         </div>
                         <div className="flex items-center gap-3">
@@ -1175,7 +1184,7 @@ export default function App() {
 
                     // Card border + accent colours by tab
                     const cardBorder = isClosed ? "border-gray-200 opacity-60" : isProject && !live ? "border-gray-200 opacity-70" : isProject ? "border-violet-200" : "border-gray-200";
-                    const topBar = isClosed ? "bg-gray-300" : isProject && !live ? "bg-gray-300" : isProject ? "bg-violet-400" : SL[a.sl]?.color.split(" ")[0] || "bg-gray-200";
+                    const topBar = isClosed ? "bg-gray-300" : isProject && !live ? "bg-gray-300" : isProject ? "bg-violet-400" : SL[acctSls(a)[0]]?.color.split(" ")[0] || "bg-gray-200";
 
                     return (
                       <div key={a.id} onClick={() => setSelected({ type: "account", data: a })}
@@ -1192,7 +1201,7 @@ export default function App() {
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <SlTag sl={a.sl} small />
+                                <SlTags a={a} small />
                                 <StatusTag status={a.status} small />
                                 {isProject && (
                                   <span className="text-[9px] font-semibold px-2 py-0.5 bg-violet-50 text-violet-600 rounded-full">{a.type}</span>
@@ -1268,7 +1277,7 @@ export default function App() {
                         <span title="Missing start/end dates — revenue not tracked in MRR" className="text-amber-500 text-[10px]">⚠</span>
                       )}
                     </div>
-                    <div className={`px-3 py-2 border-b border-gray-100 ${bg}`}><SlTag sl={a.sl} small /></div>
+                    <div className={`px-3 py-2 border-b border-gray-100 ${bg}`}><SlTags a={a} small /></div>
                     <div className={`px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 ${bg}`}>
                       {a.leadId && <Av name={getName(a.leadId)} size={24} sl={a.sl} lead />}
                       <span className="text-xs">{getName(a.leadId)}</span>
@@ -1364,7 +1373,7 @@ export default function App() {
                           {!e.hasDates && <span title="No timeline set" className="text-amber-500 text-[10px]">⚠ no dates</span>}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <SlTag sl={a.sl} small />
+                          <SlTags a={a} small />
                           <StatusTag status={a.status} small />
                           {overdue && <Tag small variant="amber">Past end date</Tag>}
                         </div>
@@ -1498,7 +1507,7 @@ export default function App() {
                           className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50 transition-colors ${i < planning.length - 1 ? "border-b border-gray-100" : ""}`}>
                           <div className="flex items-center gap-2.5">
                             <span className="text-[13px] font-semibold text-gray-900">{a.name}</span>
-                            <SlTag sl={a.sl} small />
+                            <SlTags a={a} small />
                             <StatusTag status={a.status} small />
                           </div>
                           <div className="flex items-center gap-4">
@@ -1755,10 +1764,31 @@ export default function App() {
         <Modal title={modal.data.id ? modal.data.name : "New Account"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">
             <Inp label="Client Name" value={modal.data.name} onChange={v => setModal({ ...modal, data: { ...modal.data, name: v } })} ph="Acme Corp" />
-            <div className="grid grid-cols-2 gap-3">
-              <Inp label="Service Line" value={modal.data.sl} onChange={v => setModal({ ...modal, data: { ...modal.data, sl: v } })} opts={slOpts} />
-              <Inp label="Status" value={modal.data.status} onChange={v => setModal({ ...modal, data: { ...modal.data, status: v } })} opts={["Launch", "Growth", "Active", "Pipeline", "Paused", "Closed"]} />
-            </div>
+            {/* Service lines — multi-select (revenue splits evenly across lines in pod P&L) */}
+            {(() => {
+              const curSls = acctSls(modal.data);
+              const setSls = (v: string[]) => setModal({ ...modal, data: { ...modal.data, sls: v, sl: v[0] || "" } });
+              return (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Service Lines</label>
+                  <div className="flex flex-wrap gap-1.5 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg min-h-[40px]">
+                    {curSls.map((s: string) => (
+                      <div key={s} className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 bg-white rounded-full border border-gray-200">
+                        <SlTag sl={s} small />
+                        <button onClick={() => setSls(curSls.filter((x: string) => x !== s))} className="text-gray-400 hover:text-gray-600 text-xs leading-none">✕</button>
+                      </div>
+                    ))}
+                    {curSls.length === 0 && <span className="text-[11px] text-gray-300 italic py-0.5">No service line yet</span>}
+                  </div>
+                  <select value="" onChange={e => { if (e.target.value && !curSls.includes(e.target.value)) setSls([...curSls, e.target.value]); }}
+                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-xs outline-none">
+                    <option value="">+ Add service line...</option>
+                    {SERVICE_LINES.filter(s => !curSls.includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              );
+            })()}
+            <Inp label="Status" value={modal.data.status} onChange={v => setModal({ ...modal, data: { ...modal.data, status: v } })} opts={["Launch", "Growth", "Active", "Pipeline", "Paused", "Closed"]} />
             <div className="grid grid-cols-2 gap-3">
               <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={leadOpts} />
               <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={pmOpts} />
