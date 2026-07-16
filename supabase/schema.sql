@@ -152,25 +152,25 @@ insert into service_lines (id, name, color) values
 on conflict (id) do nothing;
 
 -- Team Members
--- Pay synced to Humi payroll 2026-07-09 — stored as USD/month
--- (bi-weekly CAD × 26 ÷ 12 × 0.69, rounded to the dollar).
+-- Pay basis (2026-07-14): bi-weekly CAD payroll × 2 = monthly, × 0.69 = USD/month.
+-- Partners set directly at $110K USD/yr; contractors set directly in USD.
 insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hours_per_month, is_lead) values
   ('t1',  'Rafay Iqbal',        'Partner',                                 'leadership', 'Partner',      null, 9166.67, 160, true),
   ('t2',  'Matthew Good',       'Partner',                                 'leadership', 'Partner',      null, 9166.67, 160, true),
-  ('t3',  'Vicky Huynh',        'Senior Project Manager',                  'ops',        'Full-Time',    null, 4739, 160, true),
-  ('t4',  'Andrew del Rizzo',   'Digital Site Designer / Animations',      'site',       'Full-Time',    null, 4067, 160, true),
-  ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',  120000, null, 160, true),
-  ('t6',  'Nicole Chou',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, true),
-  ('t7',  'Robyn Dang',         'Staff Product Designer',                  'product',    'Full-Time',    null, 3344, 160, false),
-  ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, false),
-  ('t9',  'Deseree Lau',        'Digital Designer',                        'brand',      'Full-Time',    null, 3525, 160, false),
-  ('t10', 'Victor Wong',        'Junior Digital Designer',                 'brand',      'Full-Time',    null, 3344, 160, false),
+  ('t3',  'Vicky Huynh',        'Senior Project Manager',                  'ops',        'Full-Time',    null, 4375, 160, true),
+  ('t4',  'Andrew del Rizzo',   'Digital Site Designer / Animations',      'site',       'Full-Time',    null, 3754, 160, true),
+  ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',  null, 4572, 160, true),
+  ('t6',  'Nicole Chou',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3254, 160, true),
+  ('t7',  'Robyn Dang',         'Staff Product Designer',                  'product',    'Full-Time',    null, 3086, 160, false),
+  ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3254, 160, false),
+  ('t9',  'Deseree Lau',        'Digital Designer',                        'brand',      'Full-Time',    null, 3254, 160, false),
+  ('t10', 'Victor Wong',        'Junior Digital Designer',                 'brand',      'Full-Time',    null, 3086, 160, false),
   ('t11', 'Emily Chung',        'Contractor',                              'brand',      'Contractor',   null, 6200,  40, true),
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 4000,  40, false),
-  ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3267, 160, false),
+  ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3016, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 4000,  40, false),
-  ('t18', 'Daniel Shin',        'Project Manager',                         'ops',        'Full-Time',    null, 3162, 160, false),
-  ('t19', 'Christine Chow',     'Digital Designer',                        'brand',      'Full-Time',    null, 3811, 160, false),
+  ('t18', 'Daniel Shin',        'Project Manager',                         'ops',        'Full-Time',    null, 2919, 160, false),
+  ('t19', 'Christine Chow',     'Digital Designer',                        'brand',      'Full-Time',    null, 3518, 160, false),
   ('t20', 'Carson',             'Chief of Staff',                          'ops',        'Full-Time',    null, 6000, 160, false)
 on conflict (id) do nothing;
 
