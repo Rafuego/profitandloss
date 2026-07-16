@@ -159,7 +159,7 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t2',  'Matthew Good',       'Partner',                                 'leadership', 'Partner',      null, 9166.67, 160, true),
   ('t3',  'Vicky Huynh',        'Senior Project Manager',                  'ops',        'Full-Time',    null, 4739, 160, true),
   ('t4',  'Andrew del Rizzo',   'Digital Site Designer / Animations',      'site',       'Full-Time',    null, 4067, 160, true),
-  ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',    null, 4953, 160, true),
+  ('t5',  'Sylvia Han',         'Senior Digital Designer (Brand & Decks)', 'deck',       'Full-Time',  120000, null, 160, true),
   ('t6',  'Nicole Chou',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, true),
   ('t7',  'Robyn Dang',         'Staff Product Designer',                  'product',    'Full-Time',    null, 3344, 160, false),
   ('t8',  'Sabrina Wen',        'Staff Product Designer',                  'product',    'Full-Time',    null, 3525, 160, false),

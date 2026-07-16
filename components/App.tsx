@@ -29,7 +29,7 @@ const INIT_TEAM = [
   { id: "t2", name: "Matthew Good", role: "Partner", sl: "leadership", type: "Partner", cadY: null, usdM: 9166.67, hrs: 160, lead: true },
   { id: "t3", name: "Vicky Huynh", role: "Senior Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 4739, hrs: 160, lead: true },
   { id: "t4", name: "Andrew del Rizzo", role: "Digital Site Designer / Animations", sl: "site", type: "Full-Time", cadY: null, usdM: 4067, hrs: 160, lead: true },
-  { id: "t5", name: "Sylvia Han", role: "Senior Digital Designer (Brand & Decks)", sl: "deck", type: "Full-Time", cadY: null, usdM: 4953, hrs: 160, lead: true },
+  { id: "t5", name: "Sylvia Han", role: "Senior Digital Designer (Brand & Decks)", sl: "deck", type: "Full-Time", cadY: 120000, usdM: null, hrs: 160, lead: true },
   { id: "t6", name: "Nicole Chou", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: true },
   { id: "t7", name: "Robyn Dang", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3344, hrs: 160, lead: false },
   { id: "t8", name: "Sabrina Wen", role: "Staff Product Designer", sl: "product", type: "Full-Time", cadY: null, usdM: 3525, hrs: 160, lead: false },
