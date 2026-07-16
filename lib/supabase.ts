@@ -36,7 +36,8 @@ export type Account = {
   id: string;
   name: string;
   sl: string;
-  leadId: string | null;   // lead_id
+  leadId: string | null;   // lead_id — main designer on the account
+  pmId: string | null;     // pm_id — project manager (cost spreads across their book)
   supportIds: string[];    // from account_support join
   status: "Launch" | "Growth" | "Active" | "Pipeline" | "Paused" | "Closed";
   type: "Retainer" | "Project" | "Hybrid";
@@ -101,6 +102,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     name: r.name,
     sl: r.sl,
     leadId: r.lead_id,
+    pmId: r.pm_id ?? null,
     supportIds: supportMap[r.id] || [],
     status: r.status,
     type: r.type,
@@ -169,6 +171,7 @@ export async function upsertAccount(a: Account) {
     name: a.name,
     sl: a.sl,
     lead_id: a.leadId,
+    pm_id: a.pmId ?? null,
     status: a.status,
     type: a.type,
     retainer: a.retainer,

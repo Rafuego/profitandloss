@@ -38,7 +38,8 @@ create table if not exists accounts (
   id text primary key default 'a' || floor(random() * 100000)::text,
   name text not null,
   sl text references service_lines(id),
-  lead_id text references team_members(id) on delete set null,
+  lead_id text references team_members(id) on delete set null,   -- main designer
+  pm_id text references team_members(id) on delete set null,     -- project manager
   status text not null default 'Active' check (status in ('Launch', 'Growth', 'Active', 'Pipeline', 'Paused', 'Closed')),
   type text not null default 'Retainer' check (type in ('Retainer', 'Project', 'Hybrid')),
   retainer numeric not null default 0,
@@ -168,26 +169,26 @@ on conflict (id) do nothing;
 -- Client Accounts
 insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
   -- Active retainers (synced to billing platform 2026-07-09)
-  ('a1',   '1AU Technologies', 'symphony', 't15', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
+  ('a1',   '1AU Technologies', 'symphony', 't15', 'Active', 'Retainer', 3000, 0, 1, null, null, ''),
   ('a2',   'Attio',            'symphony', null,  'Active', 'Retainer', 1375, 0, 3, null, null, ''),
   ('a3',   'Basis',            'symphony', 't10', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a5',   'Highrise',         'symphony', 't15', 'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a6',   'Lumen',            'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
-  ('a7',   'Portal Space',     'symphony', 't10', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a8',   'Vuecason',         'symphony', 't9',  'Active', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a9',   'Applecart',        'symphony', 't15', 'Active', 'Retainer', 2750, 0, 3, null, null, ''),
-  ('a10',  'Cytora',           'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a11',  'Goody',            'symphony', 't9',  'Active', 'Retainer', 4800, 0, 3, null, null, ''),
+  ('a5',   'Highrise',         'symphony', 't15', 'Active', 'Retainer', 5000, 0, 4, null, null, ''),
+  ('a6',   'Lumen',            'symphony', null,  'Active', 'Retainer', 4500, 0, 5, null, null, ''),
+  ('a7',   'Portal Space',     'symphony', 't10', 'Active', 'Retainer', 2750, 0, 5, null, null, ''),
+  ('a8',   'Vuecason',         'symphony', 't9',  'Active', 'Retainer', 3000, 0, 1, null, null, ''),
+  ('a9',   'Applecart',        'symphony', 't15', 'Active', 'Retainer', 2750, 0, 4, null, null, ''),
+  ('a10',  'Cytora',           'symphony', null,  'Active', 'Retainer', 3500, 0, 4, null, null, ''),
+  ('a11',  'Goody',            'symphony', 't9',  'Active', 'Retainer', 4800, 0, 5, null, null, ''),
   ('a13',  'RBL',              'symphony', 't10', 'Active', 'Retainer', 3000, 0, 3, null, null, ''),
-  ('a115', 'Complify',         'symphony', null,  'Active', 'Retainer', 8500, 0, 3, null, null, ''),
+  ('a115', 'Complify',         'symphony', null,  'Active', 'Retainer', 8500, 0, 5, null, null, ''),
   ('a117', 'NeuralWatt',       'symphony', null,  'Active', 'Retainer', 3500, 0, 3, null, null, ''),
-  ('a119', 'Tempus Ai',        'symphony', null,  'Active', 'Retainer', 1250, 0, 3, null, null, ''),
-  ('a122', 'Lucenia',          'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a200', 'Anthro Energy',    'symphony', null,  'Active', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a201', 'Voyager Ventures', 'symphony', null,  'Active', 'Retainer', 1500, 0, 3, null, null, ''),
+  ('a119', 'Tempus Ai',        'symphony', null,  'Active', 'Retainer', 1250, 0, 2, null, null, ''),
+  ('a122', 'Lucenia',          'symphony', null,  'Active', 'Retainer', 5000, 0, 1, null, null, ''),
+  ('a200', 'Anthro Energy',    'symphony', null,  'Active', 'Retainer', 5000, 0, 4, null, null, ''),
+  ('a201', 'Voyager Ventures', 'symphony', null,  'Active', 'Retainer', 1500, 0, 2, null, null, ''),
   ('a400', 'ARK Invest',       'symphony', null,  'Active', 'Retainer', 6000, 0, 3, null, null, ''),
-  ('a401', 'Axle Energy',      'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
-  ('a402', 'Chart R',          'symphony', null,  'Active', 'Retainer', 4500, 0, 3, null, null, ''),
+  ('a401', 'Axle Energy',      'symphony', null,  'Active', 'Retainer', 4500, 0, 2, null, null, ''),
+  ('a402', 'Chart R',          'symphony', null,  'Active', 'Retainer', 4500, 0, 5, null, null, ''),
   ('a403', 'Alcove',           'symphony', null,  'Active', 'Retainer', 6000, 0, 3, null, null, ''),
   -- Churned retainers (kept for history)
   ('a4',   'Envoy',            'symphony', 't10', 'Closed', 'Retainer', 1500, 0, 3, null, null, ''),
@@ -202,27 +203,27 @@ on conflict (id) do nothing;
 
 -- Flat-rate projects (from Notion 2026-07-09; fees set, dates pending)
 insert into accounts (id, name, sl, lead_id, status, type, retainer, project, weight, start_date, end_date, notes) values
-  ('a500', 'Alcove — Product Pilot', 'product', 't18', 'Active',   'Project', 0, 6000,  2, '2026-06-01', '2026-07-31', 'PM: Daniel. Product pilot engagement.'),
-  ('a520', 'Alcove — Website',       'site',    't18', 'Active',   'Project', 0, 15000, 2, '2026-06-01', '2026-07-31', 'PM: Daniel. Website build.'),
-  ('a501', 'Ansa',                   'deck',    't18', 'Active',   'Project', 0, 7500,  4, '2026-07-01', '2026-07-22', 'PM: Daniel'),
-  ('a502', 'Blair Health',           'deck',    't18', 'Active',   'Project', 0, 20000, 4, '2026-07-01', '2026-08-31', 'PM: Daniel'),
-  ('a503', 'Ciridae',                'deck',    't20', 'Active',   'Project', 0, 60000, 4, '2026-07-01', '2026-09-30', 'PM: Carson'),
-  ('a504', 'Fortastra',              'deck',    't20', 'Active',   'Project', 0, 7500,  3, '2026-07-01', '2026-07-31', 'PM: Carson'),
-  ('a505', 'Giant Step VC',          'deck',    't18', 'Active',   'Project', 0, 8000,  3, '2026-05-01', '2026-08-31', 'PM: Daniel'),
-  ('a506', 'Homemade Method',        'deck',    't20', 'Active',   'Project', 0, 8000,  2, '2026-06-01', '2026-07-31', 'PM: Carson'),
-  ('a507', 'Inference Health',       'deck',    't18', 'Active',   'Project', 0, 25000, 5, '2026-06-01', '2026-08-31', 'PM: Daniel. Formerly Blair AI.'),
-  ('a508', 'Kunin',                  'deck',    't20', 'Active',   'Project', 0, 20000, 4, '2026-06-01', '2026-07-31', 'PM: Carson'),
-  ('a509', 'Narya',                  'deck',    't20', 'Active',   'Project', 0, 10000, 3, '2026-05-01', '2026-05-31', 'PM: Carson. Will convert to Symphony, then primarily on Josh.'),
-  ('a510', 'OG Venture Partners',    'deck',    't18', 'Active',   'Project', 0, 20000, 2, '2026-07-01', '2026-07-15', 'PM: Daniel'),
-  ('a511', 'Ops Companion',          'deck',    null,  'Active',   'Project', 0, 10000, 3, '2026-07-01', '2026-07-31', 'No PM assigned yet'),
-  ('a512', 'Revenant VC',            'deck',    't20', 'Active',   'Project', 0, 5000,  2, '2026-07-01', '2026-07-22', 'PM: Carson'),
-  ('a513', 'Slang Ventures',         'deck',    't18', 'Active',   'Project', 0, 7500,  4, '2026-06-01', '2026-06-30', 'PM: Daniel'),
-  ('a514', 'Spice VC',               'site',    't18', 'Active',   'Project', 0, 16000, 2, '2026-05-01', '2026-07-31', 'PM: Daniel. $10K original site + $6K expanded scope (animation) worked into the existing site.'),
-  ('a515', 'Steel Atlas',            'deck',    't20', 'Active',   'Project', 0, 1000,  2, '2026-05-01', '2026-06-12', 'PM: Carson'),
-  ('a516', 'Twine Ventures',         'deck',    't18', 'Active',   'Project', 0, 8500,  3, '2026-07-01', '2026-07-31', 'PM: Daniel'),
-  ('a517', 'VistaShares',            'deck',    't18', 'Active',   'Project', 0, 35000, 4, '2026-06-01', '2026-08-31', 'PM: Daniel'),
-  ('a518', 'Axle Access',            'deck',    null,  'Pipeline', 'Project', 0, 15000, 3, null, null, 'Planning'),
-  ('a519', 'Interlude Capital',      'deck',    null,  'Pipeline', 'Project', 0, 40000, 3, null, null, 'Planning')
+  ('a500', 'Alcove — Product Pilot', 'product', null,  'Active',   'Project', 0, 6000,  2, '2026-06-01', '2026-07-31', 'PM: Daniel. Product pilot engagement.'),
+  ('a520', 'Alcove — Website',       'site',    null,  'Active',   'Project', 0, 15000, 2, '2026-06-01', '2026-07-31', 'PM: Daniel. Website build.'),
+  ('a501', 'Ansa',                   'deck',    null,  'Active',   'Project', 0, 7500,  4, '2026-07-01', '2026-07-22', 'PM: Daniel'),
+  ('a502', 'Blair Health',           'deck',    null,  'Active',   'Project', 0, 20000, 4, '2026-07-01', '2026-08-31', 'PM: Daniel'),
+  ('a503', 'Ciridae',                'deck',    null,  'Active',   'Project', 0, 60000, 4, '2026-07-01', '2026-09-30', 'PM: Carson'),
+  ('a504', 'Fortastra',              'deck',    null,  'Active',   'Project', 0, 7500,  3, '2026-07-01', '2026-07-31', 'PM: Carson'),
+  ('a505', 'Giant Step VC',          'deck',    null,  'Active',   'Project', 0, 8000,  3, '2026-05-01', '2026-08-31', 'PM: Daniel'),
+  ('a506', 'Homemade Method',        'deck',    null,  'Active',   'Project', 0, 8000,  2, '2026-06-01', '2026-07-31', 'PM: Carson'),
+  ('a507', 'Inference Health',       'deck',    null,  'Active',   'Project', 0, 25000, 5, '2026-06-01', '2026-08-31', 'PM: Daniel. Formerly Blair AI.'),
+  ('a508', 'Kunin',                  'deck',    null,  'Active',   'Project', 0, 20000, 4, '2026-06-01', '2026-07-31', 'PM: Carson'),
+  ('a509', 'Narya',                  'deck',    null,  'Active',   'Project', 0, 10000, 3, '2026-05-01', '2026-05-31', 'PM: Carson. Will convert to Symphony, then primarily on Josh.'),
+  ('a510', 'OG Venture Partners',    'deck',    null,  'Active',   'Project', 0, 20000, 2, '2026-07-01', '2026-07-15', 'PM: Daniel'),
+  ('a511', 'Ops Companion',          'deck',    null,  'Active',   'Project', 0, 10000, 4, '2026-07-01', '2026-07-31', 'No PM assigned yet'),
+  ('a512', 'Revenant VC',            'deck',    null,  'Active',   'Project', 0, 5000,  2, '2026-07-01', '2026-07-22', 'PM: Carson'),
+  ('a513', 'Slang Ventures',         'deck',    null,  'Active',   'Project', 0, 7500,  4, '2026-06-01', '2026-06-30', 'PM: Daniel'),
+  ('a514', 'Spice VC',               'site',    null,  'Active',   'Project', 0, 16000, 1, '2026-05-01', '2026-07-31', 'PM: Daniel. $10K original site + $6K expanded scope (animation) worked into the existing site.'),
+  ('a515', 'Steel Atlas',            'deck',    null,  'Active',   'Project', 0, 1000,  2, '2026-05-01', '2026-06-12', 'PM: Carson'),
+  ('a516', 'Twine Ventures',         'deck',    null,  'Active',   'Project', 0, 8500,  3, '2026-07-01', '2026-07-31', 'PM: Daniel'),
+  ('a517', 'VistaShares',            'deck',    null,  'Active',   'Project', 0, 35000, 4, '2026-06-01', '2026-08-31', 'PM: Daniel'),
+  ('a518', 'Axle Access',            'deck',    null,  'Pipeline', 'Project', 0, 15000, 4, null, null, 'Planning'),
+  ('a519', 'Interlude Capital',      'deck',    null,  'Pipeline', 'Project', 0, 40000, 4, null, null, 'Planning')
 on conflict (id) do nothing;
 
 -- Departments (for org chart)
@@ -241,3 +242,16 @@ insert into department_members (department_id, member_id) values
   ('d3', 't9'),  ('d3', 't10'), ('d3', 't11'), ('d3', 't12'), ('d3', 't19'),
   ('d4', 't6'),  ('d4', 't7'),  ('d4', 't8')
 on conflict do nothing;
+
+-- PM assignments (Notion PM views, 2026-07-14). Lead = designer; PM tracked separately.
+update accounts set pm_id='t3'  where id in ('a11','a6','a7','a9','a10','a2','a3','a13','a401','a119','a8');
+update accounts set pm_id='t20' where id in ('a115','a5','a1','a503','a504','a506','a508','a509','a511','a512','a515','a518');
+update accounts set pm_id='t18' where id in ('a402','a200','a201','a122','a500','a520','a501','a502','a505','a507','a510','a513','a514','a516','a517','a519');
+
+-- Additional projects from Notion PM views
+insert into accounts (id, name, sl, pm_id, status, type, retainer, project, weight, notes) values
+  ('a521', 'Bohr Systems', 'deck', 't20', 'Pipeline', 'Project', 0, 0, 3, 'Planning'),
+  ('a522', '1921',         'deck', 't18', 'Paused',   'Project', 0, 0, 4, ''),
+  ('a523', 'Atria',        'deck', 't18', 'Paused',   'Project', 0, 0, 1, ''),
+  ('a524', 'Neru Health',  'deck', 't18', 'Paused',   'Project', 0, 0, 1, '')
+on conflict (id) do nothing;

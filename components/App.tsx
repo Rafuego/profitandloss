@@ -46,26 +46,26 @@ const INIT_TEAM = [
 
 const INIT_ACCOUNTS = [
   // ── Active retainers (synced to billing platform 2026-07-09) ──
-  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
-  { id: "a2", name: "Attio", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 1375, project: 0, weight: 3, notes: "" },
-  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
-  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
-  { id: "a6", name: "Lumen", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, notes: "" },
-  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, notes: "" },
-  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 3, notes: "" },
-  { id: "a10", name: "Cytora", sl: "symphony", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, notes: "" },
-  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", supportIds: [], status: "Active", type: "Retainer", retainer: 4800, project: 0, weight: 3, notes: "" },
-  { id: "a13",  name: "RBL",              sl: "symphony", leadId: "t10", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a115", name: "Complify",         sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 8500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a1", name: "1AU Technologies", sl: "symphony", leadId: "t15", pmId: "t20", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 1, notes: "" },
+  { id: "a2", name: "Attio", sl: "symphony", leadId: null, pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 1375, project: 0, weight: 3, notes: "" },
+  { id: "a3", name: "Basis", sl: "symphony", leadId: "t10", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, notes: "" },
+  { id: "a5", name: "Highrise", sl: "symphony", leadId: "t15", pmId: "t20", supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 4, notes: "" },
+  { id: "a6", name: "Lumen", sl: "symphony", leadId: null, pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 5, notes: "" },
+  { id: "a7", name: "Portal Space", sl: "symphony", leadId: "t10", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 5, notes: "" },
+  { id: "a8", name: "Vuecason", sl: "symphony", leadId: "t9", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 1, notes: "" },
+  { id: "a9", name: "Applecart", sl: "symphony", leadId: "t15", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 2750, project: 0, weight: 4, notes: "" },
+  { id: "a10", name: "Cytora", sl: "symphony", leadId: null, pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 4, notes: "" },
+  { id: "a11", name: "Goody", sl: "symphony", leadId: "t9", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 4800, project: 0, weight: 5, notes: "" },
+  { id: "a13",  name: "RBL",              sl: "symphony", leadId: "t10", pmId: "t3", supportIds: [], status: "Active", type: "Retainer", retainer: 3000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a115", name: "Complify",         sl: "symphony", leadId: null, pmId: "t20",  supportIds: [], status: "Active", type: "Retainer", retainer: 8500, project: 0, weight: 5, startDate: null, endDate: null, notes: "" },
   { id: "a117", name: "NeuralWatt",       sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a119", name: "Tempus Ai",        sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 1250, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a122", name: "Lucenia",          sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a200", name: "Anthro Energy",    sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a201", name: "Voyager Ventures", sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 1500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a119", name: "Tempus Ai",        sl: "symphony", leadId: null, pmId: "t3",  supportIds: [], status: "Active", type: "Retainer", retainer: 1250, project: 0, weight: 2, startDate: null, endDate: null, notes: "" },
+  { id: "a122", name: "Lucenia",          sl: "symphony", leadId: null, pmId: "t18",  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 1, startDate: null, endDate: null, notes: "" },
+  { id: "a200", name: "Anthro Energy",    sl: "symphony", leadId: null, pmId: "t18",  supportIds: [], status: "Active", type: "Retainer", retainer: 5000, project: 0, weight: 4, startDate: null, endDate: null, notes: "" },
+  { id: "a201", name: "Voyager Ventures", sl: "symphony", leadId: null, pmId: "t18",  supportIds: [], status: "Active", type: "Retainer", retainer: 1500, project: 0, weight: 2, startDate: null, endDate: null, notes: "" },
   { id: "a400", name: "ARK Invest",       sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 6000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a401", name: "Axle Energy",      sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a402", name: "Chart R",          sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
+  { id: "a401", name: "Axle Energy",      sl: "symphony", leadId: null, pmId: "t3",  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 2, startDate: null, endDate: null, notes: "" },
+  { id: "a402", name: "Chart R",          sl: "symphony", leadId: null, pmId: "t18",  supportIds: [], status: "Active", type: "Retainer", retainer: 4500, project: 0, weight: 5, startDate: null, endDate: null, notes: "" },
   { id: "a403", name: "Alcove",           sl: "symphony", leadId: null,  supportIds: [], status: "Active", type: "Retainer", retainer: 6000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
   // ── Churned retainers (kept for history) ──
@@ -79,27 +79,32 @@ const INIT_ACCOUNTS = [
   { id: "a202", name: "Atlas Rd",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
 
   // ── Flat-rate projects (from Notion 2026-07-09; fees set, dates pending) ──
-  { id: "a500", name: "Alcove — Product Pilot", sl: "product", leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 6000,  weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Daniel. Product pilot engagement." },
-  { id: "a520", name: "Alcove — Website",       sl: "site",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 15000, weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Daniel. Website build." },
-  { id: "a501", name: "Ansa",                   sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-22", notes: "PM: Daniel" },
-  { id: "a502", name: "Blair Health",           sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-08-31", notes: "PM: Daniel" },
-  { id: "a503", name: "Ciridae",                sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 60000, weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-09-30", notes: "PM: Carson" },
-  { id: "a504", name: "Fortastra",              sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 3, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "PM: Carson" },
-  { id: "a505", name: "Giant Step VC",          sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 3, depositPaid: false, startDate: "2026-05-01", endDate: "2026-08-31", notes: "PM: Daniel" },
-  { id: "a506", name: "Homemade Method",        sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Carson" },
-  { id: "a507", name: "Inference Health",       sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 25000, weight: 5, depositPaid: false, startDate: "2026-06-01", endDate: "2026-08-31", notes: "PM: Daniel. Formerly Blair AI." },
-  { id: "a508", name: "Kunin",                  sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Carson" },
-  { id: "a509", name: "Narya",                  sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 3, depositPaid: false, startDate: "2026-05-01", endDate: "2026-05-31", notes: "PM: Carson. Will convert to Symphony, then primarily on Josh." },
-  { id: "a510", name: "OG Venture Partners",    sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 2, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-15", notes: "PM: Daniel" },
-  { id: "a511", name: "Ops Companion",          sl: "deck",    leadId: null,  supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 3, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "No PM assigned yet" },
-  { id: "a512", name: "Revenant VC",            sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 5000,  weight: 2, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-22", notes: "PM: Carson" },
-  { id: "a513", name: "Slang Ventures",         sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-06-30", notes: "PM: Daniel" },
-  { id: "a514", name: "Spice VC",               sl: "site",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 16000, weight: 2, depositPaid: false, startDate: "2026-05-01", endDate: "2026-07-31", notes: "PM: Daniel. $10K original site + $6K expanded scope (animation) worked into the existing site." },
-  { id: "a515", name: "Steel Atlas",            sl: "deck",    leadId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 1000,  weight: 2, depositPaid: false, startDate: "2026-05-01", endDate: "2026-06-12", notes: "PM: Carson" },
-  { id: "a516", name: "Twine Ventures",         sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8500,  weight: 3, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "PM: Daniel" },
-  { id: "a517", name: "VistaShares",            sl: "deck",    leadId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 35000, weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-08-31", notes: "PM: Daniel" },
-  { id: "a518", name: "Axle Access",            sl: "deck",    leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 15000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
-  { id: "a519", name: "Interlude Capital",      sl: "deck",    leadId: null,  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 40000, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  { id: "a500", name: "Alcove — Product Pilot", sl: "product", leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 6000,  weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Daniel. Product pilot engagement." },
+  { id: "a520", name: "Alcove — Website",       sl: "site",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 15000, weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Daniel. Website build." },
+  { id: "a501", name: "Ansa",                   sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-22", notes: "PM: Daniel" },
+  { id: "a502", name: "Blair Health",           sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-08-31", notes: "PM: Daniel" },
+  { id: "a503", name: "Ciridae",                sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 60000, weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-09-30", notes: "PM: Carson" },
+  { id: "a504", name: "Fortastra",              sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 3, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "PM: Carson" },
+  { id: "a505", name: "Giant Step VC",          sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 3, depositPaid: false, startDate: "2026-05-01", endDate: "2026-08-31", notes: "PM: Daniel" },
+  { id: "a506", name: "Homemade Method",        sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8000,  weight: 2, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Carson" },
+  { id: "a507", name: "Inference Health",       sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 25000, weight: 5, depositPaid: false, startDate: "2026-06-01", endDate: "2026-08-31", notes: "PM: Daniel. Formerly Blair AI." },
+  { id: "a508", name: "Kunin",                  sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-07-31", notes: "PM: Carson" },
+  { id: "a509", name: "Narya",                  sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 3, depositPaid: false, startDate: "2026-05-01", endDate: "2026-05-31", notes: "PM: Carson. Will convert to Symphony, then primarily on Josh." },
+  { id: "a510", name: "OG Venture Partners",    sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 20000, weight: 2, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-15", notes: "PM: Daniel" },
+  { id: "a511", name: "Ops Companion",          sl: "deck",    leadId: null, pmId: "t20",  supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 10000, weight: 4, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "No PM assigned yet" },
+  { id: "a512", name: "Revenant VC",            sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 5000,  weight: 2, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-22", notes: "PM: Carson" },
+  { id: "a513", name: "Slang Ventures",         sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 7500,  weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-06-30", notes: "PM: Daniel" },
+  { id: "a514", name: "Spice VC",               sl: "site",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 16000, weight: 1, depositPaid: false, startDate: "2026-05-01", endDate: "2026-07-31", notes: "PM: Daniel. $10K original site + $6K expanded scope (animation) worked into the existing site." },
+  { id: "a515", name: "Steel Atlas",            sl: "deck",    leadId: null, pmId: "t20", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 1000,  weight: 2, depositPaid: false, startDate: "2026-05-01", endDate: "2026-06-12", notes: "PM: Carson" },
+  { id: "a516", name: "Twine Ventures",         sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 8500,  weight: 3, depositPaid: false, startDate: "2026-07-01", endDate: "2026-07-31", notes: "PM: Daniel" },
+  { id: "a517", name: "VistaShares",            sl: "deck",    leadId: null, pmId: "t18", supportIds: [], status: "Active",   type: "Project", retainer: 0, project: 35000, weight: 4, depositPaid: false, startDate: "2026-06-01", endDate: "2026-08-31", notes: "PM: Daniel" },
+  { id: "a518", name: "Axle Access",            sl: "deck",    leadId: null, pmId: "t20",  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 15000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  { id: "a519", name: "Interlude Capital",      sl: "deck",    leadId: null, pmId: "t18",  supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 40000, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  // ── From Notion PM views 2026-07-14 ──
+  { id: "a521", name: "Bohr Systems", sl: "deck", leadId: null, pmId: "t20", supportIds: [], status: "Pipeline", type: "Project", retainer: 0, project: 0, weight: 3, depositPaid: false, startDate: null, endDate: null, notes: "Planning" },
+  { id: "a522", name: "1921", sl: "deck", leadId: null, pmId: "t18", supportIds: [], status: "Paused", type: "Project", retainer: 0, project: 0, weight: 4, depositPaid: false, startDate: null, endDate: null, notes: "" },
+  { id: "a523", name: "Atria", sl: "deck", leadId: null, pmId: "t18", supportIds: [], status: "Paused", type: "Project", retainer: 0, project: 0, weight: 1, depositPaid: false, startDate: null, endDate: null, notes: "" },
+  { id: "a524", name: "Neru Health", sl: "deck", leadId: null, pmId: "t18", supportIds: [], status: "Paused", type: "Project", retainer: 0, project: 0, weight: 1, depositPaid: false, startDate: null, endDate: null, notes: "" },
 ];
 
 // ── Org Chart Departments (independent of service lines) ──
@@ -169,20 +174,35 @@ const personExposure = (personId: string, accounts: any[]) => {
 };
 
 // ── Flat-rate project economics ──
-// Cost allocation reuses the workload capacity model: a person's slice of a
-// project = their capacity points on it / 5 (lead w/ support = weight×0.7,
-// solo lead = weight, support = weight×0.3 / #support). Monthly cost × slice
-// = what the project spends on them per month.
-const projectTeam = (a: any, team: any[]) => {
+// Designer cost allocation reuses the workload capacity model: a person's
+// slice of a project = their capacity points on it / 5 (lead w/ support =
+// weight×0.7, solo lead = weight, support = weight×0.3 / #support).
+// PM cost allocation is normalized instead: a PM's monthly cost is split
+// across every active account they manage, proportional to account weight —
+// so a PM's total allocated cost never exceeds their actual salary.
+const pmBookWeight = (pmId: string, accounts: any[]) =>
+  accounts
+    .filter(x => x.pmId === pmId && ["Active", "Launch", "Growth"].includes(x.status))
+    .reduce((s, x) => s + (x.weight ?? 3), 0);
+
+const projectTeam = (a: any, team: any[], accounts: any[]) => {
   const w = a.weight ?? 3;
   const rows: any[] = [];
   const lead = team.find((p: any) => p.id === a.leadId);
-  if (lead) rows.push({ p: lead, role: "Lead", pts: a.supportIds.length > 0 ? w * 0.7 : w });
+  if (lead) {
+    const pts = a.supportIds.length > 0 ? w * 0.7 : w;
+    rows.push({ p: lead, role: "Lead", alloc: pts / 5 });
+  }
   a.supportIds.forEach((id: string) => {
     const p = team.find((x: any) => x.id === id);
-    if (p) rows.push({ p, role: "Support", pts: (w * 0.3) / a.supportIds.length });
+    if (p) rows.push({ p, role: "Support", alloc: (w * 0.3) / a.supportIds.length / 5 });
   });
-  return rows.map(r => ({ ...r, alloc: r.pts / 5, monthlyCost: cost(r.p) * (r.pts / 5) }));
+  const pm = team.find((p: any) => p.id === a.pmId);
+  if (pm) {
+    const bookW = pmBookWeight(pm.id, accounts);
+    rows.push({ p: pm, role: "PM", alloc: bookW > 0 ? w / bookW : 0 });
+  }
+  return rows.map(r => ({ ...r, monthlyCost: cost(r.p) * r.alloc }));
 };
 
 // Revenue attribution on a project's total fee (lead 50% / support splits 50%,
@@ -202,8 +222,8 @@ const projElapsed = (a: any) => {
 };
 
 // Full economics for one flat-rate project
-const projectEcon = (a: any, team: any[]) => {
-  const members = projectTeam(a, team);
+const projectEcon = (a: any, team: any[], accounts: any[]) => {
+  const members = projectTeam(a, team, accounts);
   const teamMonthly = members.reduce((s, m) => s + m.monthlyCost, 0);
   const hasDates = !!(a.startDate && a.endDate);
   const months = hasDates ? monthsBetween(a.startDate, a.endDate) : null;
@@ -403,6 +423,7 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
   if (type === "account") {
     const a = data;
     const lead = team.find(p => p.id === a.leadId);
+    const pm = team.find(p => p.id === a.pmId);
     const sups = team.filter(p => a.supportIds.includes(p.id));
 
     return (
@@ -456,6 +477,16 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
               <Tag small>Support</Tag>
             </div>
           ))}
+          {pm && (
+            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white rounded-lg mb-1.5 border border-gray-200">
+              <Av name={pm.name} size={28} sl={pm.sl} />
+              <div className="flex-1"><div className="text-xs font-medium text-gray-900">{pm.name}</div><div className="text-[10px] text-gray-400">{pm.role}</div></div>
+              <Tag small variant="amber">PM</Tag>
+            </div>
+          )}
+          {!lead && sups.length === 0 && !pm && (
+            <div className="text-[11px] text-gray-300 italic">No team assigned</div>
+          )}
         </div>
 
         {a.notes && (<><div className="h-px bg-gray-200 w-full" /><div className="px-6 py-5">
@@ -627,9 +658,10 @@ export default function App() {
   const personPods = useMemo(() => team.filter(p => p.sl !== "leadership").map(p => {
     const led = activeAccounts.filter(a => a.leadId === p.id);
     const sup = activeAccounts.filter(a => a.supportIds.includes(p.id));
+    const pmd = activeAccounts.filter(a => a.pmId === p.id);
     const exp = personExposure(p.id, accounts);
     const c = cost(p);
-    return { ...p, ledAccounts: led, supAccounts: sup, leadRev: exp.asLead, supRev: exp.asSupport, rev: exp.total, cost: c, ratio: c > 0 ? exp.total / c : 0 };
+    return { ...p, ledAccounts: led, supAccounts: sup, pmAccounts: pmd, leadRev: exp.asLead, supRev: exp.asSupport, rev: exp.total, cost: c, ratio: c > 0 ? exp.total / c : 0 };
   }), [team, accounts, activeAccounts]);
 
   const unassigned = useMemo(() => accounts.filter(a => !a.leadId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
@@ -674,7 +706,7 @@ export default function App() {
         <div className="flex gap-2">
           <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
-          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
+          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, pmId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
             className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
         </div>
       </div>
@@ -768,7 +800,7 @@ export default function App() {
 
                       {/* Accounts list */}
                       <div className="border-t border-gray-100 pt-2.5">
-                        {p.ledAccounts.length === 0 && p.supAccounts.length === 0 ? (
+                        {p.ledAccounts.length === 0 && p.supAccounts.length === 0 && p.pmAccounts.length === 0 ? (
                           <div className="text-[11px] text-gray-300 italic text-center py-2">No accounts assigned</div>
                         ) : (<>
                           {p.ledAccounts.map(a => {
@@ -794,6 +826,14 @@ export default function App() {
                               <Tag small>Support</Tag>
                             </div>
                           )})}
+                          {/* PM'd accounts — oversight, not design capacity */}
+                          {p.pmAccounts.map(a => (
+                            <div key={"pm" + a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-300 shrink-0" />
+                              <span className="text-xs text-gray-500 flex-1 truncate">{a.name}</span>
+                              <Tag small variant="amber">PM</Tag>
+                            </div>
+                          ))}
 
                         </>)}
                       </div>
@@ -1248,7 +1288,7 @@ export default function App() {
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
             const planning = flat.filter(a => a.status === "Pipeline");
 
-            const econOf = (a: any) => projectEcon(a, team);
+            const econOf = (a: any) => projectEcon(a, team, accounts);
             const inFlightEcon = inFlight.map(a => ({ a, e: econOf(a) }));
             const kpiFee = inFlight.reduce((s, a) => s + a.project, 0);
             const kpiMrr = inFlight.reduce((s, a) => s + monthlyProjectRev(a), 0);
@@ -1264,7 +1304,7 @@ export default function App() {
                 if (share <= 0) return;
                 n++;
                 rev += share;
-                const m = projectTeam(a, team).find(r => r.p.id === p.id);
+                const m = projectTeam(a, team, accounts).find(r => r.p.id === p.id && r.role !== "PM");
                 if (m) {
                   monthly += m.monthlyCost;
                   const months = a.startDate && a.endDate ? monthsBetween(a.startDate, a.endDate) : null;
@@ -1380,8 +1420,8 @@ export default function App() {
                           <div key={m.p.id + m.role} className="flex items-center gap-2 py-1">
                             <Av name={m.p.name} size={22} sl={m.p.sl} lead={m.role === "Lead"} />
                             <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{m.p.name}</span>
-                            <Tag small variant={m.role === "Lead" ? "green" : "default"}>{m.role}</Tag>
-                            <span className="text-[10px] text-gray-400 w-10 text-right">{Math.round(m.alloc * 100)}%</span>
+                            <Tag small variant={m.role === "Lead" ? "green" : m.role === "PM" ? "amber" : "default"}>{m.role}</Tag>
+                            <span className="text-[10px] text-gray-400 w-10 text-right" title={m.role === "PM" ? "Share of this PM's managed book" : "Capacity share"}>{Math.round(m.alloc * 100)}%</span>
                             <span className="text-[10px] font-semibold text-red-500 w-16 text-right">{fmtK(m.monthlyCost)}/mo</span>
                             <span className="text-[10px] text-gray-500 w-14 text-right">{e.months != null ? fmtK(m.monthlyCost * e.months) : "—"}</span>
                           </div>
@@ -1433,7 +1473,7 @@ export default function App() {
                             <StatusTag status={a.status} small />
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-[11px] text-gray-400">{a.leadId ? `PM: ${getName(a.leadId)}` : "No PM"}</span>
+                            <span className="text-[11px] text-gray-400">{a.pmId ? `PM: ${getName(a.pmId)}` : "No PM"}</span>
                             <span className={`text-sm font-semibold ${a.project > 0 ? "text-gray-900" : "text-gray-300"}`}>{a.project > 0 ? fmtK(a.project) : "no fee set"}</span>
                             <button onClick={ev => { ev.stopPropagation(); save("account", { ...a, status: "Active" }); }}
                               className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">Start →</button>
@@ -1474,6 +1514,46 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                {/* PM coverage */}
+                {(() => {
+                  const pms = team.filter(p => inFlight.some(a => a.pmId === p.id));
+                  if (pms.length === 0) return null;
+                  return (
+                    <div className="mb-10">
+                      <div className="text-xl font-semibold text-gray-900 mb-1">PM Coverage</div>
+                      <div className="text-xs text-gray-400 mb-4">Each PM's cost is split across their whole managed book (retainers + projects) by account weight — the slice charged to flat-rate work is shown here.</div>
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}>
+                          {["PM", "Projects Managed", "Fees Overseen", "Cost to Projects /mo", "Oversight Leverage"].map(h => (
+                            <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
+                          ))}
+                        </div>
+                        {pms.map(pm => {
+                          const managed = inFlight.filter(a => a.pmId === pm.id);
+                          const fees = managed.reduce((s, a) => s + a.project, 0);
+                          const bookW = pmBookWeight(pm.id, accounts);
+                          const costMo = managed.reduce((s, a) => s + cost(pm) * ((a.weight ?? 3) / (bookW || 1)), 0);
+                          return (
+                            <div key={pm.id} onClick={() => setSelected({ type: "person", data: pm })} className="grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}>
+                              <div className="flex items-center gap-2.5">
+                                <Av name={pm.name} size={28} sl={pm.sl} />
+                                <div>
+                                  <div className="text-[13px] font-semibold text-gray-900">{pm.name}</div>
+                                  <div className="text-[10px] text-gray-400">{pm.role}</div>
+                                </div>
+                              </div>
+                              <div className="text-[13px] text-gray-500">{managed.length}</div>
+                              <div className="text-sm font-semibold text-emerald-600">{fmtK(fees)}</div>
+                              <div className="text-sm font-semibold text-red-500">{fmt(Math.round(costMo))}</div>
+                              <div className="text-[13px] font-semibold text-gray-700">{costMo > 0 ? `${(fees / (costMo * 12)).toFixed(1)}x` : "—"}<span className="text-[9px] text-gray-400 font-normal ml-1">fees / annualized cost</span></div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Completed */}
                 {completed.length > 0 && (
@@ -1650,7 +1730,10 @@ export default function App() {
               <Inp label="Service Line" value={modal.data.sl} onChange={v => setModal({ ...modal, data: { ...modal.data, sl: v } })} opts={slOpts} />
               <Inp label="Status" value={modal.data.status} onChange={v => setModal({ ...modal, data: { ...modal.data, status: v } })} opts={["Launch", "Growth", "Active", "Pipeline", "Paused", "Closed"]} />
             </div>
-            <Inp label="Account Lead" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v } })} opts={teamOpts} />
+            <div className="grid grid-cols-2 gap-3">
+              <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={teamOpts} />
+              <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={teamOpts} />
+            </div>
             {/* Support members multi-select */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Support Members</label>

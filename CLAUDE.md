@@ -93,6 +93,12 @@ Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the r
 - Total project cost = team monthly × `monthsBetween(start, end)`; profit = fee − total cost
 - Projects without dates or team show "—" (unknown) rather than fake numbers
 
+**PM vs. Lead (see `pm_id`):** `lead_id` is the main designer — drives revenue
+attribution and capacity points. `pm_id` is the project manager — no capacity
+points; their cost is normalized across their managed book: PM's monthly cost ×
+(account weight ÷ total weight of all active accounts they PM), so a PM's summed
+allocation never exceeds their salary (`pmBookWeight`/`projectTeam`).
+
 **Flat-rate invoicing model (50/50):** `deposit_paid` boolean tracks the 50% upfront
 invoice. Collected = full fee when `status = 'Closed'` (marking complete logs all funds
 paid), else 50% of fee if `deposit_paid`, else $0. The Projects tab has one-click
@@ -119,7 +125,7 @@ Tables in Supabase (all with open RLS policies — no auth):
 | Table | Key columns |
 |-------|-------------|
 | `team_members` | `id`, `name`, `role`, `sl` (FK→service_lines), `type`, `cad_yearly`, `usd_monthly`, `hours_per_month`, `is_lead` |
-| `accounts` | `id`, `name`, `sl`, `lead_id`, `status`, `type`, `retainer`, `project`, `start_date`, `end_date`, `weight`, `deposit_paid`, `notes` |
+| `accounts` | `id`, `name`, `sl`, `lead_id` (main designer), `pm_id` (project manager), `status`, `type`, `retainer`, `project`, `start_date`, `end_date`, `weight`, `deposit_paid`, `notes` |
 | `account_support` | `account_id`, `member_id` (many-to-many) |
 | `departments` | `id`, `name`, `color`, `sort_order` |
 | `department_members` | `department_id`, `member_id` |
