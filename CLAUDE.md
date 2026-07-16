@@ -117,6 +117,8 @@ Each designer has **5 pts max capacity**. Each account has a `weight` (1–5, de
 - Lead on account with support → `weight * 0.7` pts
 - Lead on account with no support → `weight * 1.0` pts
 - Support member → `(weight * 0.3) / numSupportMembers` pts
+- Developer (`dev_id`) → `weight * 0.3` pts
+- PM (`pm_id`) → `weight * 0.1` pts (`PM_LOAD_PER_WEIGHT` — oversight is lighter per account)
 
 Only **Active, Launch, Growth** accounts count toward capacity. Closed/Pipeline/Paused are excluded.
 

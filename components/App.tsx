@@ -133,6 +133,9 @@ const DEPT_COLORS = [
 const cost = (p: any) => p.usdM != null ? p.usdM : (p.cadY ? (p.cadY / 12) * CAD_TO_USD : 0);
 // Accounts can span multiple service lines (sls array); fall back to legacy single sl
 const acctSls = (a: any) => (a.sls && a.sls.length ? a.sls : (a.sl ? [a.sl] : []));
+// PM workload: each managed account adds weight × this factor in capacity pts
+// (managing is lighter per-account than designing — a PM tops out ~50 weight-pts of book)
+const PM_LOAD_PER_WEIGHT = 0.1;
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const fmtK = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n);
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -327,6 +330,7 @@ const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
   const c = cost(p);
   const led = accounts.filter(a => a.leadId === p.id);
   const sup = accounts.filter(a => a.supportIds.includes(p.id));
+  const pmd = accounts.filter(a => a.pmId === p.id && a.status !== "Closed");
   const exp = personExposure(p.id, accounts);
   const available = accounts.filter(a =>
     !["Closed"].includes(a.status) &&
@@ -410,7 +414,16 @@ const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
             <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(a._share))}</span>
           </div>
         ))}
-        {led.length + sup.length === 0 && !showAssign && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
+        {pmd.map(a => (
+          <div key={a.id + "pm"} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-gray-900">{a.name}</span>
+              <Tag small variant="amber">PM</Tag>
+            </div>
+            <span className="text-[10px] text-gray-400">{Math.round((a.weight ?? 3) * PM_LOAD_PER_WEIGHT * 10) / 10}pt</span>
+          </div>
+        ))}
+        {led.length + sup.length + pmd.length === 0 && !showAssign && <div className="text-xs text-gray-400 italic">No accounts assigned</div>}
       </div>
 
       <div className="px-6 pb-6 pt-3">
@@ -790,10 +803,13 @@ export default function App() {
                   }, 0);
                   // Dev work counts like support: weight × 0.3 per account
                   const devLoad = p.devAccounts.reduce((sum, a) => sum + (a.weight ?? 3) * 0.3, 0);
-                  const totalLoad = Math.round((leadLoad + supLoad + devLoad) * 10) / 10;
+                  // PM oversight: weight × 0.1 per managed account
+                  const pmLoad = p.pmAccounts.reduce((sum, a) => sum + (a.weight ?? 3) * PM_LOAD_PER_WEIGHT, 0);
+                  const totalLoad = Math.round((leadLoad + supLoad + devLoad + pmLoad) * 10) / 10;
                   const leadCount = p.ledAccounts.length;
                   const supCount = p.supAccounts.length + p.devAccounts.length;
-                  const totalClients = leadCount + supCount;
+                  const pmCount = p.pmAccounts.length;
+                  const totalClients = leadCount + supCount + pmCount;
                   const loadPct = Math.min(100, Math.round((totalLoad / maxCapacity) * 100));
                   const loadColor = totalLoad >= 5 ? "bg-red-400" : totalLoad >= 4 ? "bg-amber-400" : "bg-emerald-400";
                   const loadLabel = totalLoad >= 5 ? "At capacity" : totalLoad >= 4 ? "Near capacity" : totalClients === 0 ? "Available" : "Manageable";
@@ -818,7 +834,7 @@ export default function App() {
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-gray-400">{totalLoad} <span className="text-gray-300">/</span> 5 pts</span>
                             <span className="text-[10px] text-gray-300">·</span>
-                            <span className="text-[10px] text-gray-400">{leadCount} lead · {supCount} sup</span>
+                            <span className="text-[10px] text-gray-400">{leadCount} lead · {supCount} sup{pmCount > 0 ? ` · ${pmCount} pm` : ""}</span>
                           </div>
                           <span className={`text-[10px] font-semibold ${loadLabelColor}`}>{loadLabel}</span>
                         </div>
@@ -864,11 +880,12 @@ export default function App() {
                               <Tag small variant="dark">Dev</Tag>
                             </div>
                           ))}
-                          {/* PM'd accounts — oversight, not design capacity */}
+                          {/* PM'd accounts — lighter oversight load (weight × 0.1) */}
                           {p.pmAccounts.map(a => (
                             <div key={"pm" + a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
                               <div className="w-1.5 h-1.5 rounded-full bg-amber-300 shrink-0" />
                               <span className="text-xs text-gray-500 flex-1 truncate">{a.name}</span>
+                              <span className="text-[9px] text-gray-400 font-medium">{Math.round((a.weight ?? 3) * PM_LOAD_PER_WEIGHT * 10) / 10}pt</span>
                               <Tag small variant="amber">PM</Tag>
                             </div>
                           ))}
