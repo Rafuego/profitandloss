@@ -40,6 +40,7 @@ create table if not exists accounts (
   sl text references service_lines(id),
   lead_id text references team_members(id) on delete set null,   -- main designer
   pm_id text references team_members(id) on delete set null,     -- project manager
+  dev_id text references team_members(id) on delete set null,    -- designated developer (optional)
   status text not null default 'Active' check (status in ('Launch', 'Growth', 'Active', 'Pipeline', 'Paused', 'Closed')),
   type text not null default 'Retainer' check (type in ('Retainer', 'Project', 'Hybrid')),
   retainer numeric not null default 0,

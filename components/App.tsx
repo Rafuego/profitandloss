@@ -197,6 +197,9 @@ const projectTeam = (a: any, team: any[], accounts: any[]) => {
     const p = team.find((x: any) => x.id === id);
     if (p) rows.push({ p, role: "Support", alloc: (w * 0.3) / a.supportIds.length / 5 });
   });
+  // Optional designated developer — support-style slice (weight × 0.3 / 5)
+  const dev = team.find((p: any) => p.id === a.devId);
+  if (dev) rows.push({ p: dev, role: "Dev", alloc: (w * 0.3) / 5 });
   const pm = team.find((p: any) => p.id === a.pmId);
   if (pm) {
     const bookW = pmBookWeight(pm.id, accounts);
@@ -424,6 +427,7 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
     const a = data;
     const lead = team.find(p => p.id === a.leadId);
     const pm = team.find(p => p.id === a.pmId);
+    const dev = team.find(p => p.id === a.devId);
     const sups = team.filter(p => a.supportIds.includes(p.id));
 
     return (
@@ -477,6 +481,13 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
               <Tag small>Support</Tag>
             </div>
           ))}
+          {dev && (
+            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white rounded-lg mb-1.5 border border-gray-200">
+              <Av name={dev.name} size={28} sl={dev.sl} />
+              <div className="flex-1"><div className="text-xs font-medium text-gray-900">{dev.name}</div><div className="text-[10px] text-gray-400">{dev.role}</div></div>
+              <Tag small variant="dark">Dev</Tag>
+            </div>
+          )}
           {pm && (
             <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white rounded-lg mb-1.5 border border-gray-200">
               <Av name={pm.name} size={28} sl={pm.sl} />
@@ -484,7 +495,7 @@ const Sidebar = ({ selected, team, accounts, onClose, onEdit, onAssign }) => {
               <Tag small variant="amber">PM</Tag>
             </div>
           )}
-          {!lead && sups.length === 0 && !pm && (
+          {!lead && sups.length === 0 && !pm && !dev && (
             <div className="text-[11px] text-gray-300 italic">No team assigned</div>
           )}
         </div>
@@ -659,9 +670,10 @@ export default function App() {
     const led = activeAccounts.filter(a => a.leadId === p.id);
     const sup = activeAccounts.filter(a => a.supportIds.includes(p.id));
     const pmd = activeAccounts.filter(a => a.pmId === p.id);
+    const dev = activeAccounts.filter(a => a.devId === p.id);
     const exp = personExposure(p.id, accounts);
     const c = cost(p);
-    return { ...p, ledAccounts: led, supAccounts: sup, pmAccounts: pmd, leadRev: exp.asLead, supRev: exp.asSupport, rev: exp.total, cost: c, ratio: c > 0 ? exp.total / c : 0 };
+    return { ...p, ledAccounts: led, supAccounts: sup, pmAccounts: pmd, devAccounts: dev, leadRev: exp.asLead, supRev: exp.asSupport, rev: exp.total, cost: c, ratio: c > 0 ? exp.total / c : 0 };
   }), [team, accounts, activeAccounts]);
 
   const unassigned = useMemo(() => accounts.filter(a => !a.leadId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
@@ -706,7 +718,7 @@ export default function App() {
         <div className="flex gap-2">
           <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
-          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, pmId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
+          <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", leadId: null, pmId: null, devId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
             className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
         </div>
       </div>
@@ -761,9 +773,11 @@ export default function App() {
                     const numSup = a.supportIds.length;
                     return sum + (numSup > 0 ? (w * 0.3) / numSup : 0);
                   }, 0);
-                  const totalLoad = Math.round((leadLoad + supLoad) * 10) / 10;
+                  // Dev work counts like support: weight × 0.3 per account
+                  const devLoad = p.devAccounts.reduce((sum, a) => sum + (a.weight ?? 3) * 0.3, 0);
+                  const totalLoad = Math.round((leadLoad + supLoad + devLoad) * 10) / 10;
                   const leadCount = p.ledAccounts.length;
-                  const supCount = p.supAccounts.length;
+                  const supCount = p.supAccounts.length + p.devAccounts.length;
                   const totalClients = leadCount + supCount;
                   const loadPct = Math.min(100, Math.round((totalLoad / maxCapacity) * 100));
                   const loadColor = totalLoad >= 5 ? "bg-red-400" : totalLoad >= 4 ? "bg-amber-400" : "bg-emerald-400";
@@ -800,7 +814,7 @@ export default function App() {
 
                       {/* Accounts list */}
                       <div className="border-t border-gray-100 pt-2.5">
-                        {p.ledAccounts.length === 0 && p.supAccounts.length === 0 && p.pmAccounts.length === 0 ? (
+                        {p.ledAccounts.length === 0 && p.supAccounts.length === 0 && p.pmAccounts.length === 0 && p.devAccounts.length === 0 ? (
                           <div className="text-[11px] text-gray-300 italic text-center py-2">No accounts assigned</div>
                         ) : (<>
                           {p.ledAccounts.map(a => {
@@ -826,6 +840,15 @@ export default function App() {
                               <Tag small>Support</Tag>
                             </div>
                           )})}
+                          {/* Dev'd accounts — support-style capacity */}
+                          {p.devAccounts.map(a => (
+                            <div key={"dev" + a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full bg-gray-700 shrink-0" />
+                              <span className="text-xs text-gray-500 flex-1 truncate">{a.name}</span>
+                              <span className="text-[9px] text-gray-400 font-medium">{Math.round((a.weight ?? 3) * 0.3 * 10) / 10}pt</span>
+                              <Tag small variant="dark">Dev</Tag>
+                            </div>
+                          ))}
                           {/* PM'd accounts — oversight, not design capacity */}
                           {p.pmAccounts.map(a => (
                             <div key={"pm" + a.id} onClick={() => setSelected({ type: "account", data: a })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-1 cursor-pointer hover:bg-gray-50 transition-colors">
@@ -1734,6 +1757,7 @@ export default function App() {
               <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={teamOpts} />
               <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={teamOpts} />
             </div>
+            <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={teamOpts} />
             {/* Support members multi-select */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Support Members</label>
