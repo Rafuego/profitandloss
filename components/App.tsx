@@ -654,6 +654,10 @@ export default function App() {
   const getName = id => team.find(p => p.id === id)?.name || "—";
   const slOpts = SERVICE_LINES.map(s => ({ value: s.id, label: s.name }));
   const teamOpts = team.map(p => ({ value: p.id, label: p.name }));
+  // PM candidates = Operations people; Dev candidates = Web Development department members
+  const pmOpts = team.filter(p => p.sl === "ops").map(p => ({ value: p.id, label: p.name }));
+  const webDept = depts.find(d => d.name.toLowerCase().includes("web dev"));
+  const devOpts = (webDept ? team.filter(p => webDept.memberIds.includes(p.id)) : team).map(p => ({ value: p.id, label: p.name }));
 
   const views = [
     { id: "workload", label: "Workload" },
@@ -1755,9 +1759,9 @@ export default function App() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={teamOpts} />
-              <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={teamOpts} />
+              <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={pmOpts} />
             </div>
-            <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={teamOpts} />
+            <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={devOpts} />
             {/* Support members multi-select */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Support Members</label>
