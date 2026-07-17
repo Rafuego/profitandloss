@@ -1916,11 +1916,21 @@ export default function App() {
               );
             })()}
             <Inp label="Status" value={modal.data.status} onChange={v => setModal({ ...modal, data: { ...modal.data, status: v } })} opts={["Launch", "Growth", "Active", "Pipeline", "Paused", "Closed"]} />
-            <div className="grid grid-cols-2 gap-3">
-              <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={leadOpts} />
-              <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={pmOpts} />
-            </div>
-            <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={devOpts} />
+            {/* If the current holder is no longer eligible, keep them visible in the
+                dropdown (tagged) so the field shows the truth and can be cleared */}
+            {(() => {
+              const withCurrent = (opts, id, note) =>
+                id && !opts.some(o => o.value === id) ? [...opts, { value: id, label: `${getName(id)} (${note})` }] : opts;
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Inp label="Account Lead (Designer)" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={withCurrent(leadOpts, modal.data.leadId, "not lead-tagged")} />
+                    <Inp label="Project Manager" value={modal.data.pmId} onChange={v => setModal({ ...modal, data: { ...modal.data, pmId: v || null } })} opts={withCurrent(pmOpts, modal.data.pmId, "not ops")} />
+                  </div>
+                  <Inp label="Developer (optional)" value={modal.data.devId} onChange={v => setModal({ ...modal, data: { ...modal.data, devId: v || null } })} opts={withCurrent(devOpts, modal.data.devId, "not in Web Dev")} />
+                </>
+              );
+            })()}
             {/* Support members multi-select */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Support Members</label>
