@@ -173,17 +173,20 @@ const projRevInMonth = (a: any, y: number, m: number) => {
   return a.project / monthsBetween(a.startDate, a.endDate);
 };
 
-// Revenue attribution: lead gets 50% (or 100% if no support), support splits remaining 50% evenly
+// Revenue attribution: lead gets 50% (or 100% if delivering alone); support
+// members AND the designated developer split the remaining 50% evenly.
 const acctVal = (a: any) => a.retainer + monthlyProjectRev(a);
-const leadShare = (a: any) => a.supportIds.length > 0 ? acctVal(a) * 0.5 : acctVal(a);
-const supShare = (a: any) => a.supportIds.length > 0 ? (acctVal(a) * 0.5) / a.supportIds.length : 0;
+const delivPool = (a: any) => a.supportIds.length + (a.devId ? 1 : 0);
+const leadShare = (a: any) => delivPool(a) > 0 ? acctVal(a) * 0.5 : acctVal(a);
+const supShare = (a: any) => delivPool(a) > 0 ? (acctVal(a) * 0.5) / delivPool(a) : 0;
 const personExposure = (personId: string, accounts: any[]) => {
-  let asLead = 0, asSupport = 0;
+  let asLead = 0, asSupport = 0, asDev = 0;
   accounts.forEach(a => {
     if (a.leadId === personId) asLead += leadShare(a);
     if (a.supportIds.includes(personId)) asSupport += supShare(a);
+    if (a.devId === personId) asDev += supShare(a);
   });
-  return { asLead, asSupport, total: asLead + asSupport };
+  return { asLead, asSupport, asDev, total: asLead + asSupport + asDev };
 };
 
 // ── Flat-rate project economics ──
@@ -221,11 +224,12 @@ const projectTeam = (a: any, team: any[], accounts: any[]) => {
   return rows.map(r => ({ ...r, monthlyCost: cost(r.p) * r.alloc }));
 };
 
-// Revenue attribution on a project's total fee (lead 50% / support splits 50%,
+// Revenue attribution on a project's total fee (lead 50% / support+dev split 50%,
 // same model as retainer attribution above)
 const projFeeShare = (a: any, personId: string) => {
-  if (a.leadId === personId) return a.supportIds.length > 0 ? a.project * 0.5 : a.project;
-  if (a.supportIds.includes(personId)) return (a.project * 0.5) / a.supportIds.length;
+  const pool = delivPool(a);
+  if (a.leadId === personId) return pool > 0 ? a.project * 0.5 : a.project;
+  if (a.supportIds.includes(personId) || a.devId === personId) return (a.project * 0.5) / pool;
   return 0;
 };
 
@@ -413,11 +417,11 @@ const PersonSidebar = ({ p, accounts, onClose, onEdit, onAssign }) => {
           </div>
         )}
 
-        {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) }))].map(a => (
+        {[...led.map(a => ({ ...a, _role: "Lead", _share: leadShare(a) })), ...sup.map(a => ({ ...a, _role: "Support", _share: supShare(a) })), ...accounts.filter(a => a.devId === p.id).map(a => ({ ...a, _role: "Dev", _share: supShare(a) }))].map(a => (
           <div key={a.id + a._role} className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-white border border-gray-200 mb-1.5">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-medium text-gray-900">{a.name}</span>
-              <Tag small variant={a._role === "Lead" ? "green" : "default"}>{a._role}</Tag>
+              <Tag small variant={a._role === "Lead" ? "green" : a._role === "Dev" ? "dark" : "default"}>{a._role}</Tag>
             </div>
             <span className="text-xs font-semibold text-emerald-600">{fmt(Math.round(a._share))}</span>
           </div>
@@ -1802,11 +1806,11 @@ export default function App() {
                     }
                     const exp = personExposure(p.id, accounts);
                     const leadRev = exp.asLead;
-                    const supRev = exp.asSupport;
+                    const supRev = exp.asSupport + exp.asDev;
                     const totalExp = exp.total;
                     const ratio = c > 0 ? totalExp / c : 0;
                     const acctCount = accounts.filter(a => a.leadId === p.id).length;
-                    const supCount = accounts.filter(a => a.supportIds.includes(p.id)).length;
+                    const supCount = accounts.filter(a => a.supportIds.includes(p.id) || a.devId === p.id).length;
                     return (
                       <div key={p.id} onClick={() => setSelected({ type: "person", data: p })} className="flex items-center gap-3.5 px-5 py-3.5 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
                         <Av name={p.name} size={32} sl={p.sl} lead={p.lead} />

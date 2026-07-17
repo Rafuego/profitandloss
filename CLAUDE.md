@@ -74,10 +74,10 @@ try { await upsertAccount(d); } catch (e) {
 
 **Monthly cost per person:** `usdM` if set, otherwise CAD conversion.
 
-**Revenue attribution (lead/support split — see `leadShare`/`supShare`):**
-- Lead with no support → 100% of account value
-- Lead with support → 50% of account value
-- Support members split the remaining 50% evenly
+**Revenue attribution (see `leadShare`/`supShare`/`delivPool`):**
+- Lead delivering alone → 100% of account value
+- Lead with support and/or a developer → 50% of account value
+- Support members and the developer (`dev_id`) split the remaining 50% evenly
 
 **Flat rate / project amortization:**
 ```js
@@ -94,8 +94,8 @@ Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the r
 - Projects without dates or team show "—" (unknown) rather than fake numbers
 
 **Developer (see `dev_id`):** optional per account. Support-style math: weight × 0.3
-capacity points and weight × 0.3 ÷ 5 cost allocation on projects. Not part of
-revenue attribution.
+capacity points, weight × 0.3 ÷ 5 cost allocation on projects, and an equal slice
+of the 50% delivery pool in revenue attribution (same as a support member).
 
 **PM vs. Lead (see `pm_id`):** `lead_id` is the main designer — drives revenue
 attribution and capacity points. `pm_id` is the project manager — no capacity
