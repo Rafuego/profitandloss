@@ -1763,8 +1763,43 @@ export default function App() {
               <div className="mt-8">
                 <div className="text-xl font-semibold text-gray-900 mb-5">Revenue per Person</div>
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                  {team.filter(p => p.sl !== "leadership" && p.sl !== "ops").map(p => {
+                  {team.filter(p => p.sl !== "leadership").map(p => {
                     const c = cost(p);
+                    const isOps = p.sl === "ops";
+                    if (isOps) {
+                      // PMs: revenue attribution stays with designers — a PM's row
+                      // shows the monthly value of the book they oversee vs. their cost
+                      const book = accounts.filter(a => a.pmId === p.id && ["Active", "Launch", "Growth"].includes(a.status));
+                      const oversee = book.reduce((s, a) => s + acctVal(a), 0);
+                      const leverage = c > 0 ? oversee / c : 0;
+                      return (
+                        <div key={p.id} onClick={() => setSelected({ type: "person", data: p })} className="flex items-center gap-3.5 px-5 py-3.5 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                          <Av name={p.name} size={32} sl={p.sl} lead={p.lead} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold flex items-center gap-1.5">{p.name} <Tag small variant="amber">PM</Tag></div>
+                            <div className="text-[10px] text-gray-400">{p.role}</div>
+                          </div>
+                          <SlTag sl={p.sl} small />
+                          <div className="text-right w-20">
+                            <div className="text-[10px] text-gray-400">Accounts</div>
+                            <div className="text-xs text-gray-900">{book.length} managed</div>
+                          </div>
+                          <div className="text-right w-24">
+                            <div className="text-[10px] text-gray-400">Oversees</div>
+                            <div className="text-sm font-semibold text-amber-600">{fmt(Math.round(oversee))}</div>
+                            <div className="text-[9px] text-gray-400">/mo book value</div>
+                          </div>
+                          <div className="text-right w-20">
+                            <div className="text-[10px] text-gray-400">Cost</div>
+                            <div className="text-[13px] text-red-500">{fmt(Math.round(c))}</div>
+                          </div>
+                          <div className="text-center w-14">
+                            <div className="text-[10px] text-gray-400">Leverage</div>
+                            <div className={`text-base font-semibold ${leverage >= 1 ? "text-amber-600" : "text-red-500"}`}>{leverage.toFixed(1)}x</div>
+                          </div>
+                        </div>
+                      );
+                    }
                     const exp = personExposure(p.id, accounts);
                     const leadRev = exp.asLead;
                     const supRev = exp.asSupport;
