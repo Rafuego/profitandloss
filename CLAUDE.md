@@ -97,6 +97,12 @@ Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the r
 capacity points, weight × 0.3 ÷ 5 cost allocation on projects, and an equal slice
 of the 50% delivery pool in revenue attribution (same as a support member).
 
+**Pods (see `pod_id` on accounts + team_members, `pods` table):** cross-functional
+teams that own a book of accounts, distinct from service lines. Exclusive membership:
+one home pod per person, one owning pod per account. Pod P&L = full acctVal of its
+active accounts − full cost of its members (no splitting, since membership is exclusive).
+The "Pods" tab manages them; the by-discipline table on the P&L tab is now "Service Line P&L".
+
 **PM vs. Lead (see `pm_id`):** `lead_id` is the main designer — drives revenue
 attribution and capacity points. `pm_id` is the project manager — no capacity
 points; their cost is normalized across their managed book: PM's monthly cost ×
@@ -134,6 +140,7 @@ Tables in Supabase (all with open RLS policies — no auth):
 | `accounts` | `id`, `name`, `sl`, `lead_id` (main designer), `pm_id` (project manager), `dev_id` (optional developer), `status`, `type`, `retainer`, `project`, `start_date`, `end_date`, `weight`, `deposit_paid`, `notes` |
 | `account_support` | `account_id`, `member_id` (many-to-many) |
 | `account_service_lines` | `account_id`, `sl` (many-to-many; `accounts.sl` = primary line, kept in sync) |
+| `pods` | `id`, `name`, `color`, `lead_id`, `sort_order` (cross-functional teams; exclusive membership) |
 | `departments` | `id`, `name`, `color`, `sort_order` |
 | `department_members` | `department_id`, `member_id` |
 | `service_lines` | `id`, `name`, `color` |

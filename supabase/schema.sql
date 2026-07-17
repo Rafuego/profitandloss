@@ -29,6 +29,7 @@ create table if not exists team_members (
   usd_monthly numeric,         -- monthly rate in USD (nullable, for contractors)
   hours_per_month integer not null default 160,
   is_lead boolean not null default false,
+  pod_id text,                 -- home pod (exclusive; FK added after pods table)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -46,6 +47,7 @@ create table if not exists accounts (
   retainer numeric not null default 0,
   project numeric not null default 0,
   weight numeric not null default 3,   -- designer capacity weight (1–5 pts)
+  pod_id text,                         -- owning pod (exclusive; FK added after pods table)
   start_date date,                     -- project amortization window
   end_date date,
   deposit_paid boolean not null default false,  -- 50% upfront invoice collected (flat-rate projects)
@@ -66,6 +68,16 @@ create table if not exists account_service_lines (
   account_id text not null references accounts(id) on delete cascade,
   sl text not null references service_lines(id),
   primary key (account_id, sl)
+);
+
+-- Pods (cross-functional teams that own a book of accounts; exclusive membership)
+create table if not exists pods (
+  id text primary key default 'pod' || floor(random() * 100000)::text,
+  name text not null,
+  color text not null default 'bg-gray-100 text-gray-600',
+  lead_id text references team_members(id) on delete set null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
 );
 
 -- Org Chart Departments (independent of service lines)
@@ -271,3 +283,7 @@ on conflict do nothing;
 -- Open RLS for the junction table
 alter table account_service_lines enable row level security;
 create policy "Authenticated full access" on account_service_lines for all using (true) with check (true);
+
+-- Pods RLS
+alter table pods enable row level security;
+create policy "Authenticated full access" on pods for all using (true) with check (true);

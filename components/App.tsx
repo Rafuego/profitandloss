@@ -3,10 +3,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  fetchTeam, fetchAccounts, fetchDepartments,
+  fetchTeam, fetchAccounts, fetchDepartments, fetchPods,
   upsertTeamMember, deleteTeamMember,
   upsertAccount, deleteAccount,
   upsertDepartment, deleteDepartment,
+  upsertPod, deletePod,
 } from "@/lib/supabase";
 
 const CAD_TO_USD = 0.69;
@@ -561,10 +562,12 @@ export default function App() {
   const [team, setTeam] = useState(INIT_TEAM);
   const [accounts, setAccounts] = useState(INIT_ACCOUNTS);
   const [depts, setDepts] = useState(INIT_DEPTS);
+  const [pods, setPods] = useState<any[]>([]);
   const [selected, setSelected] = useState(null);
   const [modal, setModal] = useState(null);
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
+  const [podNid, setPodNid] = useState(1);
   const [view, setView] = useState("workload");
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -576,10 +579,11 @@ export default function App() {
   useEffect(() => {
     async function load() {
       try {
-        const [t, a, d] = await Promise.all([fetchTeam(), fetchAccounts(), fetchDepartments()]);
+        const [t, a, d, pd] = await Promise.all([fetchTeam(), fetchAccounts(), fetchDepartments(), fetchPods().catch(() => [])]);
         if (t.length > 0) setTeam(t);
         if (a.length > 0) setAccounts(a);
         if (d.length > 0) setDepts(d);
+        if (pd.length > 0) setPods(pd);
       } catch (e) {
         console.error("Failed to load from Supabase, using local data:", e);
         setSaveError(`Couldn't load from the database (${e?.message || "Supabase error"}) — showing built-in fallback data. Edits won't persist.`);
@@ -589,8 +593,9 @@ export default function App() {
     load();
   }, []);
 
-  const pods = useMemo(() => {
-    // Overhead = ops + leadership costs split equally across all active clients
+  const slPods = useMemo(() => {
+    // Service-line P&L (disciplines). Distinct from the `pods` state (real
+    // cross-functional pods). Overhead = ops + leadership split across clients.
     const overheadCost = team
       .filter(p => p.sl === "ops" || p.sl === "leadership")
       .reduce((s, p) => s + cost(p), 0);
@@ -618,10 +623,10 @@ export default function App() {
   }, [team, accounts]);
 
   const totals = useMemo(() => {
-    const r = pods.reduce((s, p) => s + p.rev, 0);
+    const r = slPods.reduce((s, p) => s + p.rev, 0);
     const c = team.reduce((s, p) => s + cost(p), 0);
     return { rev: r, cost: c, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
-  }, [pods, team, accounts]);
+  }, [slPods, team, accounts]);
 
   const save = async (type, d) => {
     setSaveError(null);
@@ -701,8 +706,63 @@ export default function App() {
     { id: "team", label: "Team" },
     { id: "accounts", label: "Accounts" },
     { id: "projects", label: "Projects" },
+    { id: "pods", label: "Pods" },
     { id: "pnl", label: "P&L" },
   ];
+
+  // ── Pod economics: exclusive membership, so a pod gets full account value
+  // and full member cost (no splitting needed). Reuses per-account/-person math.
+  const podStats = useMemo(() => pods.map(pod => {
+    const members = team.filter(p => p.podId === pod.id);
+    const accts = accounts.filter(a => a.podId === pod.id);
+    const activeAccts = accts.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
+    const rev = activeAccts.reduce((s, a) => s + acctVal(a), 0);
+    const c = members.reduce((s, p) => s + cost(p), 0);
+    const lead = team.find(p => p.id === pod.leadId);
+    return { ...pod, members, accounts: accts, activeAccts, lead, rev, cost: c, margin: rev - c, marginPct: rev > 0 ? (rev - c) / rev : (c > 0 ? -1 : 0) };
+  }), [pods, team, accounts]);
+  const unpoddedPeople = useMemo(() => team.filter(p => !p.podId && p.sl !== "leadership"), [team]);
+  const unpoddedAccts = useMemo(() => accounts.filter(a => !a.podId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
+
+  const savePod = async (d: any) => {
+    setSaveError(null);
+    let pod = d;
+    if (!pod.id) pod = { ...pod, id: `pod${podNid}`, sortOrder: pods.length };
+    const prev = pods;
+    setPods(ps => ps.find(x => x.id === pod.id) ? ps.map(x => x.id === pod.id ? pod : x) : [...ps, pod]);
+    if (!d.id) setPodNid(n => n + 1);
+    try { await upsertPod(pod); } catch (e: any) { setSaveError(`Save failed: ${e?.message || "Supabase error"}`); setPods(prev); }
+    setModal(null);
+  };
+  const removePod = async (id: string) => {
+    const prevP = pods, prevA = accounts, prevT = team;
+    setPods(ps => ps.filter(x => x.id !== id));
+    setAccounts(a => a.map(x => x.podId === id ? { ...x, podId: null } : x));
+    setTeam(t => t.map(x => x.podId === id ? { ...x, podId: null } : x));
+    try {
+      await Promise.all([
+        ...accounts.filter(a => a.podId === id).map(a => upsertAccount({ ...a, podId: null })),
+        ...team.filter(p => p.podId === id).map(p => upsertTeamMember({ ...p, podId: null })),
+      ]);
+      await deletePod(id);
+    } catch (e: any) { setSaveError(`Delete failed: ${e?.message || "Supabase error"}`); setPods(prevP); setAccounts(prevA); setTeam(prevT); }
+    setModal(null);
+  };
+  // Move a person or account into (or out of, podId=null) a pod
+  const assignToPod = async (kind: "person" | "account", id: string, podId: string | null) => {
+    setSaveError(null);
+    if (kind === "person") {
+      const p = team.find(x => x.id === id); if (!p) return;
+      const upd = { ...p, podId }; const prev = team;
+      setTeam(t => t.map(x => x.id === id ? upd : x));
+      try { await upsertTeamMember(upd); } catch (e: any) { setSaveError(`Save failed: ${e?.message}`); setTeam(prev); }
+    } else {
+      const a = accounts.find(x => x.id === id); if (!a) return;
+      const upd = { ...a, podId }; const prev = accounts;
+      setAccounts(acc => acc.map(x => x.id === id ? upd : x));
+      try { await upsertAccount(upd); } catch (e: any) { setSaveError(`Save failed: ${e?.message}`); setAccounts(prev); }
+    }
+  };
 
   const activeAccounts = useMemo(() => accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
 
@@ -1636,6 +1696,119 @@ export default function App() {
             );
           })()}
 
+          {/* ══════════ PODS VIEW ══════════ */}
+          {view === "pods" && (
+            <div className="p-8 pb-12">
+              <div className="flex items-center justify-between mb-7">
+                <div>
+                  <div className="text-2xl font-semibold text-gray-900 mb-1">Pods</div>
+                  <div className="text-xs text-gray-400">Cross-functional teams that own a book of accounts — each with its own P&L. One home pod per person, one owning pod per account.</div>
+                </div>
+                <button onClick={() => setModal({ type: "pod", data: { id: null, name: "", color: DEPT_COLORS[pods.length % DEPT_COLORS.length], leadId: null } })}
+                  className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ New Pod</button>
+              </div>
+
+              {pods.length === 0 && (
+                <div className="border-2 border-dashed border-gray-200 rounded-xl py-14 text-center mb-8">
+                  <div className="text-sm text-gray-500 font-medium mb-1">No pods yet</div>
+                  <div className="text-xs text-gray-400 mb-4">Create your first pod (e.g. the pilot), then assign a lead, members, and accounts.</div>
+                  <button onClick={() => setModal({ type: "pod", data: { id: null, name: "", color: DEPT_COLORS[0], leadId: null } })}
+                    className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Create a pod</button>
+                </div>
+              )}
+
+              <div className="grid gap-4 mb-9" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))" }}>
+                {podStats.map(pod => {
+                  const cap = pod.members.filter(m => m.sl !== "leadership" && m.sl !== "ops").length * 5;
+                  return (
+                  <div key={pod.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
+                    <div className={`h-1 ${pod.color.split(" ")[0]}`} />
+                    <div className="px-5 pt-4 pb-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <span className={`font-semibold rounded-full tracking-wide text-[11px] px-2.5 py-1 ${pod.color}`}>{pod.name}</span>
+                          <div className="text-[11px] text-gray-400 mt-1.5">{pod.lead ? `Lead: ${pod.lead.name}` : "No pod lead"}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className={`text-lg font-semibold ${pod.margin >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmtK(pod.margin)}</div>
+                            <div className="text-[9px] text-gray-400">margin{pod.rev > 0 ? ` · ${pct(pod.marginPct)}` : ""}</div>
+                          </div>
+                          <button onClick={() => setModal({ type: "pod", data: pod })} className="text-gray-300 hover:text-gray-500 text-sm">&#9998;</button>
+                        </div>
+                      </div>
+                      {/* P&L strip */}
+                      <div className="grid grid-cols-3 gap-2 mb-3.5">
+                        <div className="bg-gray-50 rounded-lg px-3 py-2"><div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Revenue</div><div className="text-[13px] font-semibold text-emerald-600 mt-0.5">{fmtK(pod.rev)}<span className="text-[8px] text-gray-400 font-normal">/mo</span></div></div>
+                        <div className="bg-gray-50 rounded-lg px-3 py-2"><div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Cost</div><div className="text-[13px] font-semibold text-red-500 mt-0.5">{fmtK(pod.cost)}<span className="text-[8px] text-gray-400 font-normal">/mo</span></div></div>
+                        <div className="bg-gray-50 rounded-lg px-3 py-2"><div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Accounts</div><div className="text-[13px] font-semibold text-gray-900 mt-0.5">{pod.activeAccts.length}</div></div>
+                      </div>
+                      {/* Members */}
+                      <div className="border-t border-gray-100 pt-2.5">
+                        <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Members · {pod.members.length}</div>
+                        {pod.members.length === 0 ? <div className="text-[11px] text-gray-300 italic mb-2">No members yet</div> : (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {pod.members.map(m => (
+                              <div key={m.id} onClick={() => setSelected({ type: "person", data: m })} className="flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 bg-gray-50 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-100">
+                                <Av name={m.name} size={20} sl={m.sl} lead={m.id === pod.leadId} />
+                                <span className="text-[11px] font-medium text-gray-900">{m.name.split(" ")[0]}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5 mt-2.5">Book · {pod.activeAccts.length} active</div>
+                        {pod.activeAccts.length === 0 ? <div className="text-[11px] text-gray-300 italic">No accounts yet</div> : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {pod.activeAccts.map(a => (
+                              <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="text-[11px] font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-2 py-0.5 cursor-pointer hover:bg-gray-100">{a.name} <span className="text-gray-400">{fmtK(acctVal(a))}</span></div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+                })}
+              </div>
+
+              {/* Unassigned buckets */}
+              {(unpoddedPeople.length > 0 || unpoddedAccts.length > 0) && pods.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {unpoddedPeople.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <div className="text-[11px] font-semibold text-amber-700 mb-2.5">Unassigned People · {unpoddedPeople.length}</div>
+                      {unpoddedPeople.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 py-1.5">
+                          <Av name={p.name} size={24} sl={p.sl} lead={p.lead} />
+                          <div className="flex-1 min-w-0"><div className="text-xs font-medium text-gray-900 truncate">{p.name}</div></div>
+                          <select value="" onChange={e => e.target.value && assignToPod("person", p.id, e.target.value)} className="bg-white border border-amber-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none">
+                            <option value="">Add to pod…</option>
+                            {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {unpoddedAccts.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <div className="text-[11px] font-semibold text-amber-700 mb-2.5">Unassigned Accounts · {unpoddedAccts.length}</div>
+                      {unpoddedAccts.map(a => (
+                        <div key={a.id} className="flex items-center gap-2 py-1.5">
+                          <div className="flex-1 min-w-0"><span className="text-xs font-medium text-gray-900">{a.name}</span> <span className="text-[10px] text-gray-400">{fmtK(acctVal(a))}/mo</span></div>
+                          <select value="" onChange={e => e.target.value && assignToPod("account", a.id, e.target.value)} className="bg-white border border-amber-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none">
+                            <option value="">Add to pod…</option>
+                            {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ══════════ P&L DASHBOARD VIEW ══════════ */}
           {view === "pnl" && (
             <div className="p-8 pb-12">
@@ -1719,16 +1892,16 @@ export default function App() {
 
               <div className="h-px bg-gray-200 w-full" />
 
-              {/* Pod P&L Table */}
+              {/* Service Line P&L Table */}
               <div className="mt-8 mb-9">
-                <div className="text-xl font-semibold text-gray-900 mb-5">Pod P&L</div>
+                <div className="text-xl font-semibold text-gray-900 mb-5">Service Line P&L</div>
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                   <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 1fr 2fr" }}>
                     {["Service Line", "People", "Revenue", "Cost", "Margin", "Margin %", "Health"].map(h => (
                       <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
                     ))}
                   </div>
-                  {pods.map(pd => (
+                  {slPods.map(pd => (
                     <div key={pd.id} className="grid px-5 py-4 border-b border-gray-100 items-center hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 1fr 2fr" }}>
                       <div className="flex items-center gap-2.5">
                         <SlTag sl={pd.id} />
@@ -2030,6 +2203,74 @@ export default function App() {
       )}
 
       {/* Department edit modal */}
+      {modal?.type === "pod" && (() => {
+        const podMembers = team.filter(p => p.podId === modal.data.id);
+        const podAccts = accounts.filter(a => a.podId === modal.data.id);
+        const memberOpts = team.filter(p => p.sl !== "leadership" && p.podId !== modal.data.id);
+        const acctOpts = accounts.filter(a => a.status !== "Closed" && a.podId !== modal.data.id);
+        return (
+        <Modal title={modal.data.id ? `Edit: ${modal.data.name}` : "New Pod"} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-3.5">
+            <Inp label="Pod Name" value={modal.data.name} onChange={v => setModal({ ...modal, data: { ...modal.data, name: v } })} ph="e.g. Pod A" />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {DEPT_COLORS.map(c => (
+                  <button key={c} onClick={() => setModal({ ...modal, data: { ...modal.data, color: c } })}
+                    className={`w-7 h-7 rounded-full border-2 transition-all ${c.split(" ")[0]} ${modal.data.color === c ? "border-gray-900 scale-110" : "border-transparent hover:border-gray-300"}`} />
+                ))}
+              </div>
+            </div>
+            <Inp label="Pod Lead" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={team.filter(p => p.lead).map(p => ({ value: p.id, label: p.name }))} />
+            {modal.data.id ? (
+              <>
+                {/* Members — assign immediately (exclusive membership) */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Members · {podMembers.length}</label>
+                  <div className="flex flex-wrap gap-1.5 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg min-h-[40px]">
+                    {podMembers.map(m => (
+                      <div key={m.id} className="flex items-center gap-1 pl-0.5 pr-2 py-0.5 bg-white rounded-full border border-gray-200">
+                        <Av name={m.name} size={20} sl={m.sl} /><span className="text-[11px] font-medium text-gray-900">{m.name.split(" ")[0]}</span>
+                        <button onClick={() => assignToPod("person", m.id, null)} className="text-gray-400 hover:text-gray-600 text-xs leading-none">✕</button>
+                      </div>
+                    ))}
+                    {podMembers.length === 0 && <span className="text-[11px] text-gray-300 italic py-0.5">No members yet</span>}
+                  </div>
+                  <select value="" onChange={e => e.target.value && assignToPod("person", e.target.value, modal.data.id)} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-xs outline-none">
+                    <option value="">+ Add member...</option>
+                    {memberOpts.map(p => <option key={p.id} value={p.id}>{p.name}{p.podId ? " (moving from another pod)" : ""}</option>)}
+                  </select>
+                </div>
+                {/* Accounts */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Account Book · {podAccts.length}</label>
+                  <div className="flex flex-wrap gap-1.5 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg min-h-[40px]">
+                    {podAccts.map(a => (
+                      <div key={a.id} className="flex items-center gap-1 pr-1.5 py-0.5 pl-2 bg-white rounded-full border border-gray-200">
+                        <span className="text-[11px] font-medium text-gray-900">{a.name}</span>
+                        <button onClick={() => assignToPod("account", a.id, null)} className="text-gray-400 hover:text-gray-600 text-xs leading-none">✕</button>
+                      </div>
+                    ))}
+                    {podAccts.length === 0 && <span className="text-[11px] text-gray-300 italic py-0.5">No accounts yet</span>}
+                  </div>
+                  <select value="" onChange={e => e.target.value && assignToPod("account", e.target.value, modal.data.id)} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-xs outline-none">
+                    <option value="">+ Add account...</option>
+                    {acctOpts.map(a => <option key={a.id} value={a.id}>{a.name}{a.podId ? " (moving from another pod)" : ""}</option>)}
+                  </select>
+                </div>
+              </>
+            ) : (
+              <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 text-[11px] text-gray-400">Save the pod first, then assign members and accounts.</div>
+            )}
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => { if (modal.data.name.trim()) savePod(modal.data); }} className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>
+              {modal.data.id && <button onClick={() => removePod(modal.data.id)} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Delete</button>}
+            </div>
+          </div>
+        </Modal>
+        );
+      })()}
+
       {modal?.type === "dept" && (
         <Modal title={modal.data.id ? `Edit: ${modal.data.name}` : "New Department"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">

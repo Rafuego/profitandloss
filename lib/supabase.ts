@@ -30,6 +30,15 @@ export type TeamMember = {
   usdM: number | null;     // usd_monthly
   hrs: number;             // hours_per_month
   lead: boolean;           // is_lead
+  podId: string | null;    // pod_id — home pod (exclusive)
+};
+
+export type Pod = {
+  id: string;
+  name: string;
+  color: string;
+  leadId: string | null;   // designated pod lead
+  sortOrder: number;
 };
 
 export type Account = {
@@ -37,6 +46,7 @@ export type Account = {
   name: string;
   sl: string;              // legacy primary service line (= sls[0])
   sls: string[];           // all service lines, from account_service_lines join
+  podId: string | null;    // pod_id — owning pod (exclusive)
   leadId: string | null;   // lead_id — main designer on the account
   pmId: string | null;     // pm_id — project manager (cost spreads across their book)
   devId: string | null;    // dev_id — designated developer (optional; support-style math)
@@ -78,7 +88,39 @@ export async function fetchTeam(): Promise<TeamMember[]> {
     usdM: r.usd_monthly,
     hrs: r.hours_per_month,
     lead: r.is_lead,
+    podId: r.pod_id ?? null,
   }));
+}
+
+export async function fetchPods(): Promise<Pod[]> {
+  const { data, error } = await supabase
+    .from("pods")
+    .select("*")
+    .order("sort_order");
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    color: r.color,
+    leadId: r.lead_id ?? null,
+    sortOrder: r.sort_order ?? 0,
+  }));
+}
+
+export async function upsertPod(p: Pod) {
+  const { error } = await supabase.from("pods").upsert({
+    id: p.id,
+    name: p.name,
+    color: p.color,
+    lead_id: p.leadId ?? null,
+    sort_order: p.sortOrder ?? 0,
+  });
+  if (error) throw error;
+}
+
+export async function deletePod(id: string) {
+  const { error } = await supabase.from("pods").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function fetchAccounts(): Promise<Account[]> {
@@ -115,6 +157,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     name: r.name,
     sl: r.sl,
     sls: slMap[r.id] || (r.sl ? [r.sl] : []),
+    podId: r.pod_id ?? null,
     leadId: r.lead_id,
     pmId: r.pm_id ?? null,
     devId: r.dev_id ?? null,
@@ -170,6 +213,7 @@ export async function upsertTeamMember(p: TeamMember) {
     usd_monthly: p.usdM || null,
     hours_per_month: p.hrs || 160,
     is_lead: p.lead || false,
+    pod_id: p.podId ?? null,
   });
   if (error) throw error;
 }
@@ -186,6 +230,7 @@ export async function upsertAccount(a: Account) {
     id: a.id,
     name: a.name,
     sl: sls[0] || null,   // legacy primary line stays in sync
+    pod_id: a.podId ?? null,
     lead_id: a.leadId,
     pm_id: a.pmId ?? null,
     dev_id: a.devId ?? null,
