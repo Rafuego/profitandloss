@@ -101,7 +101,7 @@ of the 50% delivery pool in revenue attribution (same as a support member).
 teams that own a book of accounts, distinct from service lines. Exclusive membership:
 one home pod per person, one owning pod per account. Pod P&L = full acctVal of its
 active accounts − full cost of its members (no splitting, since membership is exclusive).
-The "Pods" tab manages them; the by-discipline table on the P&L tab is now "Service Line P&L".
+The "Pods" tab manages them; the by-discipline table on the P&L tab is now "Service Line P&L". Two divisions per Kyle's model: pods (Division 1, retainer book) and the **Studio Bench** (Division 2 — non-pod people + all flat-rate projects, a permanent home not an "unassigned" error). Only active retainers are nudged to "place into a pod"; projects stay on the bench.
 
 **PM vs. Lead (see `pm_id`):** `lead_id` is the main designer — drives revenue
 attribution and capacity points. `pm_id` is the project manager — no capacity

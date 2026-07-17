@@ -721,8 +721,11 @@ export default function App() {
     const lead = team.find(p => p.id === pod.leadId);
     return { ...pod, members, accounts: accts, activeAccts, lead, rev, cost: c, margin: rev - c, marginPct: rev > 0 ? (rev - c) / rev : (c > 0 ? -1 : 0) };
   }), [pods, team, accounts]);
-  const unpoddedPeople = useMemo(() => team.filter(p => !p.podId && p.sl !== "leadership"), [team]);
-  const unpoddedAccts = useMemo(() => accounts.filter(a => !a.podId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
+  // Division 2 — the studio bench: specialists, PMs, producer (everyone not on a
+  // pod, minus leadership/escalation). A permanent home, not an "unassigned" error.
+  const benchPeople = useMemo(() => team.filter(p => !p.podId && p.sl !== "leadership"), [team]);
+  // Only active RETAINERS belong in pods; flat-rate projects are bench work by design.
+  const retainersToPlace = useMemo(() => accounts.filter(a => a.type === "Retainer" && !a.podId && ["Active", "Launch", "Growth"].includes(a.status)), [accounts]);
 
   const savePod = async (d: any) => {
     setSaveError(null);
@@ -1772,40 +1775,55 @@ export default function App() {
                 })}
               </div>
 
-              {/* Unassigned buckets */}
-              {(unpoddedPeople.length > 0 || unpoddedAccts.length > 0) && pods.length > 0 && (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {unpoddedPeople.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                      <div className="text-[11px] font-semibold text-amber-700 mb-2.5">Unassigned People · {unpoddedPeople.length}</div>
-                      {unpoddedPeople.map(p => (
-                        <div key={p.id} className="flex items-center gap-2 py-1.5">
-                          <Av name={p.name} size={24} sl={p.sl} lead={p.lead} />
-                          <div className="flex-1 min-w-0"><div className="text-xs font-medium text-gray-900 truncate">{p.name}</div></div>
-                          <select value="" onChange={e => e.target.value && assignToPod("person", p.id, e.target.value)} className="bg-white border border-amber-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none">
-                            <option value="">Add to pod…</option>
-                            {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {unpoddedAccts.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                      <div className="text-[11px] font-semibold text-amber-700 mb-2.5">Unassigned Accounts · {unpoddedAccts.length}</div>
-                      {unpoddedAccts.map(a => (
-                        <div key={a.id} className="flex items-center gap-2 py-1.5">
-                          <div className="flex-1 min-w-0"><span className="text-xs font-medium text-gray-900">{a.name}</span> <span className="text-[10px] text-gray-400">{fmtK(acctVal(a))}/mo</span></div>
-                          <select value="" onChange={e => e.target.value && assignToPod("account", a.id, e.target.value)} className="bg-white border border-amber-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none">
-                            <option value="">Add to pod…</option>
-                            {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {/* Retainers still to place into a pod — the real gap to close */}
+              {retainersToPlace.length > 0 && pods.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <div className="text-[11px] font-semibold text-amber-700 mb-2.5">Retainers to place · {retainersToPlace.length} <span className="font-normal text-amber-600">— active Symphony accounts not yet owned by a pod</span></div>
+                  <div className="grid gap-x-6 gap-y-1 md:grid-cols-2">
+                    {retainersToPlace.map(a => (
+                      <div key={a.id} className="flex items-center gap-2 py-1.5">
+                        <div className="flex-1 min-w-0"><span className="text-xs font-medium text-gray-900">{a.name}</span> <span className="text-[10px] text-gray-400">{fmtK(acctVal(a))}/mo</span></div>
+                        <select value="" onChange={e => e.target.value && assignToPod("account", a.id, e.target.value)} className="bg-white border border-amber-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none">
+                          <option value="">Add to pod…</option>
+                          {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Division 2 — the Studio Bench (permanent home, not an error state) */}
+              <div className="mt-2">
+                <div className="flex items-baseline gap-2.5 mb-1">
+                  <span className="text-xl font-semibold text-gray-900">Studio Bench</span>
+                  <span className="text-[11px] text-gray-400">— specialists, PMs & producer the pods pull from · {benchPeople.length}</span>
+                </div>
+                <div className="text-xs text-gray-400 mb-4">Deep-craft project work that isn't tied to one pod. Flat-rate projects live here by design.</div>
+                {benchPeople.length === 0 ? (
+                  <div className="text-[11px] text-gray-300 italic">Everyone is on a pod.</div>
+                ) : (
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {benchPeople.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 pl-1 pr-2 py-1 bg-gray-50 rounded-lg border border-gray-200">
+                          <Av name={p.name} size={26} sl={p.sl} lead={p.lead} />
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-gray-900 truncate">{p.name}</div>
+                            <div className="text-[9px] text-gray-400 truncate">{p.role || p.sl}</div>
+                          </div>
+                          {pods.length > 0 && (
+                            <select value="" onChange={e => e.target.value && assignToPod("person", p.id, e.target.value)} className="bg-white border border-gray-200 rounded-md px-1.5 py-1 text-[10px] text-gray-500 outline-none ml-1">
+                              <option value="">→ pod</option>
+                              {pods.map(pd => <option key={pd.id} value={pd.id}>{pd.name}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
