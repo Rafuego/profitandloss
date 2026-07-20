@@ -1864,44 +1864,57 @@ export default function App() {
                     <div className="text-xl font-semibold text-gray-900 mb-1">Revenue Mix</div>
                     <div className="text-xs text-gray-400 mb-4">Recurring retainers vs. amortized flat-rate work — and where the mix heads as project windows close (assumes the retainer book holds).</div>
                     <div className="bg-white border border-gray-200 rounded-xl p-6">
-                      {/* Stacked bar */}
-                      <div className="h-3 rounded-full overflow-hidden flex mb-4 bg-gray-100">
+                      {/* Two headline cards — each metric grouped under its own label */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-5 py-4">
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                            <span className="text-[12px] font-semibold text-gray-700">Symphony / Retainers</span>
+                          </div>
+                          <div className="text-3xl font-semibold text-gray-900 leading-none">{fmt(retMRR)}<span className="text-sm text-gray-400 font-normal">/mo</span></div>
+                          <div className="text-[11px] text-gray-500 mt-2">{pct(retPct)} of revenue · {retCount} accounts</div>
+                          <div className="text-[11px] text-gray-400">{fmt(retMRR * 12)} annualized</div>
+                        </div>
+                        <div className="rounded-xl border border-violet-100 bg-violet-50/40 px-5 py-4">
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-violet-400" />
+                            <span className="text-[12px] font-semibold text-gray-700">Flat Rate</span>
+                          </div>
+                          <div className="text-3xl font-semibold text-gray-900 leading-none">{fmt(Math.round(projMRR))}<span className="text-sm text-gray-400 font-normal">/mo</span></div>
+                          <div className="text-[11px] text-gray-500 mt-2">{pct(1 - retPct)} of revenue · {projCount} projects earning</div>
+                          <div className="text-[11px] text-gray-400">amortized across project windows</div>
+                        </div>
+                      </div>
+
+                      {/* Proportion bar */}
+                      <div className="mt-4 h-2.5 rounded-full overflow-hidden flex bg-gray-100">
                         <div className="bg-emerald-400 h-full" style={{ width: `${retPct * 100}%` }} />
                         <div className="bg-violet-400 h-full" style={{ width: `${(1 - retPct) * 100}%` }} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4 mb-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
-                          <div className="flex-1">
-                            <div className="text-[13px] font-semibold text-gray-900">Symphony / Retainers <span className="text-[10px] font-normal text-gray-400">· {retCount} accounts</span></div>
-                            <div className="text-[11px] text-gray-400">{fmt(retMRR * 12)} annualized</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-semibold text-emerald-600">{fmt(retMRR)}<span className="text-[10px] text-gray-400 font-normal">/mo</span></div>
-                            <div className="text-[11px] text-gray-400">{pct(retPct)}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2.5 h-2.5 rounded-full bg-violet-400 shrink-0" />
-                          <div className="flex-1">
-                            <div className="text-[13px] font-semibold text-gray-900">Flat Rate <span className="text-[10px] font-normal text-gray-400">· {projCount} earning this month</span></div>
-                            <div className="text-[11px] text-gray-400">amortized across project windows</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-semibold text-violet-600">{fmt(Math.round(projMRR))}<span className="text-[10px] text-gray-400 font-normal">/mo</span></div>
-                            <div className="text-[11px] text-gray-400">{pct(1 - retPct)}</div>
-                          </div>
-                        </div>
+                      <div className="mt-1.5 flex justify-between text-[11px] font-semibold">
+                        <span className="text-gray-900">{fmt(retMRR + Math.round(projMRR))}<span className="text-gray-400 font-normal">/mo total this month</span></span>
                       </div>
-                      {/* 3-month outlook */}
-                      <div className="border-t border-gray-100 pt-4 grid grid-cols-3 gap-3">
-                        {months.map((mo, i) => (
-                          <div key={mo.label} className={`rounded-lg px-4 py-3 ${i === 0 ? "bg-gray-50 border border-gray-200" : "bg-gray-50"}`}>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{mo.label}{i === 0 ? " · now" : ""}</div>
-                            <div className="text-base font-semibold text-gray-900">{fmtK(mo.total)}</div>
-                            <div className="text-[10px] text-gray-400">{fmtK(retMRR)} ret + <span className="text-violet-500">{fmtK(mo.proj)} flat</span></div>
-                          </div>
-                        ))}
+
+                      {/* 3-month outlook — flat-rate rolls off as windows close */}
+                      <div className="mt-5 pt-5 border-t border-gray-100">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">3-Month Outlook <span className="font-normal normal-case text-gray-400">— retainers hold, flat-rate revenue rolls off as project windows close</span></div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {months.map((mo, i) => {
+                            const flatPct = mo.total > 0 ? mo.proj / mo.total : 0;
+                            return (
+                            <div key={mo.label} className={`rounded-lg px-4 py-3 border ${i === 0 ? "border-gray-300 bg-white" : "border-gray-100 bg-gray-50"}`}>
+                              <div className="flex items-baseline justify-between mb-2">
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{mo.label}{i === 0 ? " · now" : ""}</span>
+                                <span className="text-lg font-semibold text-gray-900">{fmtK(mo.total)}</span>
+                              </div>
+                              <div className="h-1.5 rounded-full overflow-hidden flex bg-gray-100 mb-1.5">
+                                <div className="bg-emerald-400 h-full" style={{ width: `${(1 - flatPct) * 100}%` }} />
+                                <div className="bg-violet-400 h-full" style={{ width: `${flatPct * 100}%` }} />
+                              </div>
+                              <div className="text-[10px] text-gray-400">{fmtK(retMRR)} ret <span className="text-gray-300">·</span> <span className="text-violet-500">{fmtK(mo.proj)} flat</span></div>
+                            </div>
+                          )})}
+                        </div>
                       </div>
                     </div>
                   </div>
