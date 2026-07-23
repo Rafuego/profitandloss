@@ -567,7 +567,6 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
-  const [podNid, setPodNid] = useState(1);
   const [view, setView] = useState("workload");
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -730,10 +729,11 @@ export default function App() {
   const savePod = async (d: any) => {
     setSaveError(null);
     let pod = d;
-    if (!pod.id) pod = { ...pod, id: `pod${podNid}`, sortOrder: pods.length };
+    // UUID ids — never a reused counter (a per-session counter collides with
+    // pods loaded from the DB and silently overwrites them)
+    if (!pod.id) pod = { ...pod, id: crypto.randomUUID(), sortOrder: pods.length };
     const prev = pods;
     setPods(ps => ps.find(x => x.id === pod.id) ? ps.map(x => x.id === pod.id ? pod : x) : [...ps, pod]);
-    if (!d.id) setPodNid(n => n + 1);
     try { await upsertPod(pod); } catch (e: any) { setSaveError(`Save failed: ${e?.message || "Supabase error"}`); setPods(prev); }
     setModal(null);
   };
