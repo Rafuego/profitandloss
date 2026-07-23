@@ -2252,7 +2252,7 @@ export default function App() {
                 ))}
               </div>
             </div>
-            <Inp label="Pod Lead" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={team.filter(p => p.lead).map(p => ({ value: p.id, label: p.name }))} />
+            <Inp label="Pod Lead" value={modal.data.leadId} onChange={v => setModal({ ...modal, data: { ...modal.data, leadId: v || null } })} opts={teamOpts} />
             {modal.data.id ? (
               <>
                 {/* Members — assign immediately (exclusive membership) */}
