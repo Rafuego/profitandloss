@@ -563,6 +563,16 @@ export default function App() {
   const [accounts, setAccounts] = useState(INIT_ACCOUNTS);
   const [depts, setDepts] = useState(INIT_DEPTS);
   const [pods, setPods] = useState<any[]>([]);
+  const [mercury, setMercury] = useState<any>(null);        // Mercury invoice sync result
+  const [mercuryLoading, setMercuryLoading] = useState(false);
+  const loadMercury = () => {
+    setMercuryLoading(true);
+    fetch("/api/mercury")
+      .then(r => r.json())
+      .then(setMercury)
+      .catch(e => setMercury({ connected: true, error: String(e?.message || e) }))
+      .finally(() => setMercuryLoading(false));
+  };
   const [selected, setSelected] = useState(null);
   const [modal, setModal] = useState(null);
   const [nid, setNid] = useState(20);
@@ -591,6 +601,11 @@ export default function App() {
     }
     load();
   }, []);
+
+  // Lazily pull Mercury invoices the first time the Invoices tab is opened
+  useEffect(() => {
+    if (view === "invoices" && mercury === null && !mercuryLoading) loadMercury();
+  }, [view]);
 
   const slPods = useMemo(() => {
     // Service-line P&L (disciplines). Distinct from the `pods` state (real
@@ -706,6 +721,7 @@ export default function App() {
     { id: "accounts", label: "Accounts" },
     { id: "projects", label: "Projects" },
     { id: "pods", label: "Pods" },
+    { id: "invoices", label: "Invoices" },
     { id: "pnl", label: "P&L" },
   ];
 
@@ -1826,6 +1842,106 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* ══════════ INVOICES VIEW (Mercury) ══════════ */}
+          {view === "invoices" && (() => {
+            const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
+            const acctByName: Record<string, any> = {};
+            accounts.forEach(a => { acctByName[a.name.toLowerCase().replace(/[^a-z0-9]/g, "")] = a; });
+            const matchAcct = (name: string) => acctByName[(name || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
+            const statusStyle: Record<string, string> = {
+              Paid: "bg-emerald-50 text-emerald-600",
+              Unpaid: "bg-amber-50 text-amber-600",
+              Processing: "bg-blue-50 text-blue-600",
+              Cancelled: "bg-gray-100 text-gray-400",
+            };
+            const invoices = mercury?.invoices || [];
+            const inFlight = invoices.filter((i: any) => i.status === "Unpaid" || i.status === "Processing");
+            const paidInv = invoices.filter((i: any) => i.status === "Paid");
+            const sorted = [...invoices].sort((a, b) => {
+              const rank = (s: string) => (s === "Unpaid" ? 0 : s === "Processing" ? 1 : s === "Paid" ? 2 : 3);
+              return rank(a.status) - rank(b.status);
+            });
+
+            return (
+              <div className="p-8 pb-12">
+                <div className="flex items-center justify-between mb-7">
+                  <div>
+                    <div className="text-2xl font-semibold text-gray-900 mb-1">Invoices</div>
+                    <div className="text-xs text-gray-400">Live from Mercury — invoices in flight vs. paid. {mercury?.fetchedAt && `Synced ${new Date(mercury.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.`}</div>
+                  </div>
+                  <button onClick={loadMercury} disabled={mercuryLoading}
+                    className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50">
+                    {mercuryLoading ? "Syncing…" : "↻ Refresh"}
+                  </button>
+                </div>
+
+                {mercuryLoading && mercury === null && <div className="text-sm text-gray-400">Connecting to Mercury…</div>}
+
+                {/* Not connected — setup instructions */}
+                {mercury && mercury.connected === false && (
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 max-w-2xl">
+                    <div className="text-base font-semibold text-gray-900 mb-1">Mercury isn't connected yet</div>
+                    <div className="text-xs text-gray-500 mb-4">Add a read-only Mercury token and this tab fills with live invoice status. The token stays server-side — it's never exposed in the browser.</div>
+                    <ol className="text-[13px] text-gray-600 space-y-2 list-decimal ml-4">
+                      <li>In Mercury: <span className="font-medium">Settings → Tokens</span> → create a <span className="font-medium">read-only</span> token.</li>
+                      <li>In Vercel: <span className="font-medium">Project → Settings → Environment Variables</span> → add <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">MERCURY_API_TOKEN</code> = your token (include the <code className="bg-gray-100 px-1 rounded text-[11px]">secret-token:</code> prefix).</li>
+                      <li>Redeploy (any push, or Vercel → Deployments → Redeploy), then hit Refresh here.</li>
+                    </ol>
+                  </div>
+                )}
+
+                {/* Connected but the call errored (bad token, etc.) */}
+                {mercury && mercury.connected && mercury.error && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 max-w-2xl">
+                    <div className="text-[13px] font-semibold text-red-600 mb-1">Couldn't reach Mercury</div>
+                    <div className="text-[11px] text-red-500 font-mono break-all">{mercury.error}</div>
+                    <div className="text-[11px] text-gray-500 mt-2">Usually a bad or expired token, or the <code className="bg-gray-100 px-1 rounded">secret-token:</code> prefix is missing. Regenerate a read-only token in Mercury and update the Vercel env var.</div>
+                  </div>
+                )}
+
+                {/* Connected + data */}
+                {mercury && mercury.connected && !mercury.error && (
+                  <>
+                    <div className="flex gap-4 flex-wrap mb-8">
+                      <KpiCard label="In Flight" value={fmt(Math.round(mercury.totals?.inFlight || 0))} sub={`${inFlight.length} unpaid / processing`} color="text-amber-600" />
+                      <KpiCard label="Paid" value={fmt(Math.round(mercury.totals?.paid || 0))} sub={`${paidInv.length} collected`} color="text-emerald-600" />
+                      <KpiCard label="Invoices" value={mercury.counts?.total || 0} sub="from Mercury AR" />
+                    </div>
+
+                    {invoices.length === 0 ? (
+                      <div className="text-sm text-gray-400 italic">No invoices in Mercury yet. (Invoices you send through Ignition appear via the Ignition sync, not here.)</div>
+                    ) : (
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "1.6fr 0.8fr 1fr 1fr 1.4fr" }}>
+                          {["Client", "Invoice #", "Amount", "Status", "Due / matched account"].map(h => (
+                            <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
+                          ))}
+                        </div>
+                        {sorted.map((inv: any, i: number) => {
+                          const acct = matchAcct(inv.customer);
+                          return (
+                            <div key={inv.id || i} className="grid px-5 py-3 border-b border-gray-100 items-center" style={{ gridTemplateColumns: "1.6fr 0.8fr 1fr 1fr 1.4fr" }}>
+                              <div className="text-[13px] font-medium text-gray-900">{inv.customer}</div>
+                              <div className="text-[11px] text-gray-400">{inv.number || "—"}</div>
+                              <div className="text-[13px] font-semibold text-gray-900">{fmt(inv.amount)}</div>
+                              <div><span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${statusStyle[inv.status] || "bg-gray-100 text-gray-500"}`}>{inv.status}</span></div>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <span className="text-gray-400">{inv.status === "Paid" ? `paid ${fmtDate(inv.paidAt)}` : `due ${fmtDate(inv.dueDate)}`}</span>
+                                {acct ? <span className="text-gray-300">·</span> : null}
+                                {acct ? <SlTags a={acct} small /> : <span className="text-[9px] text-amber-500">no match</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div className="text-[11px] text-gray-400 mt-3">Read-only Mercury connection · invoices sent through Ignition are tracked separately.</div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ══════════ P&L DASHBOARD VIEW ══════════ */}
           {view === "pnl" && (

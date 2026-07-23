@@ -23,8 +23,20 @@ The entire application is a single React component tree with no routing:
 - `app/page.tsx` — renders `<App />`
 - `components/App.tsx` — **all** views, state, logic, and UI (~1300+ lines). All state lives here.
 - `lib/supabase.ts` — Supabase client, TypeScript types, and all CRUD helpers
+- `app/api/mercury/route.ts` — the one server-side route (Mercury invoicing sync)
 
-There are no separate page files, no API routes, and no context providers. Everything is co-located in `App.tsx`.
+Everything is co-located in `App.tsx` with no context providers. The only server code is the Mercury route (see below).
+
+## Mercury Invoicing (server-side)
+
+`app/api/mercury/route.ts` is a Node serverless route (`ƒ` in the build). It reads
+`MERCURY_API_TOKEN` (a **read-only** Mercury token, set in Vercel env — never in the
+browser), calls Mercury's AR API (`GET /api/v1/ar/invoices` + `/ar/customers`), and
+returns normalized invoices (status: Unpaid/Processing = in flight, Paid = paid). The
+"Invoices" tab lazy-fetches `/api/mercury` and matches invoice customers to accounts by
+name. No token → `{connected:false}` → setup instructions render. The route only ever
+issues GETs — it can never move money. Invoices sent via Ignition are a separate
+(planned) integration, not visible here.
 
 ## Key Patterns in App.tsx
 
