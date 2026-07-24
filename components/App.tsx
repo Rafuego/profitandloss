@@ -1904,9 +1904,9 @@ export default function App() {
                 {mercury && mercury.connected && !mercury.error && (
                   <>
                     <div className="flex gap-4 flex-wrap mb-8">
-                      <KpiCard label="In Flight" value={fmt(Math.round(mercury.totals?.inFlight || 0))} sub={`${inFlight.length} unpaid / processing`} color="text-amber-600" />
-                      <KpiCard label="Paid" value={fmt(Math.round(mercury.totals?.paid || 0))} sub={`${paidInv.length} collected`} color="text-emerald-600" />
-                      <KpiCard label="Invoices" value={mercury.counts?.total || 0} sub="from Mercury AR" />
+                      <KpiCard label="In Flight" value={fmt(Math.round(mercury.totals?.inFlight || 0))} sub={`${mercury.counts?.inFlight ?? inFlight.length} unpaid / processing`} color="text-amber-600" />
+                      <KpiCard label="Paid" value={fmt(Math.round(mercury.totals?.paid || 0))} sub={`${mercury.counts?.paid ?? paidInv.length} collected${mercury.truncated ? "+" : ""}`} color="text-emerald-600" />
+                      <KpiCard label="Invoices" value={`${mercury.counts?.total || 0}${mercury.truncated ? "+" : ""}`} sub="from Mercury AR" />
                     </div>
 
                     {invoices.length === 0 ? (
@@ -1936,7 +1936,7 @@ export default function App() {
                         })}
                       </div>
                     )}
-                    <div className="text-[11px] text-gray-400 mt-3">Read-only Mercury connection · invoices sent through Ignition are tracked separately.</div>
+                    <div className="text-[11px] text-gray-400 mt-3">Showing all in-flight invoices{mercury.recentPaidShown < (mercury.counts?.paid || 0) ? ` + the ${mercury.recentPaidShown} most recent paid` : ""}. Read-only Mercury connection · invoices sent through Ignition are tracked separately.</div>
                   </>
                 )}
               </div>
