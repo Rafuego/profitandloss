@@ -604,6 +604,7 @@ export default function App() {
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
   const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
+  const [invoiceTab, setInvoiceTab] = useState<"overview" | "monthly">("overview");
   const [quickAssign, setQuickAssign] = useState<{ personId: string; role: "lead" | "support"; acctId: string } | null>(null);
 
   useEffect(() => {
@@ -1966,6 +1967,15 @@ export default function App() {
                       <KpiCard label="Invoices" value={`${mercury.counts?.total || 0}${mercury.truncated ? "+" : ""}`} sub="from Mercury AR" />
                     </div>
 
+                    {/* sub-tabs */}
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-max mb-6">
+                      {([["overview", "Overview"], ["monthly", "Monthly Paid"]] as const).map(([id, label]) => (
+                        <button key={id} onClick={() => setInvoiceTab(id)}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${invoiceTab === id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>{label}</button>
+                      ))}
+                    </div>
+
+                    {invoiceTab === "overview" && (<>
                     {invoices.length === 0 ? (
                       <div className="text-sm text-gray-400 italic">No invoices in Mercury yet. (Invoices you send through Ignition appear via the Ignition sync, not here.)</div>
                     ) : (
@@ -1994,6 +2004,34 @@ export default function App() {
                       </div>
                     )}
                     <div className="text-[11px] text-gray-400 mt-3">Showing all in-flight invoices{mercury.recentPaidShown < (mercury.counts?.paid || 0) ? ` + the ${mercury.recentPaidShown} most recent paid` : ""}. Read-only Mercury connection · invoices sent through Ignition are tracked separately.</div>
+                    </>)}
+
+                    {invoiceTab === "monthly" && (() => {
+                      const months = Object.entries(mercury.paidByMonth || {}).sort((a, b) => b[0].localeCompare(a[0]));
+                      if (months.length === 0) return <div className="text-sm text-gray-400 italic">No paid invoices yet.</div>;
+                      const max = Math.max(1, ...months.map(([, v]: any) => v.total));
+                      const fmtMonth = (ym: string) => { const [y, m] = ym.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" }); };
+                      const now = new Date(), thisYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                          {months.map(([ym, v]: any) => (
+                            <div key={ym} className="px-5 py-3.5 border-b border-gray-100 last:border-0">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="text-[13px] font-semibold text-gray-900">{fmtMonth(ym)} {ym === thisYM && <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full ml-1">this month</span>}<span className="text-[10px] font-normal text-gray-400 ml-1">· {v.count} invoice{v.count !== 1 ? "s" : ""}</span></div>
+                                <div className="text-[15px] font-semibold text-emerald-600">{fmt(Math.round(v.total))}</div>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${(v.total / max) * 100}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                          <div className="px-5 py-3 bg-gray-50 flex items-center justify-between">
+                            <span className="text-[11px] text-gray-400">Paid invoices grouped by invoice month{mercury.truncated ? " (recent history)" : ""}</span>
+                            <span className="text-[12px] font-semibold text-gray-700">{fmt(Math.round(mercury.totals?.paid || 0))} all-time</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
               </div>

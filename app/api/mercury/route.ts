@@ -64,6 +64,7 @@ export async function GET() {
     const nkey = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     const today = new Date().toISOString().slice(0, 10);
     const byCustomer: Record<string, any> = {};
+    const paidByMonth: Record<string, any> = {}; // "YYYY-MM" -> { total, count }
     const bump = (name: string, inv: any) => {
       const k = nkey(name);
       if (!k) return;
@@ -102,6 +103,11 @@ export async function GET() {
           inFlight.push(norm); inFlightTotal += norm.amount;
         } else if (norm.status === "Paid") {
           paidCount++; paidTotal += norm.amount;
+          const m = (norm.invoiceDate || norm.dueDate || "").slice(0, 7); // YYYY-MM
+          if (m) {
+            const pm = paidByMonth[m] || (paidByMonth[m] = { total: 0, count: 0 });
+            pm.total += norm.amount; pm.count++;
+          }
           if (recentPaid.length < RECENT_PAID) recentPaid.push(norm);
         } else if (norm.status === "Cancelled") {
           cancelled++;
@@ -121,6 +127,7 @@ export async function GET() {
       invoices: [...inFlight, ...recentPaid],
       recentPaidShown: recentPaid.length,
       byCustomer, // per-client rollup for account-level payment status
+      paidByMonth, // { "YYYY-MM": { total, count } } — paid invoices by invoice month
       truncated,
     });
   } catch (e: any) {
