@@ -26,8 +26,24 @@ async function mget(path: string, token: string) {
 }
 
 export async function GET() {
-  const token = process.env.MERCURY_API_TOKEN;
+  const token = (process.env.MERCURY_API_TOKEN || "").trim();
   if (!token) return NextResponse.json({ connected: false });
+
+  // Guard against a token that was copied from an abbreviated display (e.g. one
+  // containing "…") — non-Latin1 chars can't go in an HTTP header and produce a
+  // cryptic ByteString error. Give a clear message instead.
+  if (/[^\x00-\xFF]/.test(token)) {
+    return NextResponse.json({
+      connected: true,
+      error: "The token contains invalid characters (e.g. a “…” ellipsis). It looks like an abbreviated copy — paste the FULL token, starting with 'secret-token:' and ending in '_yrucrem', with no '…'.",
+    });
+  }
+  if (!token.startsWith("secret-token:")) {
+    return NextResponse.json({
+      connected: true,
+      error: "The token is missing the 'secret-token:' prefix. Paste the full token including that prefix.",
+    });
+  }
 
   try {
     // Customers (188-ish) → resolve customerId to a client name
