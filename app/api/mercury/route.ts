@@ -59,6 +59,28 @@ export async function GET() {
     let paidCount = 0, paidTotal = 0, inFlightTotal = 0, total = 0, cancelled = 0;
     let cursor: string | null = null, truncated = false;
 
+    // Per-client payment rollup (keyed by normalized name) — the tracker matches
+    // accounts to this to show a paid/owed/overdue status per account.
+    const nkey = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const today = new Date().toISOString().slice(0, 10);
+    const byCustomer: Record<string, any> = {};
+    const bump = (name: string, inv: any) => {
+      const k = nkey(name);
+      if (!k) return;
+      const b = byCustomer[k] || (byCustomer[k] = { name, outstanding: 0, overdue: 0, oldestDue: null, lastPaid: null, unpaid: 0, total: 0 });
+      b.total++;
+      if (inv.status === "Unpaid" || inv.status === "Processing") {
+        b.outstanding += inv.amount; b.unpaid++;
+        if (inv.dueDate && inv.dueDate < today) {
+          b.overdue += inv.amount;
+          if (!b.oldestDue || inv.dueDate < b.oldestDue) b.oldestDue = inv.dueDate;
+        }
+      } else if (inv.status === "Paid") {
+        const d = inv.invoiceDate || inv.dueDate;
+        if (d && (!b.lastPaid || d > b.lastPaid)) b.lastPaid = d;
+      }
+    };
+
     for (let p = 0; p < MAX_PAGES; p++) {
       const q = `/ar/invoices?limit=${PAGE}&order=desc${cursor ? `&start_after=${cursor}` : ""}`;
       const res = await mget(q, token);
@@ -75,6 +97,7 @@ export async function GET() {
           invoiceDate: i.invoiceDate ?? null,
           slug: i.slug ?? null,
         };
+        bump(norm.customer, norm);
         if (norm.status === "Unpaid" || norm.status === "Processing") {
           inFlight.push(norm); inFlightTotal += norm.amount;
         } else if (norm.status === "Paid") {
@@ -97,6 +120,7 @@ export async function GET() {
       // table data: every in-flight invoice + the most recent paid ones
       invoices: [...inFlight, ...recentPaid],
       recentPaidShown: recentPaid.length,
+      byCustomer, // per-client rollup for account-level payment status
       truncated,
     });
   } catch (e: any) {

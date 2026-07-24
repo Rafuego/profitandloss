@@ -292,6 +292,27 @@ const SlTag = ({ sl, small }) => {
 // All of an account's service line tags
 const SlTags = ({ a, small }) => <>{acctSls(a).map((s: string) => <SlTag key={s} sl={s} small={small} />)}</>;
 
+// Payment status from the Mercury rollup — 🟢 paid up / 🟡 due / 🔴 overdue
+const PAY_STYLE: Record<string, any> = {
+  current: { dot: "bg-emerald-400", text: "text-emerald-600" },
+  due:     { dot: "bg-amber-400",   text: "text-amber-600" },
+  overdue: { dot: "bg-red-500",     text: "text-red-500" },
+};
+const payLabel = (p: any) =>
+  p.status === "overdue" ? `${p.overdueDays}d overdue · ${fmtK(p.overdue)}`
+  : p.status === "due" ? `${fmtK(p.outstanding)} due`
+  : "Paid up";
+const PayDot = ({ pay, showLabel }: any) => {
+  if (!pay) return null;
+  const s = PAY_STYLE[pay.status];
+  return (
+    <span className="inline-flex items-center gap-1.5" title={`Mercury: ${payLabel(pay)}${pay.lastPaid ? ` · last paid ${pay.lastPaid}` : ""}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
+      {showLabel && <span className={`text-[10px] font-semibold ${s.text}`}>{payLabel(pay)}</span>}
+    </span>
+  );
+};
+
 const StatusTag = ({ status, small }) => {
   const base = small ? "text-[9px] px-2 py-0.5" : "text-[10px] px-2.5 py-1";
   const colors = {
@@ -602,10 +623,9 @@ export default function App() {
     load();
   }, []);
 
-  // Lazily pull Mercury invoices the first time the Invoices tab is opened
-  useEffect(() => {
-    if (view === "invoices" && mercury === null && !mercuryLoading) loadMercury();
-  }, [view]);
+  // Pull Mercury invoices once on load so every tab (Projects, Accounts,
+  // Invoices) can show per-account payment status.
+  useEffect(() => { loadMercury(); }, []);
 
   const slPods = useMemo(() => {
     // Service-line P&L (disciplines). Distinct from the `pods` state (real
@@ -703,6 +723,27 @@ export default function App() {
     }
     setQuickAssign(null);
   };
+
+  // Per-account payment status derived from the Mercury per-client rollup
+  const payFor = (a: any) => {
+    const bc = mercury?.byCustomer;
+    if (!bc) return null;
+    const r = bc[(a.name || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
+    if (!r) return null; // no Mercury invoices matched to this account
+    const status = r.overdue > 0 ? "overdue" : r.outstanding > 0 ? "due" : "current";
+    const overdueDays = r.oldestDue ? Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000)) : 0;
+    return { ...r, status, overdueDays };
+  };
+  const collections = useMemo(() => {
+    const bc = mercury?.byCustomer;
+    if (!bc) return null;
+    let overdue = 0, overdueCount = 0, outstanding = 0;
+    Object.values(bc).forEach((r: any) => {
+      outstanding += r.outstanding || 0;
+      if (r.overdue > 0) { overdue += r.overdue; overdueCount++; }
+    });
+    return { overdue, overdueCount, outstanding };
+  }, [mercury]);
 
   const getName = id => team.find(p => p.id === id)?.name || "—";
   const slOpts = SERVICE_LINES.map(s => ({ value: s.id, label: s.name }));
@@ -1252,26 +1293,39 @@ export default function App() {
 
             // Shared header with tabs + view toggle
             const Header = () => (
-              <div className="flex items-center justify-between mb-7">
-                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-                  {([
-                    { id: "retainer", label: "Retainers", count: retainerCount, dot: "bg-emerald-400" },
-                    { id: "projects", label: "Flat Rate", count: projectCount, dot: "bg-violet-400" },
-                    { id: "closed",   label: "Closed / Pipeline", count: closedCount, dot: "bg-gray-400" },
-                  ] as const).map(t => (
-                    <button key={t.id} onClick={() => setAcctTab(t.id)}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${acctTab === t.id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />
-                      {t.label}
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${acctTab === t.id ? "bg-gray-100 text-gray-600" : "text-gray-400"}`}>{t.count}</span>
-                    </button>
-                  ))}
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                    {([
+                      { id: "retainer", label: "Retainers", count: retainerCount, dot: "bg-emerald-400" },
+                      { id: "projects", label: "Flat Rate", count: projectCount, dot: "bg-violet-400" },
+                      { id: "closed",   label: "Closed / Pipeline", count: closedCount, dot: "bg-gray-400" },
+                    ] as const).map(t => (
+                      <button key={t.id} onClick={() => setAcctTab(t.id)}
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${acctTab === t.id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />
+                        {t.label}
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${acctTab === t.id ? "bg-gray-100 text-gray-600" : "text-gray-400"}`}>{t.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <button onClick={() => setAcctView("pods")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "pods" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Pods</button>
+                    <button onClick={() => setAcctView("list")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>List</button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                  <button onClick={() => setAcctView("pods")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "pods" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Pods</button>
-                  <button onClick={() => setAcctView("list")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>List</button>
-                </div>
-              </div>
+                {/* Collections snapshot from Mercury */}
+                {collections && (collections.outstanding > 0) && (
+                  <div className="flex items-center gap-4 mb-6 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-[12px]">
+                    <span className="font-semibold text-gray-700">Collections</span>
+                    {collections.overdue > 0 && (
+                      <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /><span className="text-red-500 font-semibold">{fmt(Math.round(collections.overdue))} overdue</span><span className="text-gray-400">· {collections.overdueCount} client{collections.overdueCount !== 1 ? "s" : ""}</span></span>
+                    )}
+                    <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /><span className="text-gray-500">{fmt(Math.round(collections.outstanding))} outstanding total</span></span>
+                    <span className="text-[10px] text-gray-400 ml-auto">via Mercury</span>
+                  </div>
+                )}
+              </>
             );
 
             if (acctView === "pods") return (
@@ -1314,6 +1368,7 @@ export default function App() {
                                 {isProject && (
                                   <span className="text-[9px] font-semibold px-2 py-0.5 bg-violet-50 text-violet-600 rounded-full">{a.type}</span>
                                 )}
+                                {(() => { const pay = payFor(a); return pay ? <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full ${pay.status === "overdue" ? "bg-red-50 text-red-500" : pay.status === "due" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}><span className={`w-1.5 h-1.5 rounded-full ${PAY_STYLE[pay.status].dot}`} />{payLabel(pay)}</span> : null; })()}
                               </div>
                             </div>
                             <div className="text-right shrink-0">
@@ -1467,6 +1522,7 @@ export default function App() {
               const e = econOf(a);
               const overdue = !done && e.elapsed === 1;
               const collected = collectedOf(a);
+              const pay = payFor(a);
               return (
                 <div onClick={() => setSelected({ type: "account", data: a })}
                   className={`bg-white border rounded-xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer ${done ? "border-gray-200" : "border-violet-200"}`}>
@@ -1484,6 +1540,7 @@ export default function App() {
                           <SlTags a={a} small />
                           <StatusTag status={a.status} small />
                           {overdue && <Tag small variant="amber">Past end date</Tag>}
+                          {pay && <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full ${pay.status === "overdue" ? "bg-red-50 text-red-500" : pay.status === "due" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}><span className={`w-1.5 h-1.5 rounded-full ${PAY_STYLE[pay.status].dot}`} />{payLabel(pay)}</span>}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
