@@ -79,6 +79,7 @@ export async function GET() {
       "1921ai": "1921",
       atriavc: "atria",
       neruhealth: "neruhealth",
+      naryavc: "narya", // Mercury bills "Narya VC"; the tracker has only the project
     };
     const akey = (s: string) => { const k = nkey(s); return ALIAS[k] || k; };
     const today = new Date().toISOString().slice(0, 10);

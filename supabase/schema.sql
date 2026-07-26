@@ -215,7 +215,6 @@ insert into accounts (id, name, sl, lead_id, status, type, retainer, project, we
   ('a4',   'Envoy',            'symphony', 't10', 'Closed', 'Retainer', 1500, 0, 3, null, null, ''),
   ('a12',  'Raspberry Ai',     'symphony', 't8',  'Closed', 'Retainer', 8750, 0, 3, null, null, ''),
   ('a114', 'Tocaro Blue',      'symphony', null,  'Closed', 'Retainer', 5000, 0, 3, null, null, ''),
-  ('a116', 'Narya VC',         'symphony', null,  'Closed', 'Retainer', 2000, 0, 3, null, null, ''),
   ('a118', 'SirenOpt',         'symphony', null,  'Closed', 'Retainer', 5000, 0, 3, null, null, ''),
   ('a120', 'Guardrail Ai',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),
   ('a121', 'Kevin Morris',     'symphony', null,  'Closed', 'Retainer', 3500, 0, 3, null, null, ''),

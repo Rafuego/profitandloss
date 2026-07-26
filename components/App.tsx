@@ -74,7 +74,6 @@ const INIT_ACCOUNTS = [
   { id: "a4",   name: "Envoy",        sl: "symphony", leadId: "t10", supportIds: [], status: "Closed", type: "Retainer", retainer: 1500, project: 0, weight: 3, notes: "" },
   { id: "a12",  name: "Raspberry Ai", sl: "symphony", leadId: "t8",  supportIds: [], status: "Closed", type: "Retainer", retainer: 8750, project: 0, weight: 3, notes: "" },
   { id: "a114", name: "Tocaro Blue",  sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
-  { id: "a116", name: "Narya VC",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 2000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a118", name: "SirenOpt",     sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 5000, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a120", name: "Guardrail Ai", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
   { id: "a121", name: "Kevin Morris", sl: "symphony", leadId: null,  supportIds: [], status: "Closed", type: "Retainer", retainer: 3500, project: 0, weight: 3, startDate: null, endDate: null, notes: "" },
