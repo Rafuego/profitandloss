@@ -178,6 +178,9 @@ export async function GET() {
         for (const a of accts) {
           const claimed = allInvoices.filter(i => i.number && claimedBy[String(i.number).toUpperCase()] === a.id);
           if (claimed.length) {
+            // Tag each invoice with the account it belongs to (same object refs
+            // as the returned `invoices` array, so the client can group by account)
+            claimed.forEach(i => { i.accountId = a.id; i.accountName = a.name; });
             byAccount[a.id] = { ...roll(claimed), name: a.name, source: "claimed", invoiceNumbers: claimed.map(i => i.number) };
             continue;
           }
@@ -185,7 +188,10 @@ export async function GET() {
           const k = akey(a.name);
           const matched = allInvoices.filter(i =>
             akey(i.customer) === k && !(i.number && claimedBy[String(i.number).toUpperCase()]));
-          if (matched.length) byAccount[a.id] = { ...roll(matched), name: a.name, source: "name" };
+          if (matched.length) {
+            matched.forEach(i => { i.accountId = a.id; i.accountName = a.name; });
+            byAccount[a.id] = { ...roll(matched), name: a.name, source: "name" };
+          }
         }
       }
     } catch { /* per-account rollup is best-effort; byCustomer still works */ }

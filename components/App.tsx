@@ -606,7 +606,7 @@ export default function App() {
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
   const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
-  const [invoiceTab, setInvoiceTab] = useState<"overview" | "monthly">("overview");
+  const [invoiceTab, setInvoiceTab] = useState<"overview" | "overdue" | "monthly">("overview");
   const [quickAssign, setQuickAssign] = useState<{ personId: string; role: "lead" | "support"; acctId: string } | null>(null);
 
   useEffect(() => {
@@ -1981,6 +1981,23 @@ export default function App() {
               Cancelled: "bg-gray-100 text-gray-400",
             };
             const invoices = mercury?.invoices || [];
+            // Every unpaid invoice past its due date, oldest debt first
+            const todayISO = new Date().toISOString().slice(0, 10);
+            const overdueInvoices = invoices
+              .filter((i: any) => (i.status === "Unpaid" || i.status === "Processing") && i.dueDate && i.dueDate < todayISO)
+              .map((i: any) => ({ ...i, daysLate: Math.round((Date.now() - new Date(i.dueDate).getTime()) / 86400000) }))
+              .sort((a: any, b: any) => b.daysLate - a.daysLate);
+            const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + i.amount, 0);
+            // Where each overdue invoice sits in the tracker
+            const acctById: Record<string, any> = {};
+            accounts.forEach(a => { acctById[a.id] = a; });
+            const placeOf = (inv: any) => {
+              const a = inv.accountId ? acctById[inv.accountId] : null;
+              if (!a) return { label: "not in tracker", tone: "text-gray-300", acct: null };
+              const active = ["Active", "Launch", "Growth"].includes(a.status);
+              const kind = a.type === "Retainer" ? "retainer" : active ? "active project" : "archived project";
+              return { label: kind, tone: active ? "text-gray-500" : "text-amber-600", acct: a };
+            };
             const inFlight = invoices.filter((i: any) => i.status === "Unpaid" || i.status === "Processing");
             const paidInv = invoices.filter((i: any) => i.status === "Paid");
             const sorted = [...invoices].sort((a, b) => {
@@ -2047,10 +2064,15 @@ export default function App() {
 
                     {/* sub-tabs */}
                     <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-max mb-6">
-                      {([["overview", "Overview"], ["monthly", "Monthly Paid"]] as const).map(([id, label]) => (
+                      {([["overview", "Overview"], ["overdue", "Overdue"], ["monthly", "Monthly Paid"]] as const).map(([id, label]) => {
+                        const n = id === "overdue" ? overdueInvoices.length : 0;
+                        return (
                         <button key={id} onClick={() => setInvoiceTab(id)}
-                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${invoiceTab === id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>{label}</button>
-                      ))}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${invoiceTab === id ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                          {label}
+                          {n > 0 && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${invoiceTab === id ? "bg-red-50 text-red-500" : "text-red-400"}`}>{n}</span>}
+                        </button>
+                      );})}
                     </div>
 
                     {invoiceTab === "overview" && (<>
@@ -2083,6 +2105,48 @@ export default function App() {
                     )}
                     <div className="text-[11px] text-gray-400 mt-3">Showing all in-flight invoices{mercury.recentPaidShown < (mercury.counts?.paid || 0) ? ` + the ${mercury.recentPaidShown} most recent paid` : ""}. Read-only Mercury connection · invoices sent through Ignition are tracked separately.</div>
                     </>)}
+
+                    {invoiceTab === "overdue" && (
+                      overdueInvoices.length === 0 ? (
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4 text-[13px] text-emerald-700 font-medium">Nothing overdue — every invoice is inside its terms.</div>
+                      ) : (<>
+                        <div className="flex items-center gap-4 mb-5 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
+                          <div>
+                            <div className="text-2xl font-semibold text-red-500 leading-none">{fmt(Math.round(overdueTotal))}</div>
+                            <div className="text-[11px] text-red-500/80 mt-1">{overdueInvoices.length} invoice{overdueInvoices.length !== 1 ? "s" : ""} past due</div>
+                          </div>
+                          <div className="ml-auto text-right text-[11px] text-gray-500">
+                            Oldest: <span className="font-semibold text-red-500">{overdueInvoices[0].daysLate} days</span> — {overdueInvoices[0].customer}
+                          </div>
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                          <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "1.6fr 0.8fr 1fr 0.9fr 0.8fr 1.5fr" }}>
+                            {["Client", "Invoice #", "Amount", "Due", "Late", "Where it sits"].map(h => (
+                              <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
+                            ))}
+                          </div>
+                          {overdueInvoices.map((inv: any, i: number) => {
+                            const place = placeOf(inv);
+                            const severe = inv.daysLate >= 60;
+                            return (
+                              <div key={inv.id || i} onClick={() => place.acct && setSelected({ type: "account", data: place.acct })}
+                                className={`grid px-5 py-3 border-b border-gray-100 items-center ${place.acct ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors`} style={{ gridTemplateColumns: "1.6fr 0.8fr 1fr 0.9fr 0.8fr 1.5fr" }}>
+                                <div className="text-[13px] font-medium text-gray-900">{inv.customer}</div>
+                                <div className="text-[11px] text-gray-400">{inv.number || "—"}</div>
+                                <div className={`text-[13px] font-semibold ${severe ? "text-red-500" : "text-gray-900"}`}>{fmt(inv.amount)}</div>
+                                <div className="text-[11px] text-gray-400">{fmtDate(inv.dueDate)}</div>
+                                <div className={`text-[13px] font-semibold ${severe ? "text-red-500" : inv.daysLate >= 30 ? "text-amber-600" : "text-gray-500"}`}>{inv.daysLate}d</div>
+                                <div className="text-[11px] flex items-center gap-1.5 min-w-0">
+                                  <span className="text-gray-700 truncate">{place.acct ? place.acct.name : "—"}</span>
+                                  <span className={`text-[9px] shrink-0 ${place.tone}`}>· {place.label}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="text-[11px] text-gray-400 mt-3">Sorted oldest-debt first. Amber rows sit on archived projects — completed work that was never fully collected.</div>
+                      </>)
+                    )}
 
                     {invoiceTab === "monthly" && (() => {
                       const months = Object.entries(mercury.paidByMonth || {}).sort((a, b) => b[0].localeCompare(a[0]));
