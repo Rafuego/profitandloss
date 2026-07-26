@@ -18,6 +18,7 @@ const SERVICE_LINES = [
   { id: "brand", name: "Brand", color: "bg-rose-100 text-rose-700" },
   { id: "product", name: "Product", color: "bg-blue-100 text-blue-700" },
   { id: "symphony", name: "Symphony", color: "bg-violet-100 text-violet-700" },
+  { id: "animation", name: "Animation", color: "bg-emerald-100 text-emerald-700" },
   { id: "ops", name: "Operations", color: "bg-stone-200 text-stone-600" },
   { id: "leadership", name: "Leadership", color: "bg-gray-800 text-white" },
 ];
@@ -40,6 +41,7 @@ const INIT_TEAM = [
   { id: "t12", name: "Vencho", role: "Brand Lead", sl: "brand", type: "Contractor", cadY: null, usdM: 4000, hrs: 40, lead: false },
   { id: "t15", name: "Joshua Ramkissoon", role: "Webflow Developer", sl: "site", type: "Full-Time", cadY: null, usdM: 3016, hrs: 160, lead: false },
   { id: "t16", name: "Igor Katcha", role: "Webflow Developer", sl: "site", type: "Contractor", cadY: null, usdM: 4000, hrs: 40, lead: false },
+  { id: "t21", name: "Martin", role: "Animator", sl: "animation", type: "Contractor", cadY: null, usdM: 2000, hrs: 40, lead: false },
   { id: "t18", name: "Daniel Shin", role: "Project Manager", sl: "ops", type: "Full-Time", cadY: null, usdM: 2919, hrs: 160, lead: false },
   { id: "t19", name: "Christine Chow", role: "Digital Designer", sl: "brand", type: "Full-Time", cadY: null, usdM: 3518, hrs: 160, lead: false },
   { id: "t20", name: "Carson", role: "Chief of Staff", sl: "ops", type: "Full-Time", cadY: null, usdM: 6000, hrs: 160, lead: false },
@@ -109,6 +111,7 @@ const INIT_ACCOUNTS = [
 
 // ── Org Chart Departments (independent of service lines) ──
 const INIT_DEPTS = [
+  { id: "d10", name: "Animation", memberIds: ["t21"], color: "bg-emerald-100 text-emerald-700" },
   { id: "d1", name: "Deck", memberIds: ["t5"], color: "bg-amber-100 text-amber-700" },
   { id: "d2", name: "Web Development", memberIds: ["t4", "t15", "t16"], color: "bg-teal-100 text-teal-700" },
   { id: "d3", name: "Brand", memberIds: ["t9", "t10", "t11", "t12", "t19"], color: "bg-rose-100 text-rose-700" },
@@ -1514,7 +1517,9 @@ export default function App() {
                 }
               });
               return { p, n, rev, costTotal, monthly, unknownCost, multiple: costTotal > 0 ? rev / costTotal : null };
-            }).filter(m => m.n > 0).sort((x, y) => y.rev - x.rev);
+            // Keep everyone — people with no project work show as zero so gaps
+            // in coverage are visible rather than silently hidden.
+            }).sort((x, y) => y.rev - x.rev || x.p.name.localeCompare(y.p.name));
 
             // Collected: completed = full fee, else 50% if the deposit invoice is in
             const collectedOf = (a: any) => a.status === "Closed" ? a.project : (a.depositPaid ? a.project * 0.5 : 0);
@@ -1725,7 +1730,7 @@ export default function App() {
                 {mileage.length > 0 && (
                   <div className="mb-10">
                     <div className="text-xl font-semibold text-gray-900 mb-1">Employee Mileage</div>
-                    <div className="text-xs text-gray-400 mb-4">Across all flat-rate work — the project value each person delivers vs. what their time on those projects costs.</div>
+                    <div className="text-xs text-gray-400 mb-4">Across all flat-rate work — the project value each person delivers vs. what their time on those projects costs. Everyone is listed; zeros mean no flat-rate assignments (PM oversight is measured separately below).</div>
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                       <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
                         {["Person", "Projects", "Value Delivered", "Cost on Projects", "Contribution", "Multiple"].map(h => (
@@ -1733,16 +1738,19 @@ export default function App() {
                         ))}
                       </div>
                       {mileage.map(m => (
-                        <div key={m.p.id} onClick={() => setSelected({ type: "person", data: m.p })} className="grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
+                        <div key={m.p.id} onClick={() => setSelected({ type: "person", data: m.p })} className={`grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors ${m.n === 0 ? "bg-gray-50/60" : ""}`} style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
                           <div className="flex items-center gap-2.5">
                             <Av name={m.p.name} size={28} sl={m.p.sl} lead={m.p.lead} />
                             <div>
-                              <div className="text-[13px] font-semibold text-gray-900">{m.p.name}</div>
+                              <div className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5">
+                                {m.p.name}
+                                {m.n === 0 && m.p.sl === "ops" && <Tag small variant="amber">PM</Tag>}
+                              </div>
                               <div className="text-[10px] text-gray-400">{m.p.role}</div>
                             </div>
                           </div>
-                          <div className="text-[13px] text-gray-500">{m.n}</div>
-                          <div className="text-sm font-semibold text-emerald-600">{fmt(Math.round(m.rev))}</div>
+                          <div className={`text-[13px] ${m.n === 0 ? "text-gray-300" : "text-gray-500"}`}>{m.n || "—"}</div>
+                          <div className={`text-sm font-semibold ${m.rev > 0 ? "text-emerald-600" : "text-gray-300"}`}>{m.rev > 0 ? fmt(Math.round(m.rev)) : "—"}</div>
                           <div className="text-sm font-semibold text-red-500">{m.costTotal > 0 ? fmt(Math.round(m.costTotal)) : "—"}{m.unknownCost && <span title="Some projects have no dates — cost not counted" className="text-amber-500 text-[10px] ml-1">⚠</span>}</div>
                           <div className={`text-sm font-semibold ${m.rev - m.costTotal >= 0 ? "text-emerald-600" : "text-red-500"}`}>{m.costTotal > 0 ? fmt(Math.round(m.rev - m.costTotal)) : "—"}</div>
                           <div className={`text-base font-semibold ${m.multiple == null ? "text-gray-300" : m.multiple >= 1 ? "text-emerald-600" : "text-red-500"}`}>{m.multiple != null ? `${m.multiple.toFixed(1)}x` : "—"}</div>
@@ -1754,25 +1762,31 @@ export default function App() {
 
                 {/* PM coverage */}
                 {(() => {
-                  const pms = team.filter(p => inFlight.some(a => a.pmId === p.id));
+                  // Every PM with an active book — including PMs who manage only
+                  // retainers (they'd otherwise vanish from this table entirely)
+                  const activeAll = accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
+                  const pms = team.filter(p => activeAll.some(a => a.pmId === p.id));
                   if (pms.length === 0) return null;
                   return (
                     <div className="mb-10">
                       <div className="text-xl font-semibold text-gray-900 mb-1">PM Coverage</div>
-                      <div className="text-xs text-gray-400 mb-4">Each PM's cost is split across their whole managed book (retainers + projects) by account weight — the slice charged to flat-rate work is shown here.</div>
+                      <div className="text-xs text-gray-400 mb-4">Each PM's whole managed book — flat-rate projects and retainers. Their cost is spread across the book by account weight, so a PM's allocation never exceeds their salary.</div>
                       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}>
-                          {["PM", "Projects Managed", "Fees Overseen", "Cost to Projects /mo", "Oversight Leverage"].map(h => (
+                        <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "1.8fr 1.1fr 1fr 1fr 0.9fr 1fr" }}>
+                          {["PM", "Book", "Project Fees", "Retainer MRR", "Cost /mo", "Oversight Leverage"].map(h => (
                             <div key={h} className="text-[10px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
                           ))}
                         </div>
                         {pms.map(pm => {
-                          const managed = inFlight.filter(a => a.pmId === pm.id);
-                          const fees = managed.reduce((s, a) => s + a.project, 0);
-                          const bookW = pmBookWeight(pm.id, accounts);
-                          const costMo = managed.reduce((s, a) => s + cost(pm) * ((a.weight ?? 3) / (bookW || 1)), 0);
+                          const book = activeAll.filter(a => a.pmId === pm.id);
+                          const projs = book.filter(a => a.type === "Project" || a.type === "Hybrid");
+                          const rets = book.filter(a => a.type === "Retainer");
+                          const fees = projs.reduce((s, a) => s + a.project, 0);
+                          const retMRR = rets.reduce((s, a) => s + a.retainer, 0);
+                          const costMo = cost(pm); // full cost — the book is all their active accounts
+                          const annualValue = fees + retMRR * 12;
                           return (
-                            <div key={pm.id} onClick={() => setSelected({ type: "person", data: pm })} className="grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}>
+                            <div key={pm.id} onClick={() => setSelected({ type: "person", data: pm })} className="grid px-5 py-3.5 border-b border-gray-100 items-center cursor-pointer hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "1.8fr 1.1fr 1fr 1fr 0.9fr 1fr" }}>
                               <div className="flex items-center gap-2.5">
                                 <Av name={pm.name} size={28} sl={pm.sl} />
                                 <div>
@@ -1780,10 +1794,15 @@ export default function App() {
                                   <div className="text-[10px] text-gray-400">{pm.role}</div>
                                 </div>
                               </div>
-                              <div className="text-[13px] text-gray-500">{managed.length}</div>
-                              <div className="text-sm font-semibold text-emerald-600">{fmtK(fees)}</div>
+                              <div className="text-[11px] text-gray-500">
+                                <span className={projs.length ? "text-gray-900 font-semibold" : "text-gray-300"}>{projs.length} project{projs.length !== 1 ? "s" : ""}</span>
+                                <span className="text-gray-300"> · </span>
+                                <span className={rets.length ? "text-gray-900 font-semibold" : "text-gray-300"}>{rets.length} retainer{rets.length !== 1 ? "s" : ""}</span>
+                              </div>
+                              <div className={`text-sm font-semibold ${fees > 0 ? "text-emerald-600" : "text-gray-300"}`}>{fees > 0 ? fmtK(fees) : "—"}</div>
+                              <div className={`text-sm font-semibold ${retMRR > 0 ? "text-emerald-600" : "text-gray-300"}`}>{retMRR > 0 ? <>{fmtK(retMRR)}<span className="text-[9px] text-gray-400 font-normal">/mo</span></> : "—"}</div>
                               <div className="text-sm font-semibold text-red-500">{fmt(Math.round(costMo))}</div>
-                              <div className="text-[13px] font-semibold text-gray-700">{costMo > 0 ? `${(fees / (costMo * 12)).toFixed(1)}x` : "—"}<span className="text-[9px] text-gray-400 font-normal ml-1">fees / annualized cost</span></div>
+                              <div className="text-[13px] font-semibold text-gray-700">{costMo > 0 ? `${(annualValue / (costMo * 12)).toFixed(1)}x` : "—"}<span className="text-[9px] text-gray-400 font-normal ml-1">value / annual cost</span></div>
                             </div>
                           );
                         })}

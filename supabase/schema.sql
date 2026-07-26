@@ -159,6 +159,7 @@ insert into service_lines (id, name, color) values
   ('brand', 'Brand', 'bg-rose-100 text-rose-700'),
   ('product', 'Product', 'bg-blue-100 text-blue-700'),
   ('symphony', 'Symphony', 'bg-violet-100 text-violet-700'),
+  ('animation', 'Animation', 'bg-emerald-100 text-emerald-700'),
   ('ops', 'Operations', 'bg-stone-200 text-stone-600'),
   ('leadership', 'Leadership', 'bg-gray-800 text-white')
 on conflict (id) do nothing;
@@ -181,6 +182,7 @@ insert into team_members (id, name, role, sl, type, cad_yearly, usd_monthly, hou
   ('t12', 'Vencho',             'Brand Lead',                              'brand',      'Contractor',   null, 4000,  40, false),
   ('t15', 'Joshua Ramkissoon',  'Webflow Developer',                       'site',       'Full-Time',    null, 3016, 160, false),
   ('t16', 'Igor Katcha',        'Webflow Developer',                       'site',       'Contractor',   null, 4000,  40, false),
+  ('t21', 'Martin',              'Animator',                                'animation',  'Contractor',   null, 2000,  40, false),
   ('t18', 'Daniel Shin',        'Project Manager',                         'ops',        'Full-Time',    null, 2919, 160, false),
   ('t19', 'Christine Chow',     'Digital Designer',                        'brand',      'Full-Time',    null, 3518, 160, false),
   ('t20', 'Carson',             'Chief of Staff',                          'ops',        'Full-Time',    null, 6000, 160, false)
@@ -247,6 +249,7 @@ on conflict (id) do nothing;
 
 -- Departments (for org chart)
 insert into departments (id, name, color, sort_order) values
+  ('d10', 'Animation',      'bg-emerald-100 text-emerald-700', 0),
   ('d1', 'Deck',            'bg-amber-100 text-amber-700',  1),
   ('d2', 'Web Development', 'bg-teal-100 text-teal-700',    2),
   ('d3', 'Brand',           'bg-rose-100 text-rose-700',    3),
@@ -256,6 +259,7 @@ on conflict (id) do nothing;
 
 -- Department Members
 insert into department_members (department_id, member_id) values
+  ('d10', 't21'),
   ('d1', 't5'),
   ('d2', 't4'),  ('d2', 't15'), ('d2', 't16'),
   ('d3', 't9'),  ('d3', 't10'), ('d3', 't11'), ('d3', 't12'), ('d3', 't19'),
