@@ -1520,9 +1520,11 @@ export default function App() {
                 }
               });
               return { p, n, rev, costTotal, monthly, unknownCost, multiple: costTotal > 0 ? rev / costTotal : null };
-            // Keep everyone — people with no project work show as zero so gaps
-            // in coverage are visible rather than silently hidden.
-            }).sort((x, y) => y.rev - x.rev || x.p.name.localeCompare(y.p.name));
+            // Keep delivery people even at zero, so coverage gaps stay visible.
+            // PMs are measured in PM Coverage instead — drop them here unless
+            // they actually carry a delivery role on a project.
+            }).filter(m => m.n > 0 || m.p.sl !== "ops")
+              .sort((x, y) => y.rev - x.rev || x.p.name.localeCompare(y.p.name));
 
             // Collected: completed = full fee, else 50% if the deposit invoice is in
             // Collections come from Mercury only (payFor) — the old manual
@@ -1743,7 +1745,7 @@ export default function App() {
                 {mileage.length > 0 && (
                   <div className="mb-10">
                     <div className="text-xl font-semibold text-gray-900 mb-1">Employee Mileage</div>
-                    <div className="text-xs text-gray-400 mb-4">Across all flat-rate work — the project value each person delivers vs. what their time on those projects costs. Everyone is listed; zeros mean no flat-rate assignments (PM oversight is measured separately below).</div>
+                    <div className="text-xs text-gray-400 mb-4">Across all flat-rate work — the project value each person delivers vs. what their time on those projects costs. Zeros mean no flat-rate assignments; PMs are measured in PM Coverage below.</div>
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                       <div className="grid px-5 py-3 bg-gray-100" style={{ gridTemplateColumns: "2fr 0.8fr 1fr 1fr 1fr 0.8fr" }}>
                         {["Person", "Projects", "Value Delivered", "Cost on Projects", "Contribution", "Multiple"].map(h => (
@@ -1755,10 +1757,7 @@ export default function App() {
                           <div className="flex items-center gap-2.5">
                             <Av name={m.p.name} size={28} sl={m.p.sl} lead={m.p.lead} />
                             <div>
-                              <div className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5">
-                                {m.p.name}
-                                {m.n === 0 && m.p.sl === "ops" && <Tag small variant="amber">PM</Tag>}
-                              </div>
+                              <div className="text-[13px] font-semibold text-gray-900">{m.p.name}</div>
                               <div className="text-[10px] text-gray-400">{m.p.role}</div>
                             </div>
                           </div>

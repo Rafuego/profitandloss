@@ -10,6 +10,10 @@ export const dynamic = "force-dynamic"; // always fresh, never statically cached
 export const runtime = "nodejs";
 
 const BASE = "https://api.mercury.com/api/v1";
+const SNAPSHOT_EVERY_MS = 10 * 60 * 1000; // throttle snapshot writes to ~10 min
+// Module scope persists across invocations on a warm lambda, so most requests
+// skip the snapshot write entirely and stay fast.
+let lastSnapshotAt = 0;
 const PAGE = 500;      // Mercury's max page size
 const MAX_PAGES = 8;   // safety cap: 4000 invoices, newest-first
 const RECENT_PAID = 40; // how many paid invoices to send to the client for the table
@@ -147,13 +151,17 @@ export async function GET() {
       truncated,
     };
 
-    // Persist as the fallback snapshot. Never let a snapshot failure break the
-    // live response — the fresh data is what matters here.
-    try {
-      await supabase.from("mercury_snapshot").upsert({
-        id: "latest", data: payload, fetched_at: payload.fetchedAt,
-      });
-    } catch { /* snapshot is best-effort */ }
+    // Persist as the fallback snapshot, at most every SNAPSHOT_EVERY_MS so the
+    // write doesn't add latency to every page load. Never let a snapshot
+    // failure break the live response — the fresh data is what matters.
+    if (Date.now() - lastSnapshotAt > SNAPSHOT_EVERY_MS) {
+      lastSnapshotAt = Date.now();
+      try {
+        await supabase.from("mercury_snapshot").upsert({
+          id: "latest", data: payload, fetched_at: payload.fetchedAt,
+        });
+      } catch { /* snapshot is best-effort */ }
+    }
 
     return NextResponse.json(payload);
   } catch (e: any) {
