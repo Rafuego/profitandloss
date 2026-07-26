@@ -62,11 +62,25 @@ export async function GET() {
     // Per-client payment rollup (keyed by normalized name) — the tracker matches
     // accounts to this to show a paid/owed/overdue status per account.
     const nkey = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    // Mercury customer name → tracker account name (same client, different spelling)
+    const ALIAS: Record<string, string> = {
+      highriseai: "highrise",
+      lumenenergy: "lumen",
+      portalsystemsspace: "portalspace",
+      roundbarnlabs: "rbl",
+      atlasroad: "atlasrd",
+      inferenceresearchincblairai: "inferencehealth",
+      giantstep: "giantstepvc",
+      "1921ai": "1921",
+      atriavc: "atria",
+      neruhealth: "neruhealth",
+    };
+    const akey = (s: string) => { const k = nkey(s); return ALIAS[k] || k; };
     const today = new Date().toISOString().slice(0, 10);
     const byCustomer: Record<string, any> = {};
     const paidByMonth: Record<string, any> = {}; // "YYYY-MM" -> { total, count }
     const bump = (name: string, inv: any) => {
-      const k = nkey(name);
+      const k = akey(name);
       if (!k) return;
       const b = byCustomer[k] || (byCustomer[k] = { name, outstanding: 0, overdue: 0, oldestDue: null, paid: 0, lastPaid: null, unpaid: 0, total: 0 });
       b.total++;
