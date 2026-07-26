@@ -58,7 +58,8 @@ export type Account = {
   startDate: string | null; // project start date (YYYY-MM-DD)
   endDate: string | null;   // project end date (YYYY-MM-DD)
   weight: number;           // designer capacity weight (1–5 pts, default 3)
-  depositPaid: boolean;     // 50% upfront invoice collected (flat-rate projects)
+  depositPaid: boolean;     // legacy; collections now come from Mercury
+  mercuryInvoices: string;  // optional explicit Mercury invoice numbers (comma-separated)
   notes: string;
 };
 
@@ -170,6 +171,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     endDate: r.end_date || null,
     weight: r.weight != null ? Number(r.weight) : 3,
     depositPaid: r.deposit_paid ?? false,
+    mercuryInvoices: r.mercury_invoices || "",
     notes: r.notes || "",
   }));
 }
@@ -242,6 +244,7 @@ export async function upsertAccount(a: Account) {
     end_date: a.endDate || null,
     weight: a.weight ?? 3,
     deposit_paid: a.depositPaid ?? false,
+    mercury_invoices: a.mercuryInvoices || null,
     notes: a.notes,
   });
   if (acctErr) throw acctErr;

@@ -731,11 +731,11 @@ export default function App() {
   // True only when the Mercury sync actually returned data — lets the UI tell
   // "Mercury is down / not connected" apart from "this client has no invoices"
   const mercuryReady = !!mercury?.byCustomer;
-  // Per-account payment status derived from the Mercury per-client rollup
+  // Per-account payment status. The route resolves this per account id —
+  // honouring explicit invoice claims first, then falling back to name match.
   const payFor = (a: any) => {
-    const bc = mercury?.byCustomer;
-    if (!bc) return null;
-    const r = bc[(a.name || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
+    if (!mercury?.byCustomer) return null;
+    const r = mercury.byAccount?.[a.id];
     if (!r) return null; // no Mercury invoices matched to this account
     const status = r.overdue > 0 ? "overdue" : r.outstanding > 0 ? "due" : "current";
     const overdueDays = r.oldestDue ? Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000)) : 0;
@@ -2496,8 +2496,13 @@ export default function App() {
                       <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
                     </div>
                   )}
+                  <Inp label="Mercury Invoice #s (optional)" value={modal.data.mercuryInvoices || ""}
+                    onChange={v => setModal({ ...modal, data: { ...modal.data, mercuryInvoices: v } })}
+                    ph="e.g. INV-549, INV-612" />
                   <div className="text-[11px] text-gray-400">
-                    Collections are read from Mercury — matched by client name, so any deposit split (25%, 50%, …) is tracked automatically.
+                    Collections read from Mercury, matched by client name — any deposit split (25%, 50%, …) is tracked automatically.
+                    Only set invoice numbers when one Mercury client covers several engagements (e.g. a retainer <em>and</em> this project);
+                    claimed invoices are then excluded from the client’s other accounts.
                   </div>
                 </>
               );

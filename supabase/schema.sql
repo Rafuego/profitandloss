@@ -301,3 +301,9 @@ create table if not exists mercury_snapshot (
 );
 alter table mercury_snapshot enable row level security;
 create policy "Authenticated full access" on mercury_snapshot for all using (true) with check (true);
+
+-- Explicit Mercury invoice assignment: when one Mercury customer spans several
+-- engagements (e.g. "Alcove" bills a retainer AND a website project), an account
+-- can claim specific invoice numbers. Claimed invoices are excluded from the
+-- name-matched pool of every other account.
+alter table accounts add column if not exists mercury_invoices text;

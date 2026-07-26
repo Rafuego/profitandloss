@@ -84,6 +84,7 @@ export async function GET() {
     const today = new Date().toISOString().slice(0, 10);
     const byCustomer: Record<string, any> = {};
     const paidByMonth: Record<string, any> = {}; // "YYYY-MM" -> { total, count }
+    const allInvoices: any[] = [];               // every invoice, for per-account assignment
     const bump = (name: string, inv: any) => {
       const k = akey(name);
       if (!k) return;
@@ -118,6 +119,7 @@ export async function GET() {
           invoiceDate: i.invoiceDate ?? null,
           slug: i.slug ?? null,
         };
+        allInvoices.push(norm);
         bump(norm.customer, norm);
         if (norm.status === "Unpaid" || norm.status === "Processing") {
           inFlight.push(norm); inFlightTotal += norm.amount;
@@ -138,6 +140,55 @@ export async function GET() {
       if (p === MAX_PAGES - 1) truncated = true;
     }
 
+    // ── Per-account payment rollup ──────────────────────────────────────────
+    // One Mercury customer can span several engagements (e.g. "Alcove" bills a
+    // retainer AND a website project). An account may therefore claim specific
+    // invoice numbers via accounts.mercury_invoices; those invoices are then
+    // excluded from every other account's name-matched pool.
+    const byAccount: Record<string, any> = {};
+    try {
+      const { data: accts } = await supabase
+        .from("accounts").select("id, name, mercury_invoices");
+      if (accts) {
+        const claimedBy: Record<string, string> = {}; // invoice number -> account id
+        for (const a of accts) {
+          for (const raw of String(a.mercury_invoices || "").split(",")) {
+            const n = raw.trim().toUpperCase();
+            if (n) claimedBy[n] = a.id;
+          }
+        }
+        const roll = (invs: any[]) => {
+          const r: any = { outstanding: 0, overdue: 0, oldestDue: null, paid: 0, lastPaid: null, unpaid: 0, total: invs.length };
+          for (const inv of invs) {
+            if (inv.status === "Unpaid" || inv.status === "Processing") {
+              r.outstanding += inv.amount; r.unpaid++;
+              if (inv.dueDate && inv.dueDate < today) {
+                r.overdue += inv.amount;
+                if (!r.oldestDue || inv.dueDate < r.oldestDue) r.oldestDue = inv.dueDate;
+              }
+            } else if (inv.status === "Paid") {
+              r.paid += inv.amount;
+              const d = inv.invoiceDate || inv.dueDate;
+              if (d && (!r.lastPaid || d > r.lastPaid)) r.lastPaid = d;
+            }
+          }
+          return r;
+        };
+        for (const a of accts) {
+          const claimed = allInvoices.filter(i => i.number && claimedBy[String(i.number).toUpperCase()] === a.id);
+          if (claimed.length) {
+            byAccount[a.id] = { ...roll(claimed), name: a.name, source: "claimed", invoiceNumbers: claimed.map(i => i.number) };
+            continue;
+          }
+          // Fall back to name/alias match, minus anything another account claimed
+          const k = akey(a.name);
+          const matched = allInvoices.filter(i =>
+            akey(i.customer) === k && !(i.number && claimedBy[String(i.number).toUpperCase()]));
+          if (matched.length) byAccount[a.id] = { ...roll(matched), name: a.name, source: "name" };
+        }
+      }
+    } catch { /* per-account rollup is best-effort; byCustomer still works */ }
+
     const payload = {
       connected: true,
       fetchedAt: new Date().toISOString(),
@@ -146,7 +197,8 @@ export async function GET() {
       // table data: every in-flight invoice + the most recent paid ones
       invoices: [...inFlight, ...recentPaid],
       recentPaidShown: recentPaid.length,
-      byCustomer, // per-client rollup for account-level payment status
+      byCustomer, // per-client rollup (Invoices tab + collections totals)
+      byAccount,  // per-account rollup, honouring explicit invoice claims
       paidByMonth, // { "YYYY-MM": { total, count } } — paid invoices by invoice month
       truncated,
     };
