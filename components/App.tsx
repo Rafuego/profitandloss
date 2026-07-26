@@ -1584,27 +1584,55 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Invoicing — 50% up front, 50% on completion */}
+                    {/* Invoicing — real paid vs owed from Mercury when the client
+                        matches (handles any deposit split); manual toggle otherwise */}
                     {!done ? (
-                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 mb-3.5" onClick={ev => ev.stopPropagation()}>
-                        <div className="text-[10px] font-medium text-gray-500">
-                          Collected <span className={`font-semibold ${collected > 0 ? "text-emerald-600" : "text-gray-400"}`}>{fmtK(collected)}</span> of {fmtK(a.project)}
-                          {a.project - collected > 0 && <span className="text-gray-400"> · {fmtK(a.project - collected)} outstanding</span>}
+                      pay ? (() => {
+                        const pctPaid = a.project > 0 ? Math.min(1, pay.paid / a.project) : 0;
+                        return (
+                          <div className="px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-100 mb-3.5" onClick={ev => ev.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="text-[10px] font-medium text-gray-500">
+                                Collected <span className={`font-semibold ${pay.paid > 0 ? "text-emerald-600" : "text-gray-400"}`}>{fmtK(pay.paid)}</span> of {fmtK(a.project)}
+                                {pay.outstanding > 0 && <span className={pay.overdue > 0 ? "text-red-500 font-semibold" : "text-gray-400"}> · {fmtK(pay.outstanding)} {pay.overdue > 0 ? `overdue (${pay.overdueDays}d)` : "outstanding"}</span>}
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[9px] text-gray-400">via Mercury</span>
+                                <button onClick={() => save("account", { ...a, status: "Closed" })}
+                                  className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">✓ Complete</button>
+                              </div>
+                            </div>
+                            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${pctPaid >= 1 ? "bg-emerald-500" : pay.overdue > 0 ? "bg-red-400" : "bg-emerald-400"}`} style={{ width: `${pctPaid * 100}%` }} />
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-1">
+                              {pay.paid > a.project + 1
+                                ? <span className="text-amber-500 font-semibold">Mercury total {fmtK(pay.paid)} exceeds the {fmtK(a.project)} fee — extra invoices or fee understated</span>
+                                : <>{Math.round(pctPaid * 100)}% of fee collected</>}
+                              {pay.lastPaid ? ` · last payment ${pay.lastPaid}` : ""}
+                            </div>
+                          </div>
+                        );
+                      })() : (
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 mb-3.5" onClick={ev => ev.stopPropagation()}>
+                          <div className="text-[10px] font-medium text-gray-500">
+                            Collected <span className={`font-semibold ${collected > 0 ? "text-emerald-600" : "text-gray-400"}`}>{fmtK(collected)}</span> of {fmtK(a.project)}
+                            {a.project - collected > 0 && <span className="text-gray-400"> · {fmtK(a.project - collected)} outstanding</span>}
+                            <span className="text-[8px] text-gray-300 ml-1">· manual</span>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            <button onClick={() => save("account", { ...a, depositPaid: !a.depositPaid })}
+                              className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md transition-colors ${a.depositPaid ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"}`}>
+                              {a.depositPaid ? "✓ 50% collected" : "Collect 50%"}
+                            </button>
+                            <button onClick={() => save("account", { ...a, status: "Closed" })}
+                              className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">✓ Complete</button>
+                          </div>
                         </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <button onClick={() => save("account", { ...a, depositPaid: !a.depositPaid })}
-                            className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md transition-colors ${a.depositPaid ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"}`}>
-                            {a.depositPaid ? "✓ 50% collected" : "Collect 50%"}
-                          </button>
-                          <button onClick={() => save("account", { ...a, status: "Closed" })}
-                            className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">
-                            ✓ Complete
-                          </button>
-                        </div>
-                      </div>
+                      )
                     ) : (
                       <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 mb-3.5">
-                        <span className="text-[10px] font-medium text-emerald-700">Fully collected — {fmtK(a.project)} paid out</span>
+                        <span className="text-[10px] font-medium text-emerald-700">{pay && pay.outstanding > 0 ? `${fmtK(pay.paid)} collected · ${fmtK(pay.outstanding)} still owed` : `Fully collected — ${fmtK(a.project)} paid out`}</span>
                         <span className="text-[10px] font-semibold text-emerald-600">✓ Complete</span>
                       </div>
                     )}
@@ -1649,7 +1677,12 @@ export default function App() {
                 {/* KPIs */}
                 <div className="flex gap-4 flex-wrap mb-9">
                   <KpiCard label="In Flight" value={inFlight.length} sub={`${fmtK(kpiFee)} contracted`} />
-                  <KpiCard label="Collected" value={fmt(Math.round(inFlight.reduce((s, a) => s + collectedOf(a), 0)))} sub={`${fmt(Math.round(inFlight.reduce((s, a) => s + a.project - collectedOf(a), 0)))} outstanding`} color="text-emerald-600" />
+                  {(() => {
+                    // Prefer real Mercury paid/owed per project; fall back to the manual model
+                    const col = inFlight.reduce((s, a) => { const p = payFor(a); return s + (p ? p.paid : collectedOf(a)); }, 0);
+                    const owe = inFlight.reduce((s, a) => { const p = payFor(a); return s + (p ? p.outstanding : a.project - collectedOf(a)); }, 0);
+                    return <KpiCard label="Collected" value={fmt(Math.round(col))} sub={`${fmt(Math.round(owe))} outstanding`} color="text-emerald-600" />;
+                  })()}
                   <KpiCard label="Project MRR" value={fmt(Math.round(kpiMrr))} sub="amortized this month" color="text-emerald-600" />
                   <KpiCard label="Projected Profit" value={withCost.length ? fmt(Math.round(kpiProfit)) : "—"} sub={withCost.length ? `across ${withCost.length} costed project${withCost.length !== 1 ? "s" : ""}` : "needs team + dates"} color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
                   <KpiCard label="Blended Margin" value={kpiCostedFee > 0 ? pct(kpiProfit / kpiCostedFee) : "—"} sub="profit ÷ contracted fees" color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />

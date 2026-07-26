@@ -68,7 +68,7 @@ export async function GET() {
     const bump = (name: string, inv: any) => {
       const k = nkey(name);
       if (!k) return;
-      const b = byCustomer[k] || (byCustomer[k] = { name, outstanding: 0, overdue: 0, oldestDue: null, lastPaid: null, unpaid: 0, total: 0 });
+      const b = byCustomer[k] || (byCustomer[k] = { name, outstanding: 0, overdue: 0, oldestDue: null, paid: 0, lastPaid: null, unpaid: 0, total: 0 });
       b.total++;
       if (inv.status === "Unpaid" || inv.status === "Processing") {
         b.outstanding += inv.amount; b.unpaid++;
@@ -77,6 +77,7 @@ export async function GET() {
           if (!b.oldestDue || inv.dueDate < b.oldestDue) b.oldestDue = inv.dueDate;
         }
       } else if (inv.status === "Paid") {
+        b.paid += inv.amount;
         const d = inv.invoiceDate || inv.dueDate;
         if (d && (!b.lastPaid || d > b.lastPaid)) b.lastPaid = d;
       }
