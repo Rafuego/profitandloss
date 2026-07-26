@@ -4,6 +4,7 @@
 // NEVER sent to the browser. Use a READ-ONLY Mercury token — this route only
 // ever issues GETs; it can never move money.
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic"; // always fresh, never statically cached
 export const runtime = "nodejs";
@@ -133,7 +134,7 @@ export async function GET() {
       if (p === MAX_PAGES - 1) truncated = true;
     }
 
-    return NextResponse.json({
+    const payload = {
       connected: true,
       fetchedAt: new Date().toISOString(),
       counts: { total, inFlight: inFlight.length, paid: paidCount, cancelled },
@@ -144,8 +145,30 @@ export async function GET() {
       byCustomer, // per-client rollup for account-level payment status
       paidByMonth, // { "YYYY-MM": { total, count } } — paid invoices by invoice month
       truncated,
-    });
+    };
+
+    // Persist as the fallback snapshot. Never let a snapshot failure break the
+    // live response — the fresh data is what matters here.
+    try {
+      await supabase.from("mercury_snapshot").upsert({
+        id: "latest", data: payload, fetched_at: payload.fetchedAt,
+      });
+    } catch { /* snapshot is best-effort */ }
+
+    return NextResponse.json(payload);
   } catch (e: any) {
-    return NextResponse.json({ connected: true, error: e?.message || "Mercury request failed" });
+    const msg = e?.message || "Mercury request failed";
+    // Mercury is unreachable — serve the last good sync so collections data
+    // never goes blank, clearly flagged as stale.
+    try {
+      const { data } = await supabase
+        .from("mercury_snapshot").select("data, fetched_at").eq("id", "latest").single();
+      if (data?.data) {
+        return NextResponse.json({
+          ...data.data, stale: true, snapshotAt: data.fetched_at, error: msg,
+        });
+      }
+    } catch { /* no snapshot yet — fall through */ }
+    return NextResponse.json({ connected: true, error: msg });
   }
 }

@@ -1991,7 +1991,7 @@ export default function App() {
                 <div className="flex items-center justify-between mb-7">
                   <div>
                     <div className="text-2xl font-semibold text-gray-900 mb-1">Invoices</div>
-                    <div className="text-xs text-gray-400">Live from Mercury — invoices in flight vs. paid. {mercury?.fetchedAt && `Synced ${new Date(mercury.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.`}</div>
+                    <div className="text-xs text-gray-400">Live from Mercury — invoices in flight vs. paid. {mercury?.stale ? "Showing the last successful sync." : mercury?.fetchedAt ? `Synced ${new Date(mercury.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.` : ""}</div>
                   </div>
                   <button onClick={loadMercury} disabled={mercuryLoading}
                     className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50">
@@ -2014,8 +2014,8 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Connected but the call errored (bad token, etc.) */}
-                {mercury && mercury.connected && mercury.error && (
+                {/* Errored with no snapshot to fall back on */}
+                {mercury && mercury.connected && mercury.error && !mercury.stale && (
                   <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 max-w-2xl">
                     <div className="text-[13px] font-semibold text-red-600 mb-1">Couldn't reach Mercury</div>
                     <div className="text-[11px] text-red-500 font-mono break-all">{mercury.error}</div>
@@ -2023,8 +2023,19 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Connected + data */}
-                {mercury && mercury.connected && !mercury.error && (
+                {/* Serving the last good snapshot because Mercury is unreachable */}
+                {mercury && mercury.stale && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-6 flex items-start gap-3">
+                    <span className="text-amber-500 text-sm leading-none mt-0.5">⚠</span>
+                    <div>
+                      <div className="text-[12px] font-semibold text-amber-700">Mercury is unreachable — showing the last successful sync{mercury.snapshotAt ? ` from ${new Date(mercury.snapshotAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}</div>
+                      <div className="text-[11px] text-amber-600/80 mt-0.5">Figures may be out of date. <span className="font-mono">{mercury.error}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Connected + data (fresh or from snapshot) */}
+                {mercury && mercury.connected && mercury.byCustomer && (
                   <>
                     <div className="flex gap-4 flex-wrap mb-8">
                       <KpiCard label="In Flight" value={fmt(Math.round(mercury.totals?.inFlight || 0))} sub={`${mercury.counts?.inFlight ?? inFlight.length} unpaid / processing`} color="text-amber-600" />

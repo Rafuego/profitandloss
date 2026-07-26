@@ -291,3 +291,13 @@ create policy "Authenticated full access" on account_service_lines for all using
 -- Pods RLS
 alter table pods enable row level security;
 create policy "Authenticated full access" on pods for all using (true) with check (true);
+
+-- Mercury snapshot — last successful sync, served as a fallback when the
+-- Mercury API is unreachable so collections data never goes blank.
+create table if not exists mercury_snapshot (
+  id text primary key default 'latest',
+  data jsonb not null,
+  fetched_at timestamptz not null default now()
+);
+alter table mercury_snapshot enable row level security;
+create policy "Authenticated full access" on mercury_snapshot for all using (true) with check (true);

@@ -38,6 +38,13 @@ name. No token → `{connected:false}` → setup instructions render. The route 
 issues GETs — it can never move money. Invoices sent via Ignition are a separate
 (planned) integration, not visible here.
 
+**Sync model:** the route is `force-dynamic` + `no-store` and the client fetches it on
+every app load (~0.4s for 600+ invoices), so data is always live — no cron needed.
+Each successful sync is written to the `mercury_snapshot` table; if Mercury is
+unreachable the route serves that snapshot with `stale:true` + `snapshotAt` so
+collections never go blank. Snapshot writes/reads are best-effort and can never
+break the live response.
+
 ## Key Patterns in App.tsx
 
 **`// @ts-nocheck`** is at the top of App.tsx — TypeScript errors are suppressed intentionally to keep the file concise.
