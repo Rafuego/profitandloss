@@ -728,6 +728,9 @@ export default function App() {
     setQuickAssign(null);
   };
 
+  // True only when the Mercury sync actually returned data — lets the UI tell
+  // "Mercury is down / not connected" apart from "this client has no invoices"
+  const mercuryReady = !!mercury?.byCustomer;
   // Per-account payment status derived from the Mercury per-client rollup
   const payFor = (a: any) => {
     const bc = mercury?.byCustomer;
@@ -1522,12 +1525,13 @@ export default function App() {
             }).sort((x, y) => y.rev - x.rev || x.p.name.localeCompare(y.p.name));
 
             // Collected: completed = full fee, else 50% if the deposit invoice is in
-            const collectedOf = (a: any) => a.status === "Closed" ? a.project : (a.depositPaid ? a.project * 0.5 : 0);
+            // Collections come from Mercury only (payFor) — the old manual
+            // 50%-deposit toggle was removed so every project is tracked the
+            // same way. Projects with no Mercury match show as "not linked".
 
             const ProjectCard = ({ a, done }: any) => {
               const e = econOf(a);
               const overdue = !done && e.elapsed === 1;
-              const collected = collectedOf(a);
               const pay = payFor(a);
               return (
                 <div onClick={() => setSelected({ type: "account", data: a })}
@@ -1619,27 +1623,33 @@ export default function App() {
                           </div>
                         );
                       })() : (
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 mb-3.5" onClick={ev => ev.stopPropagation()}>
-                          <div className="text-[10px] font-medium text-gray-500">
-                            Collected <span className={`font-semibold ${collected > 0 ? "text-emerald-600" : "text-gray-400"}`}>{fmtK(collected)}</span> of {fmtK(a.project)}
-                            {a.project - collected > 0 && <span className="text-gray-400"> · {fmtK(a.project - collected)} outstanding</span>}
-                            <span className="text-[8px] text-gray-300 ml-1">· manual</span>
+                        <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg mb-3.5 ${mercuryReady ? "bg-amber-50 border border-amber-100" : "bg-gray-50 border border-gray-100"}`} onClick={ev => ev.stopPropagation()}>
+                          <div className={`text-[10px] font-medium ${mercuryReady ? "text-amber-700" : "text-gray-400"}`}>
+                            {mercuryReady ? <>
+                              Not linked to Mercury — no invoices found for “{a.name}”
+                              <div className="text-[9px] text-amber-600/80 font-normal mt-0.5">Collections can’t be tracked until the Mercury client name matches (or an alias is added).</div>
+                            </> : "Collections unavailable — Mercury not connected"}
                           </div>
-                          <div className="flex gap-1.5 shrink-0">
-                            <button onClick={() => save("account", { ...a, depositPaid: !a.depositPaid })}
-                              className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md transition-colors ${a.depositPaid ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"}`}>
-                              {a.depositPaid ? "✓ 50% collected" : "Collect 50%"}
-                            </button>
-                            <button onClick={() => save("account", { ...a, status: "Closed" })}
-                              className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors">✓ Complete</button>
-                          </div>
+                          <button onClick={() => save("account", { ...a, status: "Closed" })}
+                            className="text-[10px] font-semibold px-2.5 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-colors shrink-0">✓ Complete</button>
                         </div>
                       )
                     ) : (
-                      <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 mb-3.5">
-                        <span className="text-[10px] font-medium text-emerald-700">{pay && pay.outstanding > 0 ? `${fmtK(pay.paid)} collected · ${fmtK(pay.outstanding)} still owed` : `Fully collected — ${fmtK(a.project)} paid out`}</span>
-                        <span className="text-[10px] font-semibold text-emerald-600">✓ Complete</span>
-                      </div>
+                      pay ? (
+                        <div className={`flex items-center justify-between px-3 py-2 rounded-lg mb-3.5 ${pay.outstanding > 0 ? "bg-amber-50" : "bg-emerald-50"}`}>
+                          <span className={`text-[10px] font-medium ${pay.outstanding > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                            {pay.outstanding > 0
+                              ? <>{fmtK(pay.paid)} collected · <span className="font-semibold">{fmtK(pay.outstanding)} still owed</span>{pay.overdue > 0 ? ` (${pay.overdueDays}d overdue)` : ""}</>
+                              : <>Fully collected — {fmtK(pay.paid)} paid</>}
+                          </span>
+                          <span className="text-[10px] font-semibold text-gray-400">✓ Complete</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 mb-3.5">
+                          <span className="text-[10px] font-medium text-gray-400">{mercuryReady ? "Not linked to Mercury — collections unknown" : "Collections unavailable — Mercury not connected"}</span>
+                          <span className="text-[10px] font-semibold text-gray-400">✓ Complete</span>
+                        </div>
+                      )
                     )}
 
                     {/* Burn to date — only meaningful mid-flight */}
@@ -1683,10 +1693,13 @@ export default function App() {
                 <div className="flex gap-4 flex-wrap mb-9">
                   <KpiCard label="In Flight" value={inFlight.length} sub={`${fmtK(kpiFee)} contracted`} />
                   {(() => {
-                    // Prefer real Mercury paid/owed per project; fall back to the manual model
-                    const col = inFlight.reduce((s, a) => { const p = payFor(a); return s + (p ? p.paid : collectedOf(a)); }, 0);
-                    const owe = inFlight.reduce((s, a) => { const p = payFor(a); return s + (p ? p.outstanding : a.project - collectedOf(a)); }, 0);
-                    return <KpiCard label="Collected" value={fmt(Math.round(col))} sub={`${fmt(Math.round(owe))} outstanding`} color="text-emerald-600" />;
+                    // Mercury is the single source for collections
+                    if (!mercuryReady) return <KpiCard label="Collected" value="—" sub="Mercury not connected" color="text-gray-400" />;
+                    const linked = inFlight.map(a => payFor(a)).filter(Boolean);
+                    const unlinked = inFlight.length - linked.length;
+                    const col = linked.reduce((s, p: any) => s + p.paid, 0);
+                    const owe = linked.reduce((s, p: any) => s + p.outstanding, 0);
+                    return <KpiCard label="Collected" value={fmt(Math.round(col))} sub={`${fmt(Math.round(owe))} outstanding${unlinked ? ` · ${unlinked} not linked` : ""}`} color="text-emerald-600" />;
                   })()}
                   <KpiCard label="Project MRR" value={fmt(Math.round(kpiMrr))} sub="amortized this month" color="text-emerald-600" />
                   <KpiCard label="Projected Profit" value={withCost.length ? fmt(Math.round(kpiProfit)) : "—"} sub={withCost.length ? `across ${withCost.length} costed project${withCost.length !== 1 ? "s" : ""}` : "needs team + dates"} color={kpiProfit >= 0 ? "text-emerald-600" : "text-red-500"} />
@@ -2469,10 +2482,9 @@ export default function App() {
                       <span className="text-violet-400 ml-1">· {monthsBetween(modal.data.startDate, modal.data.endDate)} month project</span>
                     </div>
                   )}
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={modal.data.depositPaid || false} onChange={ev => setModal({ ...modal, data: { ...modal.data, depositPaid: ev.target.checked } })} />
-                    <span className="text-[13px] text-gray-500">50% deposit invoice collected{modal.data.project > 0 ? ` (${fmt(modal.data.project * 0.5)})` : ""}</span>
-                  </label>
+                  <div className="text-[11px] text-gray-400">
+                    Collections are read from Mercury — matched by client name, so any deposit split (25%, 50%, …) is tracked automatically.
+                  </div>
                 </>
               );
             })()}

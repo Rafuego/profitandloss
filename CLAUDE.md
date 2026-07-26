@@ -121,10 +121,12 @@ points; their cost is normalized across their managed book: PM's monthly cost ×
 (account weight ÷ total weight of all active accounts they PM), so a PM's summed
 allocation never exceeds their salary (`pmBookWeight`/`projectTeam`).
 
-**Flat-rate invoicing model (50/50):** `deposit_paid` boolean tracks the 50% upfront
-invoice. Collected = full fee when `status = 'Closed'` (marking complete logs all funds
-paid), else 50% of fee if `deposit_paid`, else $0. The Projects tab has one-click
-"Collect 50%" and "Complete" buttons on in-flight cards.
+**Flat-rate invoicing (Mercury-driven):** collections come from Mercury only —
+`payFor(account)` matches the client name (with an alias map in the route) to the
+per-client rollup and reports paid / outstanding / overdue, so any deposit split
+(25%, 50%, …) is handled automatically. The old manual `deposit_paid` toggle was
+removed; the column remains in the DB but is unused. `mercuryReady` distinguishes
+"Mercury not connected" from "this client has no matching invoices".
 
 **Overhead distribution:** ops + leadership costs split equally across all active clients, allocated proportionally to each pod.
 
