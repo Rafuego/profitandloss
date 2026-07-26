@@ -1289,13 +1289,17 @@ export default function App() {
             // Tab filtering
             const tabFiltered = accounts.filter(a => {
               if (acctTab === "retainer") return a.type === "Retainer" && ["Active", "Launch", "Growth"].includes(a.status);
-              if (acctTab === "projects") return (a.type === "Project" || a.type === "Hybrid") && a.status !== "Closed";
+              // Same active-status rule as Retainers, so Paused/Pipeline projects
+              // live only in Closed/Pipeline instead of appearing in both tabs
+              if (acctTab === "projects") return (a.type === "Project" || a.type === "Hybrid") && ["Active", "Launch", "Growth"].includes(a.status);
               if (acctTab === "closed") return a.status === "Closed" || a.status === "Paused" || a.status === "Pipeline";
               return true;
             });
 
-            const retainerCount = accounts.filter(a => a.type === "Retainer" && ["Active", "Launch", "Growth"].includes(a.status)).length;
-            const projectCount = accounts.filter(a => a.type === "Project" || a.type === "Hybrid").length;
+            // Counts mirror each tab's filter exactly
+            const isActive = (a: any) => ["Active", "Launch", "Growth"].includes(a.status);
+            const retainerCount = accounts.filter(a => a.type === "Retainer" && isActive(a)).length;
+            const projectCount = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && isActive(a)).length;
             const closedCount = accounts.filter(a => ["Closed", "Paused", "Pipeline"].includes(a.status)).length;
 
             // Shared header with tabs + view toggle
