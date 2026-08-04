@@ -296,3 +296,37 @@ export async function deleteDepartment(id: string) {
   const { error } = await supabase.from("departments").delete().eq("id", id);
   if (error) throw error;
 }
+
+export type Cost = {
+  id: string;
+  vendor: string;
+  category: string;
+  amount: number;
+  month: string;            // YYYY-MM-01
+  accountId: string | null; // optional project attribution
+  notes: string;
+};
+
+export async function fetchCosts(): Promise<Cost[]> {
+  const { data, error } = await supabase.from("costs").select("*").order("month", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, vendor: r.vendor, category: r.category,
+    amount: Number(r.amount), month: r.month,
+    accountId: r.account_id ?? null, notes: r.notes || "",
+  }));
+}
+
+export async function upsertCost(c: Cost) {
+  const { error } = await supabase.from("costs").upsert({
+    id: c.id, vendor: c.vendor, category: c.category || "Development",
+    amount: c.amount || 0, month: c.month,
+    account_id: c.accountId ?? null, notes: c.notes || "",
+  });
+  if (error) throw error;
+}
+
+export async function deleteCost(id: string) {
+  const { error } = await supabase.from("costs").delete().eq("id", id);
+  if (error) throw error;
+}

@@ -8,6 +8,7 @@ import {
   upsertAccount, deleteAccount,
   upsertDepartment, deleteDepartment,
   upsertPod, deletePod,
+  fetchCosts, upsertCost, deleteCost,
 } from "@/lib/supabase";
 
 const CAD_TO_USD = 0.69;
@@ -586,6 +587,7 @@ export default function App() {
   const [accounts, setAccounts] = useState(INIT_ACCOUNTS);
   const [depts, setDepts] = useState(INIT_DEPTS);
   const [pods, setPods] = useState<any[]>([]);
+  const [costs, setCosts] = useState<any[]>([]);
   const [mercury, setMercury] = useState<any>(null);        // Mercury invoice sync result
   const [mercuryLoading, setMercuryLoading] = useState(false);
   const loadMercury = () => {
@@ -612,11 +614,12 @@ export default function App() {
   useEffect(() => {
     async function load() {
       try {
-        const [t, a, d, pd] = await Promise.all([fetchTeam(), fetchAccounts(), fetchDepartments(), fetchPods().catch(() => [])]);
+        const [t, a, d, pd, cs] = await Promise.all([fetchTeam(), fetchAccounts(), fetchDepartments(), fetchPods().catch(() => []), fetchCosts().catch(() => [])]);
         if (t.length > 0) setTeam(t);
         if (a.length > 0) setAccounts(a);
         if (d.length > 0) setDepts(d);
         if (pd.length > 0) setPods(pd);
+        if (cs.length > 0) setCosts(cs);
       } catch (e) {
         console.error("Failed to load from Supabase, using local data:", e);
         setSaveError(`Couldn't load from the database (${e?.message || "Supabase error"}) — showing built-in fallback data. Edits won't persist.`);
@@ -661,9 +664,19 @@ export default function App() {
 
   const totals = useMemo(() => {
     const r = slPods.reduce((s, p) => s + p.rev, 0);
-    const c = team.reduce((s, p) => s + cost(p), 0);
-    return { rev: r, cost: c, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
-  }, [slPods, team, accounts]);
+    const people = team.reduce((s, p) => s + cost(p), 0);
+    // External vendor spend is lumpy month to month, so the P&L carries a
+    // trailing 3-month average rather than whichever month you're looking at.
+    const byMonth: Record<string, number> = {};
+    costs.forEach((x: any) => {
+      const m = (x.month || "").slice(0, 7);
+      if (m) byMonth[m] = (byMonth[m] || 0) + Number(x.amount || 0);
+    });
+    const recent = Object.keys(byMonth).sort().reverse().slice(0, 3);
+    const vendor = recent.length ? recent.reduce((s, m) => s + byMonth[m], 0) / recent.length : 0;
+    const c = people + vendor;
+    return { rev: r, cost: c, people, vendor, margin: r - c, pct: r > 0 ? (r - c) / r : 0, heads: team.length, active: accounts.filter(a => ["Active", "Launch", "Growth"].includes(a.status)).length };
+  }, [slPods, team, accounts, costs]);
 
   const save = async (type, d) => {
     setSaveError(null);
@@ -751,6 +764,40 @@ export default function App() {
     return { overdue, overdueCount, outstanding };
   }, [mercury]);
 
+  // ── External / vendor costs ──────────────────────────────────────────────
+  // Spend that isn't a person on the roster (Upwork dev, agencies, software).
+  // Monthly figures are lumpy, so the P&L uses a trailing 3-month average.
+  const costStats = useMemo(() => {
+    const byMonth: Record<string, number> = {};
+    const byVendor: Record<string, { total: number; months: number }> = {};
+    costs.forEach((c: any) => {
+      const m = (c.month || "").slice(0, 7);
+      if (m) byMonth[m] = (byMonth[m] || 0) + Number(c.amount || 0);
+      const v = byVendor[c.vendor] || (byVendor[c.vendor] = { total: 0, months: 0 });
+      v.total += Number(c.amount || 0); v.months++;
+    });
+    const months = Object.keys(byMonth).sort().reverse();
+    const recent = months.slice(0, 3);
+    const trailingAvg = recent.length ? recent.reduce((s, m) => s + byMonth[m], 0) / recent.length : 0;
+    const total = Object.values(byMonth).reduce((s, v) => s + v, 0);
+    return { byMonth, byVendor, months, trailingAvg, total };
+  }, [costs]);
+
+  const saveCost = async (d: any) => {
+    setSaveError(null);
+    let c = d.id ? d : { ...d, id: crypto.randomUUID() };
+    const prev = costs;
+    setCosts(cs => cs.find((x: any) => x.id === c.id) ? cs.map((x: any) => x.id === c.id ? c : x) : [...cs, c]);
+    try { await upsertCost(c); } catch (e: any) { setSaveError(`Save failed: ${e?.message || "Supabase error"}`); setCosts(prev); }
+    setModal(null);
+  };
+  const removeCost = async (id: string) => {
+    const prev = costs;
+    setCosts(cs => cs.filter((x: any) => x.id !== id));
+    try { await deleteCost(id); } catch (e: any) { setSaveError(`Delete failed: ${e?.message || "Supabase error"}`); setCosts(prev); }
+    setModal(null);
+  };
+
   const getName = id => team.find(p => p.id === id)?.name || "—";
   const slOpts = SERVICE_LINES.map(s => ({ value: s.id, label: s.name }));
   const teamOpts = team.map(p => ({ value: p.id, label: p.name }));
@@ -769,6 +816,7 @@ export default function App() {
     { id: "projects", label: "Projects" },
     { id: "pods", label: "Pods" },
     { id: "invoices", label: "Invoices" },
+    { id: "costs", label: "Costs" },
     { id: "pnl", label: "P&L" },
   ];
 
@@ -2180,6 +2228,82 @@ export default function App() {
             );
           })()}
 
+          {/* ══════════ COSTS VIEW (external / vendor spend) ══════════ */}
+          {view === "costs" && (() => {
+            const fmtMonth = (ym: string) => { const [y, m] = ym.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" }); };
+            const months = costStats.months;
+            const max = Math.max(1, ...months.map(m => costStats.byMonth[m]));
+            const thisYear = new Date().getFullYear().toString();
+            const ytd = months.filter(m => m.startsWith(thisYear)).reduce((s, m) => s + costStats.byMonth[m], 0);
+            const blank = { id: null, vendor: "", category: "Development", amount: 0, month: new Date().toISOString().slice(0, 8) + "01", accountId: null, notes: "" };
+            return (
+              <div className="p-8 pb-12">
+                <div className="flex items-center justify-between mb-7">
+                  <div>
+                    <div className="text-2xl font-semibold text-gray-900 mb-1">External Costs</div>
+                    <div className="text-xs text-gray-400">Spend on people who aren’t on the roster — Upwork developers, agencies, software. Roster salaries live in Team.</div>
+                  </div>
+                  <button onClick={() => setModal({ type: "cost", data: blank })}
+                    className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Add Cost</button>
+                </div>
+
+                {costs.length === 0 ? (
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl py-14 text-center">
+                    <div className="text-sm text-gray-500 font-medium mb-1">No external costs recorded</div>
+                    <div className="text-xs text-gray-400 mb-4">Add vendor spend by month — it’ll roll into the studio P&L.</div>
+                    <button onClick={() => setModal({ type: "cost", data: blank })} className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Add the first one</button>
+                  </div>
+                ) : (<>
+                  <div className="flex gap-4 flex-wrap mb-8">
+                    <KpiCard label="Run Rate" value={fmt(Math.round(costStats.trailingAvg))} sub="trailing 3-month average" color="text-red-500" />
+                    <KpiCard label={`${thisYear} to date`} value={fmt(Math.round(ytd))} sub={`${months.filter(m => m.startsWith(thisYear)).length} months recorded`} />
+                    <KpiCard label="All time" value={fmt(Math.round(costStats.total))} sub={`${months.length} months · ${Object.keys(costStats.byVendor).length} vendor${Object.keys(costStats.byVendor).length !== 1 ? "s" : ""}`} color="text-gray-600" />
+                  </div>
+
+                  <div className="grid gap-6" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+                    {/* Monthly trend */}
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">By month</div>
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        {months.map(m => (
+                          <div key={m} className="px-5 py-3 border-b border-gray-100 last:border-0">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[12px] font-medium text-gray-700">{fmtMonth(m)}</span>
+                              <span className="text-[13px] font-semibold text-gray-900">{fmt(Math.round(costStats.byMonth[m]))}</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-red-400 rounded-full" style={{ width: `${(costStats.byMonth[m] / max) * 100}%` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Line items */}
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Entries</div>
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[520px] overflow-y-auto">
+                        {[...costs].sort((a: any, b: any) => (b.month || "").localeCompare(a.month || "")).map((c: any) => {
+                          const acct = c.accountId ? accounts.find(a => a.id === c.accountId) : null;
+                          return (
+                            <div key={c.id} onClick={() => setModal({ type: "cost", data: c })}
+                              className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[12px] font-medium text-gray-900 truncate">{c.vendor}</div>
+                                <div className="text-[10px] text-gray-400">{fmtMonth((c.month || "").slice(0, 7))} · {c.category}{acct ? ` · ${acct.name}` : ""}</div>
+                              </div>
+                              <div className="text-[12px] font-semibold text-gray-900 shrink-0">{fmt(Math.round(c.amount))}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </>)}
+              </div>
+            );
+          })()}
+
           {/* ══════════ P&L DASHBOARD VIEW ══════════ */}
           {view === "pnl" && (
             <div className="p-8 pb-12">
@@ -2187,7 +2311,7 @@ export default function App() {
                 <div className="text-2xl font-semibold text-gray-900 mb-5">Studio Overview</div>
                 <div className="flex gap-4 flex-wrap">
                   <KpiCard label="Monthly Revenue" value={fmt(totals.rev)} sub={`${fmt(totals.rev * 12)} annualized`} color="text-emerald-600" />
-                  <KpiCard label="Monthly Cost" value={fmt(totals.cost)} sub={`${fmt(totals.cost * 12)} annualized`} color="text-red-500" />
+                  <KpiCard label="Monthly Cost" value={fmt(totals.cost)} sub={totals.vendor > 0 ? `${fmt(Math.round(totals.people))} team + ${fmt(Math.round(totals.vendor))} external` : `${fmt(totals.cost * 12)} annualized`} color="text-red-500" />
                   <KpiCard label="Monthly Margin" value={fmt(totals.margin)} sub={`${pct(totals.pct)} margin`} color={totals.margin >= 0 ? "text-emerald-600" : "text-red-500"} />
                   <KpiCard label="Headcount" value={totals.heads} sub={`${totals.active} active accounts`} />
                   <KpiCard label="Revenue / Head" value={fmt(Math.round(totals.rev / (totals.heads || 1)))} sub="per person per month" color="text-gray-600" />
@@ -2591,6 +2715,27 @@ export default function App() {
       )}
 
       {/* Department edit modal */}
+      {modal?.type === "cost" && (
+        <Modal title={modal.data.id ? `Edit: ${modal.data.vendor}` : "New External Cost"} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-3.5">
+            <Inp label="Vendor" value={modal.data.vendor} onChange={v => setModal({ ...modal, data: { ...modal.data, vendor: v } })} ph="e.g. Upwork" />
+            <div className="grid grid-cols-2 gap-3">
+              <Inp label="Category" value={modal.data.category} onChange={v => setModal({ ...modal, data: { ...modal.data, category: v } })} opts={["Development", "Design", "Software", "Agency", "Other"]} />
+              <Inp label="Amount (USD)" value={modal.data.amount} onChange={v => setModal({ ...modal, data: { ...modal.data, amount: v } })} type="number" />
+            </div>
+            <Inp label="Month" value={(modal.data.month || "").slice(0, 10)} onChange={v => setModal({ ...modal, data: { ...modal.data, month: v ? v.slice(0, 8) + "01" : null } })} type="date" />
+            <Inp label="Attribute to a project (optional)" value={modal.data.accountId} onChange={v => setModal({ ...modal, data: { ...modal.data, accountId: v || null } })}
+              opts={accounts.filter(a => a.type !== "Retainer").map(a => ({ value: a.id, label: a.name }))} />
+            <Inp label="Notes" value={modal.data.notes} onChange={v => setModal({ ...modal, data: { ...modal.data, notes: v } })} ph="optional" />
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => { if (modal.data.vendor?.trim() && modal.data.month) saveCost(modal.data); }}
+                className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>
+              {modal.data.id && <button onClick={() => removeCost(modal.data.id)} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Delete</button>}
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {modal?.type === "pod" && (() => {
         const podMembers = team.filter(p => p.podId === modal.data.id);
         const podAccts = accounts.filter(a => a.podId === modal.data.id);

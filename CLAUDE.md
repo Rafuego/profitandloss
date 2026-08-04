@@ -135,6 +135,14 @@ per-client rollup and reports paid / outstanding / overdue, so any deposit split
 removed; the column remains in the DB but is unused. `mercuryReady` distinguishes
 "Mercury not connected" from "this client has no matching invoices".
 
+**External / vendor costs (see `costs` table + Costs tab):** spend on non-roster
+people and services (Upwork dev, agencies, software), recorded per calendar month
+with an optional `account_id` to attribute it to one project. Monthly amounts are
+lumpy, so `totals` adds a **trailing 3-month average** to studio cost rather than the
+current month; the P&L Monthly Cost card shows the team/external split. Source data
+comes from Upwork/Amex CSV exports — Mercury only sees Amex bill payments as lump
+sums with no line detail, so card spend cannot be pulled automatically.
+
 **Overhead distribution:** ops + leadership costs split equally across all active clients, allocated proportionally to each pod.
 
 ## Workload Capacity System

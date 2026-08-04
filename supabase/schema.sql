@@ -306,3 +306,20 @@ create policy "Authenticated full access" on mercury_snapshot for all using (tru
 -- can claim specific invoice numbers. Claimed invoices are excluded from the
 -- name-matched pool of every other account.
 alter table accounts add column if not exists mercury_invoices text;
+
+-- External / vendor costs (Upwork dev, agencies, software). People costs live in
+-- team_members; this covers spend that isn't a person on the roster. Amounts are
+-- per calendar month; account_id optionally attributes a cost to one project.
+create table if not exists costs (
+  id text primary key default 'c' || floor(random() * 1000000)::text,
+  vendor text not null,
+  category text not null default 'Development',
+  amount numeric not null default 0,
+  month date not null,                                        -- first day of the month
+  account_id text references accounts(id) on delete set null, -- optional project attribution
+  notes text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_costs_month on costs(month);
+alter table costs enable row level security;
+create policy "Authenticated full access" on costs for all using (true) with check (true);
