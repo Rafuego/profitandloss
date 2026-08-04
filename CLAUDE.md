@@ -78,6 +78,10 @@ try { await upsertAccount(d); } catch (e) {
 
 ## Views
 
+Navigation is a left sidebar (`navGroups`) grouped People / Clients / Money, with
+studio totals and the +Account/+Person actions pinned below it. Layout is
+nav · content · detail panel.
+
 | Tab | State key |
 |-----|-----------|
 | Workload | `workloadTab`: `"leads" \| "symphony" \| "product" \| "pm" \| "all"` |
