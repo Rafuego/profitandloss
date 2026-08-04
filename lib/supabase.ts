@@ -330,3 +330,31 @@ export async function deleteCost(id: string) {
   const { error } = await supabase.from("costs").delete().eq("id", id);
   if (error) throw error;
 }
+
+export type CostRule = { id: string; matchText: string; accountId: string | null; vendor: string };
+
+export async function fetchCostRules(): Promise<CostRule[]> {
+  const { data, error } = await supabase.from("cost_rules").select("*");
+  if (error) throw error;
+  return (data || []).map((r: any) => ({ id: r.id, matchText: r.match_text, accountId: r.account_id ?? null, vendor: r.vendor }));
+}
+
+export async function upsertCostRule(r: CostRule) {
+  const { error } = await supabase.from("cost_rules").upsert({
+    id: r.id, match_text: r.matchText, account_id: r.accountId ?? null, vendor: r.vendor || "Upwork",
+  });
+  if (error) throw error;
+}
+
+export async function deleteCostRule(id: string) {
+  const { error } = await supabase.from("cost_rules").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Replace all cost rows for a given vendor+month set (used by CSV re-imports so
+// re-importing an overlapping period updates rather than double-counts).
+export async function replaceCostsForMonths(vendor: string, months: string[]) {
+  if (!months.length) return;
+  const { error } = await supabase.from("costs").delete().eq("vendor", vendor).in("month", months);
+  if (error) throw error;
+}

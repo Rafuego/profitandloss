@@ -9,6 +9,7 @@ import {
   upsertDepartment, deleteDepartment,
   upsertPod, deletePod,
   fetchCosts, upsertCost, deleteCost,
+  fetchCostRules, upsertCostRule, replaceCostsForMonths,
 } from "@/lib/supabase";
 
 const CAD_TO_USD = 0.69;
@@ -588,6 +589,9 @@ export default function App() {
   const [depts, setDepts] = useState(INIT_DEPTS);
   const [pods, setPods] = useState<any[]>([]);
   const [costs, setCosts] = useState<any[]>([]);
+  const [costRules, setCostRules] = useState<any[]>([]);
+  const [importText, setImportText] = useState("");
+  const [importRows, setImportRows] = useState<any[] | null>(null);
   const [mercury, setMercury] = useState<any>(null);        // Mercury invoice sync result
   const [mercuryLoading, setMercuryLoading] = useState(false);
   const loadMercury = () => {
@@ -620,6 +624,7 @@ export default function App() {
         if (d.length > 0) setDepts(d);
         if (pd.length > 0) setPods(pd);
         if (cs.length > 0) setCosts(cs);
+        try { setCostRules(await fetchCostRules()); } catch {}
       } catch (e) {
         console.error("Failed to load from Supabase, using local data:", e);
         setSaveError(`Couldn't load from the database (${e?.message || "Supabase error"}) — showing built-in fallback data. Edits won't persist.`);
@@ -782,6 +787,78 @@ export default function App() {
     const total = Object.values(byMonth).reduce((s, v) => s + v, 0);
     return { byMonth, byVendor, months, trailingAvg, total };
   }, [costs]);
+
+  // ── Upwork CSV import ────────────────────────────────────────────────────
+  // Parses an Upwork export, finds the freelancer/contract + amount + date
+  // columns whatever they're called, and pre-assigns each row to a project
+  // using saved rules so you only ever map a given freelancer once.
+  const parseCsv = (text: string) => {
+    const lines = text.trim().split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) return [];
+    const splitRow = (line: string) => {
+      const out: string[] = []; let cur = "", q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+        else if (ch === "," && !q) { out.push(cur); cur = ""; }
+        else cur += ch;
+      }
+      out.push(cur); return out.map(s => s.trim());
+    };
+    const head = splitRow(lines[0]).map(h => h.toLowerCase());
+    const findCol = (...names: string[]) => head.findIndex(h => names.some(n => h.includes(n)));
+    const iDate = findCol("date");
+    const iAmt = findCol("amount", "total");
+    // Prefer a real contract/freelancer column; the payment report has neither
+    const iWho = findCol("freelancer", "contract", "description", "team", "payment method");
+    const iType = findCol("type");
+    if (iDate < 0 || iAmt < 0) return [];
+    const rows: any[] = [];
+    for (const line of lines.slice(1)) {
+      const c = splitRow(line);
+      const amount = parseFloat((c[iAmt] || "").replace(/[^0-9.\-]/g, ""));
+      if (!isFinite(amount) || amount === 0) continue;
+      const d = new Date((c[iDate] || "").replace(/"/g, ""));
+      if (isNaN(d.getTime())) continue;
+      const who = (iWho >= 0 ? c[iWho] : "") || "Upwork";
+      const rule = costRules.find((r: any) => who.toLowerCase().includes(r.matchText.toLowerCase()));
+      rows.push({
+        who, amount, type: iType >= 0 ? c[iType] : "",
+        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`,
+        accountId: rule?.accountId || null, remember: false,
+      });
+    }
+    return rows;
+  };
+
+  const runImport = async () => {
+    if (!importRows?.length) return;
+    setSaveError(null);
+    // Group into one cost row per (month, project) so the ledger stays readable
+    const grouped: Record<string, any> = {};
+    importRows.forEach(r => {
+      const k = `${r.month}|${r.accountId || "none"}`;
+      const g = grouped[k] || (grouped[k] = { month: r.month, accountId: r.accountId, amount: 0, whos: new Set() });
+      g.amount += r.amount; g.whos.add(r.who);
+    });
+    const months = [...new Set(importRows.map(r => r.month))];
+    const newRows = Object.values(grouped).map((g: any) => ({
+      id: crypto.randomUUID(), vendor: "Upwork", category: "Development",
+      amount: Math.round(g.amount * 100) / 100, month: g.month, accountId: g.accountId,
+      notes: `Imported from Upwork · ${[...g.whos].slice(0, 3).join(", ")}${g.whos.size > 3 ? ` +${g.whos.size - 3}` : ""}`,
+    }));
+    try {
+      // Re-importing an overlapping period replaces those months instead of doubling them
+      await replaceCostsForMonths("Upwork", months);
+      for (const r of newRows) await upsertCost(r);
+      for (const r of importRows.filter(x => x.remember && x.accountId)) {
+        await upsertCostRule({ id: crypto.randomUUID(), matchText: r.who, accountId: r.accountId, vendor: "Upwork" });
+      }
+      setCosts(cs => [...cs.filter((c: any) => !(c.vendor === "Upwork" && months.includes(c.month))), ...newRows]);
+      try { setCostRules(await fetchCostRules()); } catch {}
+      setImportRows(null); setImportText("");
+    } catch (e: any) { setSaveError(`Import failed: ${e?.message || "Supabase error"}`); }
+  };
 
   const saveCost = async (d: any) => {
     setSaveError(null);
@@ -2243,9 +2320,87 @@ export default function App() {
                     <div className="text-2xl font-semibold text-gray-900 mb-1">External Costs</div>
                     <div className="text-xs text-gray-400">Spend on people who aren’t on the roster — Upwork developers, agencies, software. Roster salaries live in Team.</div>
                   </div>
-                  <button onClick={() => setModal({ type: "cost", data: blank })}
-                    className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Add Cost</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setImportRows(importRows ? null : []); setImportText(""); }}
+                      className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">
+                      {importRows ? "Cancel import" : "↑ Import Upwork CSV"}
+                    </button>
+                    <button onClick={() => setModal({ type: "cost", data: blank })}
+                      className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Add Cost</button>
+                  </div>
                 </div>
+
+                {/* CSV import: paste → auto-map via saved rules → assign the rest */}
+                {importRows !== null && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 mb-8">
+                    {importRows.length === 0 ? (<>
+                      <div className="text-[13px] font-semibold text-gray-900 mb-1">Import from Upwork</div>
+                      <div className="text-[11px] text-gray-500 mb-3">
+                        In Upwork go to <span className="font-medium">Reports → Transaction History</span>, set the date range, and download the CSV — that report includes the
+                        freelancer and contract on each row, which is what lets spend attach to a project. Paste the whole file below.
+                      </div>
+                      <textarea value={importText} onChange={e => setImportText(e.target.value)}
+                        placeholder="Paste the CSV contents here…"
+                        className="w-full h-36 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[11px] font-mono text-gray-700 outline-none resize-y" />
+                      <div className="flex items-center gap-2 mt-3">
+                        <button onClick={() => { const r = parseCsv(importText); r.length ? setImportRows(r) : setSaveError("Couldn't find date and amount columns in that CSV."); }}
+                          disabled={!importText.trim()}
+                          className={`rounded-lg px-4 py-2 text-[11px] font-semibold transition-colors ${importText.trim() ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+                          Preview
+                        </button>
+                        <span className="text-[10px] text-gray-400">Re-importing a period replaces those months — it won’t double-count.</span>
+                      </div>
+                    </>) : (<>
+                      {(() => {
+                        const byWho: Record<string, any> = {};
+                        importRows.forEach((r, i) => {
+                          const g = byWho[r.who] || (byWho[r.who] = { who: r.who, total: 0, n: 0, idxs: [], accountId: r.accountId, remember: r.remember });
+                          g.total += r.amount; g.n++; g.idxs.push(i);
+                        });
+                        const groups = Object.values(byWho).sort((a: any, b: any) => b.total - a.total);
+                        const months = [...new Set(importRows.map(r => r.month))].sort();
+                        const assigned = importRows.filter(r => r.accountId).reduce((s, r) => s + r.amount, 0);
+                        const totalAmt = importRows.reduce((s, r) => s + r.amount, 0);
+                        const setGroup = (g: any, patch: any) =>
+                          setImportRows(rows => rows!.map((r, i) => g.idxs.includes(i) ? { ...r, ...patch } : r));
+                        return (<>
+                          <div className="flex items-baseline justify-between mb-3">
+                            <div>
+                              <div className="text-[13px] font-semibold text-gray-900">{importRows.length} rows · {fmt(Math.round(totalAmt))}</div>
+                              <div className="text-[11px] text-gray-400">{months[0]?.slice(0, 7)} → {months[months.length - 1]?.slice(0, 7)} · {fmt(Math.round(assigned))} attributed to projects</div>
+                            </div>
+                            <button onClick={runImport} className="bg-gray-900 text-white rounded-lg px-4 py-2 text-[11px] font-semibold hover:bg-gray-800 transition-colors">Import {months.length} month{months.length !== 1 ? "s" : ""}</button>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg overflow-hidden max-h-72 overflow-y-auto">
+                            <div className="grid px-4 py-2 bg-gray-100 sticky top-0" style={{ gridTemplateColumns: "2fr 0.7fr 1fr 1.6fr 0.9fr" }}>
+                              {["Freelancer / contract", "Rows", "Amount", "Project", "Remember"].map(h => (
+                                <div key={h} className="text-[9px] font-semibold tracking-wider uppercase text-gray-500">{h}</div>
+                              ))}
+                            </div>
+                            {groups.map((g: any) => (
+                              <div key={g.who} className="grid px-4 py-2 border-b border-gray-100 items-center" style={{ gridTemplateColumns: "2fr 0.7fr 1fr 1.6fr 0.9fr" }}>
+                                <div className="text-[11px] text-gray-900 truncate pr-2" title={g.who}>{g.who}</div>
+                                <div className="text-[11px] text-gray-400">{g.n}</div>
+                                <div className="text-[11px] font-semibold text-gray-900">{fmt(Math.round(g.total))}</div>
+                                <select value={g.accountId || ""} onChange={e => setGroup(g, { accountId: e.target.value || null })}
+                                  className="bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none mr-2">
+                                  <option value="">— unattributed —</option>
+                                  {accounts.filter(a => a.type !== "Retainer").map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                </select>
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                  <input type="checkbox" checked={!!g.remember} disabled={!g.accountId}
+                                    onChange={e => setGroup(g, { remember: e.target.checked })} />
+                                  <span className="text-[10px] text-gray-400">save rule</span>
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-2">Tick “save rule” and that freelancer auto-maps to the same project on every future import.</div>
+                        </>);
+                      })()}
+                    </>)}
+                  </div>
+                )}
 
                 {costs.length === 0 ? (
                   <div className="border-2 border-dashed border-gray-200 rounded-xl py-14 text-center">

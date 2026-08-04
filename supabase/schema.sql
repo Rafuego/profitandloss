@@ -323,3 +323,15 @@ create table if not exists costs (
 create index if not exists idx_costs_month on costs(month);
 alter table costs enable row level security;
 create policy "Authenticated full access" on costs for all using (true) with check (true);
+
+-- Cost mapping rules: remembers which Upwork freelancer/contract belongs to which
+-- project, so repeat CSV imports auto-attribute without re-tagging every row.
+create table if not exists cost_rules (
+  id text primary key default 'r' || floor(random() * 1000000)::text,
+  match_text text not null,      -- freelancer or contract name from the Upwork export
+  account_id text references accounts(id) on delete cascade,
+  vendor text not null default 'Upwork',
+  created_at timestamptz not null default now()
+);
+alter table cost_rules enable row level security;
+create policy "Authenticated full access" on cost_rules for all using (true) with check (true);
