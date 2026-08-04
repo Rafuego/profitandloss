@@ -335,3 +335,7 @@ create table if not exists cost_rules (
 );
 alter table cost_rules enable row level security;
 create policy "Authenticated full access" on cost_rules for all using (true) with check (true);
+
+-- Internal accounts (e.g. "Interlude Studio") — valid cost targets for work done
+-- on ourselves, but excluded from client counts, revenue and project lists.
+alter table accounts add column if not exists is_internal boolean not null default false;

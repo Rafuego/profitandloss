@@ -60,6 +60,7 @@ export type Account = {
   weight: number;           // designer capacity weight (1–5 pts, default 3)
   depositPaid: boolean;     // legacy; collections now come from Mercury
   mercuryInvoices: string;  // optional explicit Mercury invoice numbers (comma-separated)
+  isInternal: boolean;      // internal work (e.g. Interlude Studio) — not a client
   notes: string;
 };
 
@@ -172,6 +173,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     weight: r.weight != null ? Number(r.weight) : 3,
     depositPaid: r.deposit_paid ?? false,
     mercuryInvoices: r.mercury_invoices || "",
+    isInternal: r.is_internal ?? false,
     notes: r.notes || "",
   }));
 }
@@ -245,6 +247,7 @@ export async function upsertAccount(a: Account) {
     weight: a.weight ?? 3,
     deposit_paid: a.depositPaid ?? false,
     mercury_invoices: a.mercuryInvoices || null,
+    is_internal: a.isInternal ?? false,
     notes: a.notes,
   });
   if (acctErr) throw acctErr;

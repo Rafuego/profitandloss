@@ -150,7 +150,10 @@ comes from Upwork/Amex CSV exports. Imports are **idempotent**: each row's id is
 `upw-<Upwork Reference ID>` (falling back to date+amount), so re-uploading the full
 export updates matching rows and never overwrites a project assignment. Any account
 can carry cost — retainers included, not just projects. Source data — Mercury only sees Amex bill payments as lump
-sums with no line detail, so card spend cannot be pulled automatically.
+sums with no line detail, so card spend cannot be pulled automatically. **Internal accounts** (`accounts.is_internal`, e.g.
+"Interlude Studio" `a-internal`) are valid cost targets for work we do on ourselves,
+grouped under "Internal" in cost dropdowns, but excluded from every client-facing
+list and count (Accounts tabs, Projects view).
 
 **Overhead distribution:** ops + leadership costs split equally across all active clients, allocated proportionally to each pod.
 

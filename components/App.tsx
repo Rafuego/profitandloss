@@ -801,9 +801,10 @@ export default function App() {
     const live = (a: any) => ["Active", "Launch", "Growth"].includes(a.status);
     const byName = (a: any, b: any) => a.name.localeCompare(b.name);
     return [
-      { label: "Active projects", items: accounts.filter(a => a.type !== "Retainer" && live(a)).sort(byName) },
-      { label: "Retainers", items: accounts.filter(a => a.type === "Retainer" && live(a)).sort(byName) },
-      { label: "Closed / archived", items: accounts.filter(a => !live(a)).sort(byName) },
+      { label: "Internal", items: accounts.filter(a => a.isInternal).sort(byName) },
+      { label: "Active projects", items: accounts.filter(a => !a.isInternal && a.type !== "Retainer" && live(a)).sort(byName) },
+      { label: "Retainers", items: accounts.filter(a => !a.isInternal && a.type === "Retainer" && live(a)).sort(byName) },
+      { label: "Closed / archived", items: accounts.filter(a => !a.isInternal && !live(a)).sort(byName) },
     ].filter(g => g.items.length > 0);
   }, [accounts]);
   const CostTargetOptions = () => (
@@ -1489,6 +1490,7 @@ export default function App() {
 
             // Tab filtering
             const tabFiltered = accounts.filter(a => {
+              if (a.isInternal) return false; // internal work, not a client
               if (acctTab === "retainer") return a.type === "Retainer" && ["Active", "Launch", "Growth"].includes(a.status);
               // Same active-status rule as Retainers, so Paused/Pipeline projects
               // live only in Closed/Pipeline instead of appearing in both tabs
@@ -1499,9 +1501,9 @@ export default function App() {
 
             // Counts mirror each tab's filter exactly
             const isActive = (a: any) => ["Active", "Launch", "Growth"].includes(a.status);
-            const retainerCount = accounts.filter(a => a.type === "Retainer" && isActive(a)).length;
-            const projectCount = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && isActive(a)).length;
-            const closedCount = accounts.filter(a => ["Closed", "Paused", "Pipeline"].includes(a.status)).length;
+            const retainerCount = accounts.filter(a => !a.isInternal && a.type === "Retainer" && isActive(a)).length;
+            const projectCount = accounts.filter(a => !a.isInternal && (a.type === "Project" || a.type === "Hybrid") && isActive(a)).length;
+            const closedCount = accounts.filter(a => !a.isInternal && ["Closed", "Paused", "Pipeline"].includes(a.status)).length;
 
             // Shared header with tabs + view toggle
             const Header = () => (
@@ -1696,7 +1698,7 @@ export default function App() {
           {/* ══════════ FLAT-RATE PROJECTS VIEW ══════════ */}
           {view === "projects" && (() => {
             const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "";
-            const flat = accounts.filter(a => a.type === "Project" || a.type === "Hybrid");
+            const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && !a.isInternal);
             const inFlight = flat.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
             const planning = flat.filter(a => a.status === "Pipeline");
