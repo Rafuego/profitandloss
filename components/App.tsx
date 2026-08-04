@@ -597,6 +597,7 @@ export default function App() {
   const [costs, setCosts] = useState<any[]>([]);
   const [costRules, setCostRules] = useState<any[]>([]);
   const [importText, setImportText] = useState("");
+  const [costsShowAll, setCostsShowAll] = useState(false);
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [mercury, setMercury] = useState<any>(null);        // Mercury invoice sync result
   const [mercuryLoading, setMercuryLoading] = useState(false);
@@ -830,7 +831,8 @@ export default function App() {
       const rule = costRules.find((r: any) => who.toLowerCase().includes(r.matchText.toLowerCase()));
       rows.push({
         who, amount, type: iType >= 0 ? c[iType] : "",
-        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`,
+        // keep the real transaction date; monthly rollups slice to YYYY-MM
+        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
         accountId: rule?.accountId || null, remember: false,
       });
     }
@@ -840,18 +842,12 @@ export default function App() {
   const runImport = async () => {
     if (!importRows?.length) return;
     setSaveError(null);
-    // Group into one cost row per (month, project) so the ledger stays readable
-    const grouped: Record<string, any> = {};
-    importRows.forEach(r => {
-      const k = `${r.month}|${r.accountId || "none"}`;
-      const g = grouped[k] || (grouped[k] = { month: r.month, accountId: r.accountId, amount: 0, whos: new Set() });
-      g.amount += r.amount; g.whos.add(r.who);
-    });
-    const months = [...new Set(importRows.map(r => r.month))];
-    const newRows = Object.values(grouped).map((g: any) => ({
+    // One row per transaction so each payment can be assigned individually
+    const months = [...new Set(importRows.map(r => r.month.slice(0, 7) + "-01"))];
+    const newRows = importRows.map(r => ({
       id: crypto.randomUUID(), vendor: "Upwork", category: "Development",
-      amount: Math.round(g.amount * 100) / 100, month: g.month, accountId: g.accountId,
-      notes: `Imported from Upwork · ${[...g.whos].slice(0, 3).join(", ")}${g.whos.size > 3 ? ` +${g.whos.size - 3}` : ""}`,
+      amount: Math.round(r.amount * 100) / 100, month: r.month, accountId: r.accountId,
+      notes: `Imported from Upwork · ${r.who}`,
     }));
     try {
       // Re-importing an overlapping period replaces those months instead of doubling them
@@ -860,7 +856,9 @@ export default function App() {
       for (const r of importRows.filter(x => x.remember && x.accountId)) {
         await upsertCostRule({ id: crypto.randomUUID(), matchText: r.who, accountId: r.accountId, vendor: "Upwork" });
       }
-      setCosts(cs => [...cs.filter((c: any) => !(c.vendor === "Upwork" && months.includes(c.month))), ...newRows]);
+      // months are YYYY-MM-01 keys; rows hold real dates, so compare by month
+      const monthKeys = new Set(months.map(m => m.slice(0, 7)));
+      setCosts(cs => [...cs.filter((c: any) => !(c.vendor === "Upwork" && monthKeys.has((c.month || "").slice(0, 7)))), ...newRows]);
       try { setCostRules(await fetchCostRules()); } catch {}
       setImportRows(null); setImportText("");
     } catch (e: any) { setSaveError(`Import failed: ${e?.message || "Supabase error"}`); }
@@ -2548,22 +2546,42 @@ export default function App() {
                           </>
                         );
                       })()}
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Entries</div>
-                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[520px] overflow-y-auto">
-                        {[...costs].sort((a: any, b: any) => (b.month || "").localeCompare(a.month || "")).map((c: any) => {
-                          const acct = c.accountId ? accounts.find(a => a.id === c.accountId) : null;
-                          return (
-                            <div key={c.id} onClick={() => setModal({ type: "cost", data: c })}
-                              className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[12px] font-medium text-gray-900 truncate">{c.vendor}</div>
-                                <div className="text-[10px] text-gray-400">{fmtMonth((c.month || "").slice(0, 7))} · {c.category}{acct ? ` · ${acct.name}` : ""}</div>
-                              </div>
-                              <div className="text-[12px] font-semibold text-gray-900 shrink-0">{fmt(Math.round(c.amount))}</div>
+                      {(() => {
+                        const unassigned = costs.filter((c: any) => !c.accountId);
+                        const shown = [...costs]
+                          .filter((c: any) => costsShowAll || !c.accountId)
+                          .sort((a: any, b: any) => (b.month || "").localeCompare(a.month || ""));
+                        const projOpts = accounts.filter(a => a.type !== "Retainer");
+                        const fmtDay = (d: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
+                        return (<>
+                          <div className="flex items-baseline justify-between mb-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                              Transactions {unassigned.length > 0 && <span className="text-amber-600 normal-case tracking-normal font-medium">· {unassigned.length} to assign</span>}
                             </div>
-                          );
-                        })}
-                      </div>
+                            <button onClick={() => setCostsShowAll(v => !v)} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">
+                              {costsShowAll ? "Show unassigned only" : `Show all (${costs.length})`}
+                            </button>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[560px] overflow-y-auto">
+                            {shown.length === 0 && <div className="px-4 py-6 text-center text-[11px] text-emerald-600 font-medium">Everything is assigned to a project.</div>}
+                            {shown.map((c: any) => (
+                              <div key={c.id} className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                                <div className="w-[70px] shrink-0 text-[10px] text-gray-400">{fmtDay(c.month)}</div>
+                                <div className="w-[68px] shrink-0 text-[12px] font-semibold text-gray-900 text-right">{fmt(c.amount)}</div>
+                                {/* Inline assignment — saves on change, no modal needed */}
+                                <select value={c.accountId || ""} onChange={e => saveCost({ ...c, accountId: e.target.value || null })}
+                                  className={`flex-1 min-w-0 rounded-md px-2 py-1 text-[11px] outline-none border ${c.accountId ? "bg-white border-gray-200 text-gray-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+                                  <option value="">— assign to project —</option>
+                                  {projOpts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                </select>
+                                <button onClick={() => setModal({ type: "cost", data: c })} title="Edit or split"
+                                  className="text-gray-300 hover:text-gray-600 text-xs px-1 shrink-0">&#9998;</button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-2">Pick a project to assign — it saves immediately. Use ✎ to split one payment across several projects.</div>
+                        </>);
+                      })()}
                     </div>
                   </div>
                 </>)}
