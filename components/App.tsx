@@ -616,7 +616,7 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
-  const [view, setView] = useState("workload");
+  const [view, setView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
@@ -943,6 +943,9 @@ export default function App() {
 
   // Grouped for the sidebar — keeps the list readable as tabs are added
   const navGroups = [
+    { label: "Studio", items: [
+      { id: "dashboard", label: "Dashboard" },
+    ]},
     { label: "People", items: [
       { id: "workload", label: "Workload" },
       { id: "team", label: "Team" },
@@ -1100,6 +1103,147 @@ export default function App() {
         <div className="flex-1 overflow-auto">
 
           {/* ══════════ WORKLOAD VIEW ══════════ */}
+          {/* ══════════ DASHBOARD (default home) ══════════ */}
+          {view === "dashboard" && (() => {
+            // Compose the home view entirely from memos other tabs already compute.
+            const nowMonth = new Date().toISOString().slice(0, 7);
+            const collectedThisMonth = mercury?.paidByMonth?.[nowMonth]?.total || 0;
+
+            // Same capacity math as the Workload cards
+            const loads = personPods.filter(p => p.sl !== "leadership").map(p => {
+              const lead = p.ledAccounts.reduce((s, a) => s + ((a.supportIds.length > 0 ? (a.weight ?? 3) * 0.7 : (a.weight ?? 3))), 0);
+              const sup = p.supAccounts.reduce((s, a) => s + (a.supportIds.length > 0 ? ((a.weight ?? 3) * 0.3) / a.supportIds.length : 0), 0);
+              const dev = p.devAccounts.reduce((s, a) => s + (a.weight ?? 3) * 0.3, 0);
+              const pm = p.pmAccounts.reduce((s, a) => s + (a.weight ?? 3) * PM_LOAD_PER_WEIGHT, 0);
+              return { p, pts: Math.round((lead + sup + dev + pm) * 10) / 10 };
+            });
+            const hot = loads.filter(l => l.pts >= 4).sort((a, b) => b.pts - a.pts);
+
+            // Overdue accounts, worst first (same source as the Invoices Overdue tab)
+            const overdueAccts = Object.values(mercury?.byAccount || {})
+              .filter((r: any) => r.overdue > 0)
+              .sort((a: any, b: any) => b.overdue - a.overdue);
+
+            const liveProjects = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && !a.isInternal && ["Active", "Launch", "Growth"].includes(a.status));
+            const projEcons = liveProjects.map(a => ({ a, e: projectEcon(a, team, accounts, costs) }));
+            const losing = projEcons.filter(x => x.e.profit != null && x.e.profit < 0);
+            const endingSoon = liveProjects.filter(a => {
+              if (!a.endDate) return false;
+              const d = (new Date(a.endDate).getTime() - Date.now()) / 86400000;
+              return d >= -7 && d <= 30;
+            }).sort((a, b) => (a.endDate || "").localeCompare(b.endDate || ""));
+
+            const unassignedCosts = costs.filter((c: any) => !c.accountId);
+            const unassignedTotal = unassignedCosts.reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
+
+            const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
+            const Tile = ({ label, value, sub, tone = "text-gray-900", onClick }: any) => (
+              <div onClick={onClick} className={`bg-white border border-gray-200 rounded-xl px-5 py-4 flex-1 min-w-[150px] ${onClick ? "cursor-pointer hover:shadow-sm hover:border-gray-300 transition-all" : ""}`}>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</div>
+                <div className={`text-xl font-semibold mt-1 ${tone}`}>{value}</div>
+                {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
+              </div>
+            );
+            const Section = ({ title, action, onAction, children }: any) => (
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{title}</div>
+                  {action && <button onClick={onAction} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">{action} →</button>}
+                </div>
+                {children}
+              </div>
+            );
+            const Row = ({ left, right, tone = "text-gray-900", onClick }: any) => (
+              <div onClick={onClick} className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}>
+                <span className="text-[12px] font-medium text-gray-900 truncate pr-3">{left}</span>
+                <span className={`text-[12px] font-semibold shrink-0 ${tone}`}>{right}</span>
+              </div>
+            );
+            const Empty = ({ children }: any) => <div className="px-4 py-4 text-[11px] text-gray-300 italic">{children}</div>;
+
+            return (
+              <div className="p-8 pb-12">
+                <div className="mb-7">
+                  <div className="text-2xl font-semibold text-gray-900 mb-1">Interlude Studio</div>
+                  <div className="text-xs text-gray-400">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}{mercury?.stale ? " · Mercury data is from the last sync" : ""}</div>
+                </div>
+
+                {/* Headline numbers */}
+                <div className="flex gap-3 flex-wrap mb-3">
+                  <Tile label="Monthly Revenue" value={fmtK(totals.rev)} sub={`${totals.active} active accounts`} tone="text-emerald-600" onClick={go("pnl")} />
+                  <Tile label="Monthly Cost" value={fmtK(totals.cost)} sub={`team ${fmtK(totals.people)} + external ${fmtK(totals.vendor)}`} tone="text-red-500" onClick={go("pnl")} />
+                  <Tile label="Margin" value={`${fmtK(totals.margin)}`} sub={`${Math.round(totals.pct * 100)}% of revenue`} tone={totals.margin >= 0 ? "text-gray-900" : "text-red-500"} onClick={go("pnl")} />
+                  <Tile label="Collected This Month" value={mercuryReady ? fmtK(collectedThisMonth) : "—"} sub={mercuryReady ? `via Mercury` : "Mercury not connected"} onClick={go("invoices")} />
+                  <Tile label="Overdue" value={collections ? fmtK(collections.overdue) : "—"}
+                    sub={collections ? `${collections.overdueCount} client${collections.overdueCount === 1 ? "" : "s"} · ${fmtK(collections.outstanding)} outstanding` : "Mercury not connected"}
+                    tone={collections?.overdue > 0 ? "text-red-500" : "text-gray-900"}
+                    onClick={go("invoices", () => setInvoiceTab("overdue"))} />
+                </div>
+
+                <div className="grid gap-3 mt-1" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
+                  {/* Needs attention */}
+                  <Section title="Collections — worst first" action="Invoices" onAction={go("invoices", () => setInvoiceTab("overdue"))}>
+                    {overdueAccts.length === 0 && <Empty>{mercuryReady ? "Nothing overdue. Lovely." : "Mercury not connected."}</Empty>}
+                    {overdueAccts.slice(0, 6).map((r: any) => (
+                      <Row key={r.name} left={r.name} tone="text-red-500"
+                        right={`${fmtK(r.overdue)}${r.oldestDue ? ` · ${Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000))}d` : ""}`}
+                        onClick={go("invoices", () => setInvoiceTab("overdue"))} />
+                    ))}
+                  </Section>
+
+                  <Section title="Team capacity" action="Workload" onAction={go("workload")}>
+                    {hot.length === 0 && <Empty>No one is near capacity.</Empty>}
+                    {hot.slice(0, 6).map(({ p, pts }) => (
+                      <Row key={p.id} left={p.name} tone={pts >= 5 ? "text-red-500" : "text-amber-500"}
+                        right={`${pts} / 5 pts${pts >= 5 ? " · at capacity" : ""}`}
+                        onClick={go("workload", () => setWorkloadTab("all"))} />
+                    ))}
+                  </Section>
+
+                  <Section title="To do" >
+                    {unassignedCosts.length === 0 && losing.length === 0 && endingSoon.length === 0 && retainersToPlace.length === 0 && <Empty>All clear.</Empty>}
+                    {unassignedCosts.length > 0 && (
+                      <Row left={`Assign ${unassignedCosts.length} external cost${unassignedCosts.length === 1 ? "" : "s"} to accounts`} right={fmtK(unassignedTotal)} tone="text-amber-600" onClick={go("costs")} />
+                    )}
+                    {losing.map(({ a, e }) => (
+                      <Row key={a.id} left={`${a.name} is over budget`} right={fmtK(e.profit)} tone="text-red-500" onClick={go("projects")} />
+                    ))}
+                    {endingSoon.map(a => (
+                      <Row key={a.id} left={`${a.name} wraps ${new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`} right={fmtK(a.project)} onClick={go("projects")} />
+                    ))}
+                    {retainersToPlace.length > 0 && (
+                      <Row left={`Place ${retainersToPlace.length} retainer${retainersToPlace.length === 1 ? "" : "s"} into a pod`} right="" onClick={go("pods")} />
+                    )}
+                  </Section>
+
+                  {/* Snapshots */}
+                  <Section title="Service line P&L" action="P&L" onAction={go("pnl")}>
+                    {slPods.map(sl => (
+                      <Row key={sl.id} left={sl.name} tone={sl.margin >= 0 ? "text-emerald-600" : "text-red-500"}
+                        right={`${fmtK(sl.rev)} rev · ${fmtK(sl.margin)}`} onClick={go("pnl")} />
+                    ))}
+                  </Section>
+
+                  <Section title="Projects in flight" action="Projects" onAction={go("projects")}>
+                    {projEcons.length === 0 && <Empty>No active flat-rate projects.</Empty>}
+                    {projEcons.sort((x, y) => y.a.project - x.a.project).slice(0, 6).map(({ a, e }) => (
+                      <Row key={a.id} left={a.name}
+                        right={`${fmtK(a.project)}${e.elapsed != null ? ` · ${Math.round(e.elapsed * 100)}%` : ""}`}
+                        onClick={go("projects")} />
+                    ))}
+                  </Section>
+
+                  <Section title="External spend" action="Costs" onAction={go("costs")}>
+                    <Row left="Run rate (3-mo avg)" right={`${fmtK(costStats.trailingAvg)}/mo`} tone="text-red-500" onClick={go("costs")} />
+                    {Object.entries(costs.reduce((m: any, c: any) => { if (c.accountId) { const a = accounts.find(x => x.id === c.accountId); if (a) m[a.name] = (m[a.name] || 0) + Number(c.amount || 0); } return m; }, {}))
+                      .sort((a: any, b: any) => b[1] - a[1]).slice(0, 5)
+                      .map(([name, v]: any) => <Row key={name} left={name} right={fmtK(v)} onClick={go("costs")} />)}
+                  </Section>
+                </div>
+              </div>
+            );
+          })()}
+
           {view === "workload" && (
             <div className="p-8 pb-12">
               <div className="flex items-center justify-between mb-7">

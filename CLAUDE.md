@@ -84,6 +84,7 @@ nav · content · detail panel.
 
 | Tab | State key |
 |-----|-----------|
+| Dashboard | default view — composes existing memos (`totals`, `collections`, `personPods`, `costStats`, `slPods`, `projectEcon`); every tile/row navigates to its tab |
 | Workload | `workloadTab`: `"leads" \| "symphony" \| "product" \| "pm" \| "all"` |
 | Org Chart | `depts` state |
 | Team | static, reads `team` |
@@ -203,6 +204,14 @@ INIT_ACCOUNTS uses prefixed IDs (`a1`–`a13`, `a114`–`a122`, `a200`–`a220`,
 ## Team Member IDs
 
 `t1`–`t17` are the original seed members. New members added via UI get UUIDs. The `INIT_TEAM` constant is only the fallback — Supabase is the source of truth after first load.
+
+## Password Gate
+
+`middleware.ts` applies HTTP Basic Auth to every page and API route when the
+`APP_PASSWORD` env var is set (Vercel). Unset (local dev) = open. Username is
+ignored; the team shares one password. NOTE: this gates the UI and API only —
+the Supabase anon key + open RLS still allow direct DB access for anyone who
+extracts the key from the bundle; real lockdown would need Supabase Auth.
 
 ## Deployment
 
