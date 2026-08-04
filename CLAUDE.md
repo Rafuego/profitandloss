@@ -115,6 +115,8 @@ Pod P&L revenue uses `acctVal(a)` (retainer + amortized project) — never the r
 - Monthly cost to project = person's monthly cost × allocation
 - Total project cost = team monthly × `monthsBetween(start, end)`; profit = fee − total cost
 - Projects without dates or team show "—" (unknown) rather than fake numbers
+- External costs attributed to the project (`costs.account_id`) add to total cost
+  as an actual spent amount, not a monthly rate — surfaced as an "External" tile
 
 **Developer (see `dev_id`):** optional per account. Support-style math: weight × 0.3
 capacity points, weight × 0.3 ÷ 5 cost allocation on projects, and an equal slice

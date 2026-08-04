@@ -247,17 +247,23 @@ const projElapsed = (a: any) => {
 };
 
 // Full economics for one flat-rate project
-const projectEcon = (a: any, team: any[], accounts: any[]) => {
+const projectEcon = (a: any, team: any[], accounts: any[], costs: any[] = []) => {
   const members = projectTeam(a, team, accounts);
   const teamMonthly = members.reduce((s, m) => s + m.monthlyCost, 0);
   const hasDates = !!(a.startDate && a.endDate);
   const months = hasDates ? monthsBetween(a.startDate, a.endDate) : null;
-  const totalCost = months != null ? teamMonthly * months : null;
+  // External spend explicitly attributed to this project (e.g. Upwork devs).
+  // It's an actual total, not a monthly rate, so it adds on top of team cost.
+  const external = costs.filter(c => c.accountId === a.id);
+  const externalTotal = external.reduce((s, c) => s + Number(c.amount || 0), 0);
+  const teamTotal = months != null ? teamMonthly * months : null;
+  const totalCost = teamTotal != null ? teamTotal + externalTotal : (externalTotal > 0 ? externalTotal : null);
   const profit = totalCost != null ? a.project - totalCost : null;
   const marginPct = profit != null && a.project > 0 ? profit / a.project : null;
   const elapsed = projElapsed(a);
-  return { members, teamMonthly, hasDates, months, totalCost, profit, marginPct, elapsed,
-    costToDate: totalCost != null && elapsed != null ? totalCost * elapsed : null,
+  return { members, teamMonthly, hasDates, months, teamTotal, external, externalTotal, totalCost, profit, marginPct, elapsed,
+    // burn-to-date: team cost accrues over the window, external is already spent
+    costToDate: teamTotal != null && elapsed != null ? teamTotal * elapsed + externalTotal : null,
     revToDate: elapsed != null ? a.project * elapsed : null };
 };
 
@@ -868,6 +874,29 @@ export default function App() {
     try { await upsertCost(c); } catch (e: any) { setSaveError(`Save failed: ${e?.message || "Supabase error"}`); setCosts(prev); }
     setModal(null);
   };
+  // Replace one cost row with several project-tagged rows (keeps any unallocated
+  // remainder as an untagged row so the month's total never changes).
+  const applySplit = async (d: any) => {
+    setSaveError(null);
+    const parts = d._splits.filter((s: any) => s.accountId && Number(s.amount) > 0);
+    if (!parts.length) return;
+    const allocated = parts.reduce((s: number, x: any) => s + Number(x.amount), 0);
+    const left = Math.round((Number(d.amount) - allocated) * 100) / 100;
+    const base = { vendor: d.vendor, category: d.category, month: d.month };
+    const rows = parts.map((s: any) => ({
+      ...base, id: crypto.randomUUID(), amount: Number(s.amount), accountId: s.accountId,
+      notes: d.notes || "",
+    }));
+    if (left > 0.01) rows.push({ ...base, id: crypto.randomUUID(), amount: left, accountId: null, notes: (d.notes || "") + " (unattributed remainder)" });
+    const prev = costs;
+    setCosts(cs => [...cs.filter((c: any) => c.id !== d.id), ...rows]);
+    try {
+      for (const r of rows) await upsertCost(r);
+      if (d.id) await deleteCost(d.id);
+    } catch (e: any) { setSaveError(`Split failed: ${e?.message || "Supabase error"}`); setCosts(prev); }
+    setModal(null);
+  };
+
   const removeCost = async (id: string) => {
     const prev = costs;
     setCosts(cs => cs.filter((x: any) => x.id !== id));
@@ -1649,7 +1678,7 @@ export default function App() {
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
             const planning = flat.filter(a => a.status === "Pipeline");
 
-            const econOf = (a: any) => projectEcon(a, team, accounts);
+            const econOf = (a: any) => projectEcon(a, team, accounts, costs);
             const inFlightEcon = inFlight.map(a => ({ a, e: econOf(a) }));
             const kpiFee = inFlight.reduce((s, a) => s + a.project, 0);
             const kpiMrr = inFlight.reduce((s, a) => s + monthlyProjectRev(a), 0);
@@ -1729,7 +1758,7 @@ export default function App() {
                     )}
 
                     {/* Economics */}
-                    <div className="grid grid-cols-4 gap-2 mb-3.5">
+                    <div className={`grid ${e.externalTotal > 0 ? "grid-cols-5" : "grid-cols-4"} gap-2 mb-3.5`}>
                       <div className="bg-gray-50 rounded-lg px-2.5 py-2">
                         <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Rev /mo</div>
                         <div className="text-xs font-semibold text-emerald-600 mt-0.5">{done ? "—" : fmtK(monthlyProjectRev(a))}</div>
@@ -1738,6 +1767,12 @@ export default function App() {
                         <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Team /mo</div>
                         <div className="text-xs font-semibold text-red-500 mt-0.5">{e.members.length ? fmtK(e.teamMonthly) : "—"}</div>
                       </div>
+                      {e.externalTotal > 0 && (
+                        <div className="bg-amber-50 rounded-lg px-2.5 py-2" title={e.external.map((c: any) => `${(c.month || "").slice(0, 7)} ${c.vendor} ${fmt(c.amount)}`).join("\n")}>
+                          <div className="text-[8px] font-semibold uppercase tracking-wider text-amber-600/70">External</div>
+                          <div className="text-xs font-semibold text-amber-700 mt-0.5">{fmtK(e.externalTotal)}</div>
+                        </div>
+                      )}
                       <div className="bg-gray-50 rounded-lg px-2.5 py-2">
                         <div className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">Profit</div>
                         <div className={`text-xs font-semibold mt-0.5 ${e.profit == null ? "text-gray-300" : e.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>{e.profit != null ? fmtK(e.profit) : "—"}</div>
@@ -1828,6 +1863,23 @@ export default function App() {
                             <span className="text-[10px] text-gray-500 w-14 text-right">{e.months != null ? fmtK(m.monthlyCost * e.months) : "—"}</span>
                           </div>
                         ))}
+                        {e.externalTotal > 0 && (
+                          <div className="flex items-center gap-2 py-1 border-t border-gray-100 mt-1 pt-1.5">
+                            <div className="w-[22px] h-[22px] rounded-full bg-amber-100 flex items-center justify-center text-[9px] font-semibold text-amber-700 shrink-0">EX</div>
+                            <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{[...new Set(e.external.map((c: any) => c.vendor))].join(", ")}</span>
+                            <Tag small variant="amber">External</Tag>
+                            <span className="text-[10px] text-gray-400 w-10 text-right">{e.external.length}×</span>
+                            <span className="text-[10px] font-semibold text-red-500 w-16 text-right">—</span>
+                            <span className="text-[10px] text-gray-500 w-14 text-right">{fmtK(e.externalTotal)}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : e.externalTotal > 0 ? (
+                      <div className="border-t border-gray-100 pt-2.5 flex items-center gap-2">
+                        <div className="w-[22px] h-[22px] rounded-full bg-amber-100 flex items-center justify-center text-[9px] font-semibold text-amber-700 shrink-0">EX</div>
+                        <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{[...new Set(e.external.map((c: any) => c.vendor))].join(", ")}</span>
+                        <Tag small variant="amber">External</Tag>
+                        <span className="text-[10px] text-gray-500 w-14 text-right">{fmtK(e.externalTotal)}</span>
                       </div>
                     ) : (
                       <div className="border-t border-gray-100 pt-2.5 text-[11px] text-gray-300 italic">No team attached — cost unknown</div>
@@ -2459,8 +2511,43 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Line items */}
+                    {/* By project + line items */}
                     <div>
+                      {(() => {
+                        const byAcct: Record<string, number> = {}; let untagged = 0;
+                        costs.forEach((c: any) => {
+                          if (c.accountId) byAcct[c.accountId] = (byAcct[c.accountId] || 0) + Number(c.amount || 0);
+                          else untagged += Number(c.amount || 0);
+                        });
+                        const rows = Object.entries(byAcct).map(([id, v]) => ({ acct: accounts.find(a => a.id === id), v }))
+                          .filter(r => r.acct).sort((a, b) => b.v - a.v);
+                        const tagged = rows.reduce((s, r) => s + r.v, 0);
+                        const all = tagged + untagged;
+                        return (
+                          <>
+                            <div className="flex items-baseline justify-between mb-3">
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">By project</div>
+                              <div className="text-[10px] text-gray-400">{all > 0 ? `${Math.round((tagged / all) * 100)}% attributed` : ""}</div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                              {rows.map(r => (
+                                <div key={r.acct.id} onClick={() => setSelected({ type: "account", data: r.acct })}
+                                  className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
+                                  <span className="text-[12px] font-medium text-gray-900 truncate">{r.acct.name}</span>
+                                  <span className="text-[12px] font-semibold text-gray-900 shrink-0">{fmt(Math.round(r.v))}</span>
+                                </div>
+                              ))}
+                              {untagged > 0 && (
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border-t border-amber-100">
+                                  <span className="text-[12px] font-medium text-amber-700">Not yet attributed</span>
+                                  <span className="text-[12px] font-semibold text-amber-700">{fmt(Math.round(untagged))}</span>
+                                </div>
+                              )}
+                              {rows.length === 0 && untagged === 0 && <div className="px-4 py-3 text-[11px] text-gray-300 italic">No costs yet</div>}
+                            </div>
+                          </>
+                        );
+                      })()}
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Entries</div>
                       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[520px] overflow-y-auto">
                         {[...costs].sort((a: any, b: any) => (b.month || "").localeCompare(a.month || "")).map((c: any) => {
@@ -2904,13 +2991,61 @@ export default function App() {
               <Inp label="Amount (USD)" value={modal.data.amount} onChange={v => setModal({ ...modal, data: { ...modal.data, amount: v } })} type="number" />
             </div>
             <Inp label="Month" value={(modal.data.month || "").slice(0, 10)} onChange={v => setModal({ ...modal, data: { ...modal.data, month: v ? v.slice(0, 8) + "01" : null } })} type="date" />
-            <Inp label="Attribute to a project (optional)" value={modal.data.accountId} onChange={v => setModal({ ...modal, data: { ...modal.data, accountId: v || null } })}
-              opts={accounts.filter(a => a.type !== "Retainer").map(a => ({ value: a.id, label: a.name }))} />
+            {!modal.data._splits ? (<>
+              <Inp label="Attribute to a project (optional)" value={modal.data.accountId} onChange={v => setModal({ ...modal, data: { ...modal.data, accountId: v || null } })}
+                opts={accounts.filter(a => a.type !== "Retainer").map(a => ({ value: a.id, label: a.name }))} />
+              {modal.data.id && (
+                <button onClick={() => setModal({ ...modal, data: { ...modal.data, _splits: [{ accountId: modal.data.accountId || "", amount: modal.data.amount }] } })}
+                  className="self-start text-[11px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-md transition-colors">
+                  ⑂ Split across projects
+                </button>
+              )}
+            </>) : (() => {
+              const splits = modal.data._splits;
+              const allocated = splits.reduce((s: number, x: any) => s + (Number(x.amount) || 0), 0);
+              const left = Math.round((Number(modal.data.amount) - allocated) * 100) / 100;
+              const setSplits = (v: any[]) => setModal({ ...modal, data: { ...modal.data, _splits: v } });
+              return (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Split across projects</label>
+                    <span className={`text-[11px] font-semibold ${Math.abs(left) < 0.01 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {Math.abs(left) < 0.01 ? "fully allocated" : `${fmt(left)} left`}
+                    </span>
+                  </div>
+                  {splits.map((s: any, i: number) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <select value={s.accountId} onChange={e => setSplits(splits.map((x: any, j: number) => j === i ? { ...x, accountId: e.target.value } : x))}
+                        className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-900 outline-none">
+                        <option value="">— pick a project —</option>
+                        {accounts.filter(a => a.type !== "Retainer").map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                      <input type="number" value={s.amount} onChange={e => setSplits(splits.map((x: any, j: number) => j === i ? { ...x, amount: e.target.value === "" ? "" : Number(e.target.value) } : x))}
+                        className="w-28 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-900 outline-none" />
+                      <button onClick={() => setSplits(splits.filter((_: any, j: number) => j !== i))} className="text-gray-400 hover:text-gray-600 text-sm px-1">✕</button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <button onClick={() => setSplits([...splits, { accountId: "", amount: left > 0 ? left : 0 }])}
+                      className="text-[11px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-md transition-colors">+ Add project</button>
+                    <button onClick={() => setModal({ ...modal, data: { ...modal.data, _splits: null } })}
+                      className="text-[11px] font-semibold text-gray-400 hover:text-gray-600 px-2.5 py-1.5 rounded-md transition-colors">Cancel split</button>
+                  </div>
+                </div>
+              );
+            })()}
             <Inp label="Notes" value={modal.data.notes} onChange={v => setModal({ ...modal, data: { ...modal.data, notes: v } })} ph="optional" />
             <div className="flex gap-2 mt-2">
-              <button onClick={() => { if (modal.data.vendor?.trim() && modal.data.month) saveCost(modal.data); }}
-                className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">Save</button>
-              {modal.data.id && <button onClick={() => removeCost(modal.data.id)} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Delete</button>}
+              <button onClick={() => {
+                const d = modal.data;
+                if (!d.vendor?.trim() || !d.month) return;
+                if (d._splits) { applySplit(d); return; }
+                saveCost(d);
+              }}
+                className="flex-1 bg-gray-900 text-white rounded-lg py-3 font-semibold text-[13px] hover:bg-gray-800 transition-colors">
+                {modal.data._splits ? `Save ${modal.data._splits.filter((s: any) => s.accountId && Number(s.amount) > 0).length} split rows` : "Save"}
+              </button>
+              {modal.data.id && !modal.data._splits && <button onClick={() => removeCost(modal.data.id)} className="bg-red-50 text-red-500 border border-red-200 rounded-lg px-4 py-3 font-semibold text-xs hover:bg-red-100 transition-colors">Delete</button>}
             </div>
           </div>
         </Modal>
