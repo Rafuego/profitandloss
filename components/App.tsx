@@ -598,6 +598,9 @@ export default function App() {
   const [costRules, setCostRules] = useState<any[]>([]);
   const [importText, setImportText] = useState("");
   const [costsShowAll, setCostsShowAll] = useState(false);
+  // Costs tab: account id to filter the transaction list to (null = no filter).
+  // Set by clicking a "By project" row so its transactions can be reassigned.
+  const [costsFilter, setCostsFilter] = useState(null);
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [mercury, setMercury] = useState<any>(null);        // Mercury invoice sync result
   const [mercuryLoading, setMercuryLoading] = useState(false);
@@ -2567,14 +2570,16 @@ export default function App() {
                             </div>
                             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
                               {rows.map(r => (
-                                <div key={r.acct.id} onClick={() => setSelected({ type: "account", data: r.acct })}
-                                  className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
-                                  <span className="text-[12px] font-medium text-gray-900 truncate">{r.acct.name}</span>
-                                  <span className="text-[12px] font-semibold text-gray-900 shrink-0">{fmt(Math.round(r.v))}</span>
+                                <div key={r.acct.id} onClick={() => setCostsFilter(f => f === r.acct.id ? null : r.acct.id)}
+                                  title="Show this account's transactions"
+                                  className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer transition-colors ${costsFilter === r.acct.id ? "bg-gray-900 text-white hover:bg-gray-800" : "hover:bg-gray-50"}`}>
+                                  <span className={`text-[12px] font-medium truncate ${costsFilter === r.acct.id ? "text-white" : "text-gray-900"}`}>{r.acct.name}</span>
+                                  <span className={`text-[12px] font-semibold shrink-0 ${costsFilter === r.acct.id ? "text-white" : "text-gray-900"}`}>{fmt(Math.round(r.v))}</span>
                                 </div>
                               ))}
                               {untagged > 0 && (
-                                <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border-t border-amber-100">
+                                <div onClick={() => setCostsFilter(null)}
+                                  className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border-t border-amber-100 cursor-pointer hover:bg-amber-100 transition-colors">
                                   <span className="text-[12px] font-medium text-amber-700">Not yet attributed</span>
                                   <span className="text-[12px] font-semibold text-amber-700">{fmt(Math.round(untagged))}</span>
                                 </div>
@@ -2586,21 +2591,29 @@ export default function App() {
                       })()}
                       {(() => {
                         const unassigned = costs.filter((c: any) => !c.accountId);
+                        const filterAcct = costsFilter ? accounts.find(a => a.id === costsFilter) : null;
                         const shown = [...costs]
-                          .filter((c: any) => costsShowAll || !c.accountId)
+                          .filter((c: any) => filterAcct ? c.accountId === costsFilter : (costsShowAll || !c.accountId))
                           .sort((a: any, b: any) => (b.month || "").localeCompare(a.month || ""));
                         const fmtDay = (d: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
                         return (<>
                           <div className="flex items-baseline justify-between mb-3">
                             <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                              Transactions {unassigned.length > 0 && <span className="text-amber-600 normal-case tracking-normal font-medium">· {unassigned.length} to assign</span>}
+                              {filterAcct ? <>Transactions · <span className="text-gray-900">{filterAcct.name}</span></>
+                                : <>Transactions {unassigned.length > 0 && <span className="text-amber-600 normal-case tracking-normal font-medium">· {unassigned.length} to assign</span>}</>}
                             </div>
-                            <button onClick={() => setCostsShowAll(v => !v)} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">
-                              {costsShowAll ? "Show unassigned only" : `Show all (${costs.length})`}
-                            </button>
+                            {filterAcct ? (
+                              <button onClick={() => setCostsFilter(null)} className="text-[10px] font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md">✕ Clear filter</button>
+                            ) : (
+                              <button onClick={() => setCostsShowAll(v => !v)} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">
+                                {costsShowAll ? "Show unassigned only" : `Show all (${costs.length})`}
+                              </button>
+                            )}
                           </div>
                           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[560px] overflow-y-auto">
-                            {shown.length === 0 && <div className="px-4 py-6 text-center text-[11px] text-emerald-600 font-medium">Everything is assigned to a project.</div>}
+                            {shown.length === 0 && (filterAcct
+                              ? <div className="px-4 py-6 text-center text-[11px] text-gray-400">No transactions on {filterAcct.name} anymore.</div>
+                              : <div className="px-4 py-6 text-center text-[11px] text-emerald-600 font-medium">Everything is assigned to a project.</div>)}
                             {shown.map((c: any) => (
                               <div key={c.id} className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
                                 <div className="w-[70px] shrink-0 text-[10px] text-gray-400">{fmtDay(c.month)}</div>
@@ -2616,7 +2629,7 @@ export default function App() {
                               </div>
                             ))}
                           </div>
-                          <div className="text-[10px] text-gray-400 mt-2">Pick a project to assign — it saves immediately. Use ✎ to split one payment across several projects.</div>
+                          <div className="text-[10px] text-gray-400 mt-2">Pick a project to assign — it saves immediately. Click a "By project" row to see and reassign its transactions; use ✎ to split one payment across several projects.</div>
                         </>);
                       })()}
                     </div>
