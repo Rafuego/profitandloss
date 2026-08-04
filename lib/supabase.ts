@@ -351,17 +351,3 @@ export async function deleteCostRule(id: string) {
   if (error) throw error;
 }
 
-// Clear a vendor's cost rows across the months a CSV re-import covers, so
-// re-importing an overlapping period updates rather than double-counts.
-// Rows store real transaction dates, so each month is cleared as a date range.
-export async function replaceCostsForMonths(vendor: string, months: string[]) {
-  for (const m of months) {
-    const start = m.slice(0, 7) + "-01";
-    const d = new Date(start + "T00:00:00");
-    d.setMonth(d.getMonth() + 1);
-    const end = d.toISOString().slice(0, 10);
-    const { error } = await supabase.from("costs").delete()
-      .eq("vendor", vendor).gte("month", start).lt("month", end);
-    if (error) throw error;
-  }
-}

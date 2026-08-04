@@ -9,7 +9,7 @@ import {
   upsertDepartment, deleteDepartment,
   upsertPod, deletePod,
   fetchCosts, upsertCost, deleteCost,
-  fetchCostRules, upsertCostRule, replaceCostsForMonths,
+  fetchCostRules, upsertCostRule,
 } from "@/lib/supabase";
 
 const CAD_TO_USD = 0.69;
@@ -795,6 +795,25 @@ export default function App() {
     return { byMonth, byVendor, months, trailingAvg, total };
   }, [costs]);
 
+  // Any account can carry external cost — dev work happens on retainers too.
+  // Grouped so active work is easy to find among the archived projects.
+  const costTargetGroups = useMemo(() => {
+    const live = (a: any) => ["Active", "Launch", "Growth"].includes(a.status);
+    const byName = (a: any, b: any) => a.name.localeCompare(b.name);
+    return [
+      { label: "Active projects", items: accounts.filter(a => a.type !== "Retainer" && live(a)).sort(byName) },
+      { label: "Retainers", items: accounts.filter(a => a.type === "Retainer" && live(a)).sort(byName) },
+      { label: "Closed / archived", items: accounts.filter(a => !live(a)).sort(byName) },
+    ].filter(g => g.items.length > 0);
+  }, [accounts]);
+  const CostTargetOptions = () => (
+    <>{costTargetGroups.map(g => (
+      <optgroup key={g.label} label={g.label}>
+        {g.items.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+      </optgroup>
+    ))}</>
+  );
+
   // ── Upwork CSV import ────────────────────────────────────────────────────
   // Parses an Upwork export, finds the freelancer/contract + amount + date
   // columns whatever they're called, and pre-assigns each row to a project
@@ -819,6 +838,7 @@ export default function App() {
     // Prefer a real contract/freelancer column; the payment report has neither
     const iWho = findCol("freelancer", "contract", "description", "team", "payment method");
     const iType = findCol("type");
+    const iRef = findCol("reference id", "reference", "ref id");
     if (iDate < 0 || iAmt < 0) return [];
     const rows: any[] = [];
     for (const line of lines.slice(1)) {
@@ -829,11 +849,19 @@ export default function App() {
       if (isNaN(d.getTime())) continue;
       const who = (iWho >= 0 ? c[iWho] : "") || "Upwork";
       const rule = costRules.find((r: any) => who.toLowerCase().includes(r.matchText.toLowerCase()));
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      // Stable id per transaction — Upwork's Reference ID when present, else
+      // date+amount. Re-importing the same transaction updates that row instead
+      // of creating a duplicate, so existing project assignments survive.
+      const ref = iRef >= 0 ? (c[iRef] || "").replace(/\W/g, "") : "";
+      const id = ref ? `upw-${ref}` : `upw-${month}-${Math.round(amount * 100)}`;
+      const existing = costs.find((x: any) => x.id === id);
       rows.push({
-        who, amount, type: iType >= 0 ? c[iType] : "",
-        // keep the real transaction date; monthly rollups slice to YYYY-MM
-        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-        accountId: rule?.accountId || null, remember: false,
+        id, who, amount, type: iType >= 0 ? c[iType] : "",
+        month,
+        // never clobber an assignment you've already made
+        accountId: existing?.accountId || rule?.accountId || null,
+        alreadyAssigned: !!existing?.accountId, isNew: !existing, remember: false,
       });
     }
     return rows;
@@ -842,23 +870,20 @@ export default function App() {
   const runImport = async () => {
     if (!importRows?.length) return;
     setSaveError(null);
-    // One row per transaction so each payment can be assigned individually
-    const months = [...new Set(importRows.map(r => r.month.slice(0, 7) + "-01"))];
+    // One row per transaction, keyed by a stable id. Re-importing simply updates
+    // matching rows — nothing is deleted, so project assignments always survive.
     const newRows = importRows.map(r => ({
-      id: crypto.randomUUID(), vendor: "Upwork", category: "Development",
+      id: r.id, vendor: "Upwork", category: "Development",
       amount: Math.round(r.amount * 100) / 100, month: r.month, accountId: r.accountId,
       notes: `Imported from Upwork · ${r.who}`,
     }));
     try {
-      // Re-importing an overlapping period replaces those months instead of doubling them
-      await replaceCostsForMonths("Upwork", months);
       for (const r of newRows) await upsertCost(r);
       for (const r of importRows.filter(x => x.remember && x.accountId)) {
         await upsertCostRule({ id: crypto.randomUUID(), matchText: r.who, accountId: r.accountId, vendor: "Upwork" });
       }
-      // months are YYYY-MM-01 keys; rows hold real dates, so compare by month
-      const monthKeys = new Set(months.map(m => m.slice(0, 7)));
-      setCosts(cs => [...cs.filter((c: any) => !(c.vendor === "Upwork" && monthKeys.has((c.month || "").slice(0, 7)))), ...newRows]);
+      const byId = new Set(newRows.map(r => r.id));
+      setCosts(cs => [...cs.filter((c: any) => !byId.has(c.id)), ...newRows]);
       try { setCostRules(await fetchCostRules()); } catch {}
       setImportRows(null); setImportText("");
     } catch (e: any) { setSaveError(`Import failed: ${e?.message || "Supabase error"}`); }
@@ -2423,7 +2448,7 @@ export default function App() {
                           className={`rounded-lg px-4 py-2 text-[11px] font-semibold transition-colors ${importText.trim() ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
                           Preview
                         </button>
-                        <span className="text-[10px] text-gray-400">Re-importing a period replaces those months — it won’t double-count.</span>
+                        <span className="text-[10px] text-gray-400">Safe to re-upload the full export each month — transactions match on Upwork’s reference ID, so existing rows update and your project assignments are kept.</span>
                       </div>
                     </>) : (<>
                       {(() => {
@@ -2439,13 +2464,24 @@ export default function App() {
                         const setGroup = (g: any, patch: any) =>
                           setImportRows(rows => rows!.map((r, i) => g.idxs.includes(i) ? { ...r, ...patch } : r));
                         return (<>
-                          <div className="flex items-baseline justify-between mb-3">
-                            <div>
-                              <div className="text-[13px] font-semibold text-gray-900">{importRows.length} rows · {fmt(Math.round(totalAmt))}</div>
-                              <div className="text-[11px] text-gray-400">{months[0]?.slice(0, 7)} → {months[months.length - 1]?.slice(0, 7)} · {fmt(Math.round(assigned))} attributed to projects</div>
-                            </div>
-                            <button onClick={runImport} className="bg-gray-900 text-white rounded-lg px-4 py-2 text-[11px] font-semibold hover:bg-gray-800 transition-colors">Import {months.length} month{months.length !== 1 ? "s" : ""}</button>
-                          </div>
+                          {(() => {
+                            const fresh = importRows.filter(r => r.isNew).length;
+                            const kept = importRows.filter(r => r.alreadyAssigned).length;
+                            return (
+                              <div className="flex items-baseline justify-between mb-3">
+                                <div>
+                                  <div className="text-[13px] font-semibold text-gray-900">{importRows.length} transactions · {fmt(Math.round(totalAmt))}</div>
+                                  <div className="text-[11px] text-gray-400">
+                                    {months[0]?.slice(0, 7)} → {months[months.length - 1]?.slice(0, 7)} ·{" "}
+                                    <span className="text-emerald-600 font-medium">{fresh} new</span>
+                                    {importRows.length - fresh > 0 && <> · {importRows.length - fresh} already imported</>}
+                                    {kept > 0 && <> · <span className="text-emerald-600 font-medium">{kept} keep their project</span></>}
+                                  </div>
+                                </div>
+                                <button onClick={runImport} className="bg-gray-900 text-white rounded-lg px-4 py-2 text-[11px] font-semibold hover:bg-gray-800 transition-colors">Import</button>
+                              </div>
+                            );
+                          })()}
                           <div className="border border-gray-200 rounded-lg overflow-hidden max-h-72 overflow-y-auto">
                             <div className="grid px-4 py-2 bg-gray-100 sticky top-0" style={{ gridTemplateColumns: "2fr 0.7fr 1fr 1.6fr 0.9fr" }}>
                               {["Freelancer / contract", "Rows", "Amount", "Project", "Remember"].map(h => (
@@ -2460,7 +2496,7 @@ export default function App() {
                                 <select value={g.accountId || ""} onChange={e => setGroup(g, { accountId: e.target.value || null })}
                                   className="bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-[10px] text-gray-700 outline-none mr-2">
                                   <option value="">— unattributed —</option>
-                                  {accounts.filter(a => a.type !== "Retainer").map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                  <CostTargetOptions />
                                 </select>
                                 <label className="flex items-center gap-1.5 cursor-pointer">
                                   <input type="checkbox" checked={!!g.remember} disabled={!g.accountId}
@@ -2551,7 +2587,6 @@ export default function App() {
                         const shown = [...costs]
                           .filter((c: any) => costsShowAll || !c.accountId)
                           .sort((a: any, b: any) => (b.month || "").localeCompare(a.month || ""));
-                        const projOpts = accounts.filter(a => a.type !== "Retainer");
                         const fmtDay = (d: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
                         return (<>
                           <div className="flex items-baseline justify-between mb-3">
@@ -2571,8 +2606,8 @@ export default function App() {
                                 {/* Inline assignment — saves on change, no modal needed */}
                                 <select value={c.accountId || ""} onChange={e => saveCost({ ...c, accountId: e.target.value || null })}
                                   className={`flex-1 min-w-0 rounded-md px-2 py-1 text-[11px] outline-none border ${c.accountId ? "bg-white border-gray-200 text-gray-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
-                                  <option value="">— assign to project —</option>
-                                  {projOpts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                  <option value="">— assign to account —</option>
+                                  <CostTargetOptions />
                                 </select>
                                 <button onClick={() => setModal({ type: "cost", data: c })} title="Edit or split"
                                   className="text-gray-300 hover:text-gray-600 text-xs px-1 shrink-0">&#9998;</button>
@@ -3010,8 +3045,14 @@ export default function App() {
             </div>
             <Inp label="Month" value={(modal.data.month || "").slice(0, 10)} onChange={v => setModal({ ...modal, data: { ...modal.data, month: v ? v.slice(0, 8) + "01" : null } })} type="date" />
             {!modal.data._splits ? (<>
-              <Inp label="Attribute to a project (optional)" value={modal.data.accountId} onChange={v => setModal({ ...modal, data: { ...modal.data, accountId: v || null } })}
-                opts={accounts.filter(a => a.type !== "Retainer").map(a => ({ value: a.id, label: a.name }))} />
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase">Attribute to an account (optional)</label>
+                <select value={modal.data.accountId || ""} onChange={e => setModal({ ...modal, data: { ...modal.data, accountId: e.target.value || null } })}
+                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-900 text-sm outline-none">
+                  <option value="">— none —</option>
+                  <CostTargetOptions />
+                </select>
+              </div>
               {modal.data.id && (
                 <button onClick={() => setModal({ ...modal, data: { ...modal.data, _splits: [{ accountId: modal.data.accountId || "", amount: modal.data.amount }] } })}
                   className="self-start text-[11px] font-semibold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-md transition-colors">
@@ -3036,7 +3077,7 @@ export default function App() {
                       <select value={s.accountId} onChange={e => setSplits(splits.map((x: any, j: number) => j === i ? { ...x, accountId: e.target.value } : x))}
                         className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-900 outline-none">
                         <option value="">— pick a project —</option>
-                        {accounts.filter(a => a.type !== "Retainer").map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        <CostTargetOptions />
                       </select>
                       <input type="number" value={s.amount} onChange={e => setSplits(splits.map((x: any, j: number) => j === i ? { ...x, amount: e.target.value === "" ? "" : Number(e.target.value) } : x))}
                         className="w-28 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-900 outline-none" />

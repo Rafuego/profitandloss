@@ -146,7 +146,10 @@ people and services (Upwork dev, agencies, software), recorded per calendar mont
 with an optional `account_id` to attribute it to one project. Monthly amounts are
 lumpy, so `totals` adds a **trailing 3-month average** to studio cost rather than the
 current month; the P&L Monthly Cost card shows the team/external split. Source data
-comes from Upwork/Amex CSV exports — Mercury only sees Amex bill payments as lump
+comes from Upwork/Amex CSV exports. Imports are **idempotent**: each row's id is
+`upw-<Upwork Reference ID>` (falling back to date+amount), so re-uploading the full
+export updates matching rows and never overwrites a project assignment. Any account
+can carry cost — retainers included, not just projects. Source data — Mercury only sees Amex bill payments as lump
 sums with no line detail, so card spend cannot be pulled automatically.
 
 **Overhead distribution:** ops + leadership costs split equally across all active clients, allocated proportionally to each pod.
