@@ -1137,108 +1137,205 @@ export default function App() {
             const unassignedTotal = unassignedCosts.reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
 
             const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
-            const Tile = ({ label, value, sub, tone = "text-gray-900", onClick }: any) => (
-              <div onClick={onClick} className={`bg-white border border-gray-200 rounded-xl px-5 py-4 flex-1 min-w-[150px] ${onClick ? "cursor-pointer hover:shadow-sm hover:border-gray-300 transition-all" : ""}`}>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</div>
-                <div className={`text-xl font-semibold mt-1 ${tone}`}>{value}</div>
-                {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
+            // Thin meter: gray track, status-colored fill (capacity, elapsed, share)
+            const Meter = ({ pct, tone = "bg-gray-900" }: any) => (
+              <div className="w-14 h-[5px] rounded-full bg-gray-100 overflow-hidden shrink-0">
+                <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(3, Math.min(100, pct))}%` }} />
               </div>
             );
-            const Section = ({ title, action, onAction, children }: any) => (
+            const Section = ({ title, count, dot, action, onAction, children }: any) => (
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{title}</div>
+                <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 border-b border-gray-100">
+                  {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />}
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{title}</div>
+                  {count != null && count > 0 && <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-gray-100 text-gray-500">{count}</span>}
+                  <div className="flex-1" />
                   {action && <button onClick={onAction} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">{action} →</button>}
                 </div>
                 {children}
               </div>
             );
-            const Row = ({ left, right, tone = "text-gray-900", onClick }: any) => (
-              <div onClick={onClick} className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}>
-                <span className="text-[12px] font-medium text-gray-900 truncate pr-3">{left}</span>
-                <span className={`text-[12px] font-semibold shrink-0 ${tone}`}>{right}</span>
+            const Row = ({ onClick, children }: any) => (
+              <div onClick={onClick} className={`flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}>
+                {children}
               </div>
             );
+            const Name = ({ children }: any) => <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{children}</span>;
+            const Val = ({ children, tone = "text-gray-900" }: any) => <span className={`text-[12px] font-semibold shrink-0 ${tone}`} style={{ fontVariantNumeric: "tabular-nums" }}>{children}</span>;
+            const Sub = ({ children }: any) => <span className="text-[10px] text-gray-400 shrink-0 w-8 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{children}</span>;
             const Empty = ({ children }: any) => <div className="px-4 py-4 text-[11px] text-gray-300 italic">{children}</div>;
+            const maxOverdue = Math.max(1, ...overdueAccts.map((r: any) => r.overdue));
+            const maxSlRev = Math.max(1, ...slPods.map(sl => sl.rev));
+            const spendByAcct = Object.entries(costs.reduce((m: any, c: any) => {
+              if (c.accountId) { const a = accounts.find(x => x.id === c.accountId); if (a) m[a.name] = (m[a.name] || 0) + Number(c.amount || 0); }
+              return m;
+            }, {})).sort((a: any, b: any) => b[1] - a[1]);
+            const maxSpend = Math.max(1, ...spendByAcct.map(([, v]: any) => v));
+            const todoCount = (unassignedCosts.length ? 1 : 0) + losing.length + endingSoon.length + (retainersToPlace.length ? 1 : 0);
 
             return (
-              <div className="p-8 pb-12">
-                <div className="mb-7">
+              <div className="p-8 pb-12 max-w-[1180px]">
+                <div className="mb-6">
                   <div className="text-2xl font-semibold text-gray-900 mb-1">Interlude Studio</div>
                   <div className="text-xs text-gray-400">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}{mercury?.stale ? " · Mercury data is from the last sync" : ""}</div>
                 </div>
 
-                {/* Headline numbers */}
-                <div className="flex gap-3 flex-wrap mb-3">
-                  <Tile label="Monthly Revenue" value={fmtK(totals.rev)} sub={`${totals.active} active accounts`} tone="text-emerald-600" onClick={go("pnl")} />
-                  <Tile label="Monthly Cost" value={fmtK(totals.cost)} sub={`team ${fmtK(totals.people)} + external ${fmtK(totals.vendor)}`} tone="text-red-500" onClick={go("pnl")} />
-                  <Tile label="Margin" value={`${fmtK(totals.margin)}`} sub={`${Math.round(totals.pct * 100)}% of revenue`} tone={totals.margin >= 0 ? "text-gray-900" : "text-red-500"} onClick={go("pnl")} />
-                  <Tile label="Collected This Month" value={mercuryReady ? fmtK(collectedThisMonth) : "—"} sub={mercuryReady ? `via Mercury` : "Mercury not connected"} onClick={go("invoices")} />
-                  <Tile label="Overdue" value={collections ? fmtK(collections.overdue) : "—"}
-                    sub={collections ? `${collections.overdueCount} client${collections.overdueCount === 1 ? "" : "s"} · ${fmtK(collections.outstanding)} outstanding` : "Mercury not connected"}
-                    tone={collections?.overdue > 0 ? "text-red-500" : "text-gray-900"}
-                    onClick={go("invoices", () => setInvoiceTab("overdue"))} />
+                {/* Hero band — the one number the studio leads with, everything else supporting */}
+                <div className="bg-white border border-gray-200 rounded-2xl px-7 py-6 mb-3">
+                  <div className="flex flex-wrap items-end gap-x-10 gap-y-5">
+                    <div onClick={go("pnl")} className="cursor-pointer group">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Monthly Margin</div>
+                      <div className={`text-[46px] leading-none font-semibold tracking-tight ${totals.margin >= 0 ? "text-gray-900" : "text-red-500"} group-hover:opacity-70 transition-opacity`}>{fmtK(totals.margin)}</div>
+                      <div className="text-[11px] text-gray-400 mt-2">{Math.round(totals.pct * 100)}% of revenue</div>
+                    </div>
+                    <div className="flex items-end gap-8 pb-0.5">
+                      <div onClick={go("pnl")} className="cursor-pointer">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Revenue</div>
+                        <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(totals.rev)}</div>
+                        <div className="text-[10px] text-gray-400 mt-1.5">{totals.active} active accounts</div>
+                      </div>
+                      <div onClick={go("pnl")} className="cursor-pointer">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Cost</div>
+                        <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(totals.cost)}</div>
+                        <div className="text-[10px] text-gray-400 mt-1.5">team {fmtK(totals.people)} · external {fmtK(totals.vendor)}</div>
+                      </div>
+                    </div>
+                    <div className="flex-1" />
+                    <div className="flex items-end gap-8 pb-0.5">
+                      <div onClick={go("invoices")} className="cursor-pointer text-right">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Collected in {new Date().toLocaleDateString("en-US", { month: "short" })}</div>
+                        <div className="text-[22px] leading-none font-semibold text-gray-900">{mercuryReady ? fmtK(collectedThisMonth) : "—"}</div>
+                        <div className="text-[10px] text-gray-400 mt-1.5">{mercuryReady ? "via Mercury" : "not connected"}</div>
+                      </div>
+                      <div onClick={go("invoices", () => setInvoiceTab("overdue"))} className="cursor-pointer text-right">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Overdue</div>
+                        <div className={`text-[22px] leading-none font-semibold ${collections?.overdue > 0 ? "text-red-500" : "text-gray-900"}`}>{collections ? fmtK(collections.overdue) : "—"}</div>
+                        <div className="text-[10px] text-gray-400 mt-1.5">{collections ? `${collections.overdueCount} client${collections.overdueCount === 1 ? "" : "s"} · ${fmtK(collections.outstanding)} out` : "not connected"}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Where revenue goes: team cost · external · margin (2px gaps) */}
+                  {totals.rev > 0 && totals.margin > 0 && (
+                    <div className="mt-5">
+                      <div className="flex h-[7px] rounded-full overflow-hidden" style={{ gap: 2 }}>
+                        <div className="bg-gray-400 rounded-full" style={{ width: `${(totals.people / totals.rev) * 100}%` }} />
+                        <div className="bg-amber-400 rounded-full" style={{ width: `${(totals.vendor / totals.rev) * 100}%` }} />
+                        <div className="bg-emerald-500 rounded-full" style={{ width: `${(totals.margin / totals.rev) * 100}%` }} />
+                      </div>
+                      <div className="flex gap-4 mt-2">
+                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-400" />Team {fmtK(totals.people)}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-amber-400" />External {fmtK(totals.vendor)}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-emerald-500" />Margin {fmtK(totals.margin)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid gap-3 mt-1" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-                  {/* Needs attention */}
-                  <Section title="Collections — worst first" action="Invoices" onAction={go("invoices", () => setInvoiceTab("overdue"))}>
+                <div className="flex flex-wrap gap-3 mt-1 items-start">
+                  {/* Attention column — status accents mark these as "act on me" */}
+                  <div className="flex-1 min-w-[330px] flex flex-col gap-3">
+                  <Section title="Collections" count={overdueAccts.length} dot={overdueAccts.length ? "bg-red-500" : "bg-emerald-500"} action="Invoices" onAction={go("invoices", () => setInvoiceTab("overdue"))}>
                     {overdueAccts.length === 0 && <Empty>{mercuryReady ? "Nothing overdue. Lovely." : "Mercury not connected."}</Empty>}
                     {overdueAccts.slice(0, 6).map((r: any) => (
-                      <Row key={r.name} left={r.name} tone="text-red-500"
-                        right={`${fmtK(r.overdue)}${r.oldestDue ? ` · ${Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000))}d` : ""}`}
-                        onClick={go("invoices", () => setInvoiceTab("overdue"))} />
+                      <Row key={r.name} onClick={go("invoices", () => setInvoiceTab("overdue"))}>
+                        <Name>{r.name}</Name>
+                        <Meter pct={(r.overdue / maxOverdue) * 100} tone="bg-red-400" />
+                        <Val tone="text-red-500">{fmtK(r.overdue)}</Val>
+                        <Sub>{r.oldestDue ? `${Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000))}d` : ""}</Sub>
+                      </Row>
                     ))}
                   </Section>
 
-                  <Section title="Team capacity" action="Workload" onAction={go("workload")}>
-                    {hot.length === 0 && <Empty>No one is near capacity.</Empty>}
-                    {hot.slice(0, 6).map(({ p, pts }) => (
-                      <Row key={p.id} left={p.name} tone={pts >= 5 ? "text-red-500" : "text-amber-500"}
-                        right={`${pts} / 5 pts${pts >= 5 ? " · at capacity" : ""}`}
-                        onClick={go("workload", () => setWorkloadTab("all"))} />
-                    ))}
-                  </Section>
-
-                  <Section title="To do" >
-                    {unassignedCosts.length === 0 && losing.length === 0 && endingSoon.length === 0 && retainersToPlace.length === 0 && <Empty>All clear.</Empty>}
+                  <Section title="To do" count={todoCount} dot={todoCount ? "bg-amber-400" : "bg-emerald-500"}>
+                    {todoCount === 0 && <Empty>All clear.</Empty>}
                     {unassignedCosts.length > 0 && (
-                      <Row left={`Assign ${unassignedCosts.length} external cost${unassignedCosts.length === 1 ? "" : "s"} to accounts`} right={fmtK(unassignedTotal)} tone="text-amber-600" onClick={go("costs")} />
+                      <Row onClick={go("costs")}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <Name>Assign {unassignedCosts.length} external cost{unassignedCosts.length === 1 ? "" : "s"} to accounts</Name>
+                        <Val>{fmtK(unassignedTotal)}</Val>
+                      </Row>
                     )}
                     {losing.map(({ a, e }) => (
-                      <Row key={a.id} left={`${a.name} is over budget`} right={fmtK(e.profit)} tone="text-red-500" onClick={go("projects")} />
+                      <Row key={a.id} onClick={go("projects")}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                        <Name>{a.name} is over budget</Name>
+                        <Val tone="text-red-500">{fmtK(e.profit)}</Val>
+                      </Row>
                     ))}
-                    {endingSoon.map(a => (
-                      <Row key={a.id} left={`${a.name} wraps ${new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`} right={fmtK(a.project)} onClick={go("projects")} />
+                    {endingSoon.slice(0, Math.max(2, 8 - losing.length - (unassignedCosts.length ? 1 : 0))).map(a => (
+                      <Row key={a.id} onClick={go("projects")}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                        <Name>{a.name} wraps {new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Name>
+                        <Val>{fmtK(a.project)}</Val>
+                      </Row>
                     ))}
+                    {(() => { const cap = Math.max(2, 8 - losing.length - (unassignedCosts.length ? 1 : 0)); const extra = endingSoon.length - cap; return extra > 0 ? (
+                      <Row onClick={go("projects")}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-200 shrink-0" />
+                        <Name><span className="text-gray-400">+{extra} more wrapping soon</span></Name>
+                      </Row>
+                    ) : null; })()}
                     {retainersToPlace.length > 0 && (
-                      <Row left={`Place ${retainersToPlace.length} retainer${retainersToPlace.length === 1 ? "" : "s"} into a pod`} right="" onClick={go("pods")} />
+                      <Row onClick={go("pods")}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                        <Name>Place {retainersToPlace.length} retainer{retainersToPlace.length === 1 ? "" : "s"} into a pod</Name>
+                      </Row>
                     )}
                   </Section>
 
-                  {/* Snapshots */}
-                  <Section title="Service line P&L" action="P&L" onAction={go("pnl")}>
-                    {slPods.map(sl => (
-                      <Row key={sl.id} left={sl.name} tone={sl.margin >= 0 ? "text-emerald-600" : "text-red-500"}
-                        right={`${fmtK(sl.rev)} rev · ${fmtK(sl.margin)}`} onClick={go("pnl")} />
+                  <Section title="Team capacity" count={hot.length} dot={hot.some(h => h.pts >= 5) ? "bg-red-500" : hot.length ? "bg-amber-400" : "bg-emerald-500"} action="Workload" onAction={go("workload")}>
+                    {hot.length === 0 && <Empty>No one is near capacity.</Empty>}
+                    {hot.slice(0, 6).map(({ p, pts }) => (
+                      <Row key={p.id} onClick={go("workload", () => setWorkloadTab("all"))}>
+                        <Name>{p.name}</Name>
+                        <Meter pct={(pts / 5) * 100} tone={pts >= 5 ? "bg-red-400" : "bg-amber-400"} />
+                        <Val tone={pts >= 5 ? "text-red-500" : "text-amber-500"}>{pts}</Val>
+                        <Sub>/ 5</Sub>
+                      </Row>
                     ))}
                   </Section>
 
-                  <Section title="Projects in flight" action="Projects" onAction={go("projects")}>
+                  </div>
+                  {/* Snapshot column — neutral ink, meters carry the comparison */}
+                  <div className="flex-1 min-w-[330px] flex flex-col gap-3">
+                  <Section title="Service line P&L" action="P&L" onAction={go("pnl")}>
+                    {slPods.map(sl => (
+                      <Row key={sl.id} onClick={go("pnl")}>
+                        <Name>{sl.name}</Name>
+                        <Meter pct={(sl.rev / maxSlRev) * 100} />
+                        <Val>{fmtK(sl.rev)}</Val>
+                        <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full shrink-0 w-14 text-center ${sl.margin >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{sl.margin >= 0 ? "+" : ""}{fmtK(sl.margin)}</span>
+                      </Row>
+                    ))}
+                  </Section>
+
+                  <Section title="Projects in flight" count={projEcons.length} action="Projects" onAction={go("projects")}>
                     {projEcons.length === 0 && <Empty>No active flat-rate projects.</Empty>}
                     {projEcons.sort((x, y) => y.a.project - x.a.project).slice(0, 6).map(({ a, e }) => (
-                      <Row key={a.id} left={a.name}
-                        right={`${fmtK(a.project)}${e.elapsed != null ? ` · ${Math.round(e.elapsed * 100)}%` : ""}`}
-                        onClick={go("projects")} />
+                      <Row key={a.id} onClick={go("projects")}>
+                        <Name>{a.name}</Name>
+                        {e.elapsed != null && <Meter pct={e.elapsed * 100} tone={e.elapsed >= 1 ? "bg-red-400" : "bg-gray-900"} />}
+                        <Val>{fmtK(a.project)}</Val>
+                        <Sub>{e.elapsed != null ? `${Math.round(e.elapsed * 100)}%` : ""}</Sub>
+                      </Row>
                     ))}
                   </Section>
 
                   <Section title="External spend" action="Costs" onAction={go("costs")}>
-                    <Row left="Run rate (3-mo avg)" right={`${fmtK(costStats.trailingAvg)}/mo`} tone="text-red-500" onClick={go("costs")} />
-                    {Object.entries(costs.reduce((m: any, c: any) => { if (c.accountId) { const a = accounts.find(x => x.id === c.accountId); if (a) m[a.name] = (m[a.name] || 0) + Number(c.amount || 0); } return m; }, {}))
-                      .sort((a: any, b: any) => b[1] - a[1]).slice(0, 5)
-                      .map(([name, v]: any) => <Row key={name} left={name} right={fmtK(v)} onClick={go("costs")} />)}
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-baseline justify-between">
+                      <span className="text-[11px] text-gray-400">Run rate · 3-mo avg</span>
+                      <span className="text-[15px] font-semibold text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(costStats.trailingAvg)}<span className="text-[10px] font-medium text-gray-400">/mo</span></span>
+                    </div>
+                    {spendByAcct.length === 0 && <Empty>No spend attributed yet.</Empty>}
+                    {spendByAcct.slice(0, 5).map(([name, v]: any) => (
+                      <Row key={name} onClick={go("costs")}>
+                        <Name>{name}</Name>
+                        <Meter pct={(v / maxSpend) * 100} tone="bg-amber-400" />
+                        <Val>{fmtK(v)}</Val>
+                      </Row>
+                    ))}
                   </Section>
+                  </div>
                 </div>
               </div>
             );
