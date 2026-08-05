@@ -1042,7 +1042,7 @@ export default function App() {
   );
 
   return (
-    <div className="font-sans bg-white text-gray-900 h-screen flex flex-col">
+    <div className="font-sans bg-white text-gray-900 flex flex-col" style={{ height: "100dvh" }}>
 
       {/* Save error banner */}
       {saveError && (
@@ -1076,7 +1076,7 @@ export default function App() {
           </div>
 
           {/* Studio totals */}
-          <div className="border-t border-gray-200 px-5 py-3.5">
+          <div className="border-t border-gray-200 px-5 py-3.5 shrink-0">
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[10px] text-gray-400">Revenue</span>
               <span className="text-[12px] font-semibold text-emerald-600">{fmtK(totals.rev)}</span>
@@ -1092,7 +1092,7 @@ export default function App() {
           </div>
 
           {/* Actions */}
-          <div className="px-3 pb-4 pt-3 flex flex-col gap-1.5">
+          <div className="px-3 pb-4 pt-3 flex flex-col gap-1.5 shrink-0">
             <button onClick={() => setModal({ type: "account", data: { name: "", sl: "", sls: [], leadId: null, pmId: null, devId: null, supportIds: [], status: "Active", type: "Retainer", retainer: 0, project: 0, weight: 3, depositPaid: false, notes: "" } })}
               className="bg-gray-900 rounded-lg px-3 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Account</button>
             <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
@@ -1673,6 +1673,14 @@ export default function App() {
           {/* ══════════ TEAM ROSTER VIEW ══════════ */}
           {view === "team" && (
             <div className="overflow-auto">
+              <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <div>
+                  <div className="text-2xl font-semibold text-gray-900">Team</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{team.length} people · {fmtK(totals.people)}/mo</div>
+                </div>
+                <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
+                  className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ Add member</button>
+              </div>
               {SERVICE_LINES.filter(sl => team.some(p => p.sl === sl.id)).map(sl => {
                 const members = team.filter(p => p.sl === sl.id);
                 const slCost = members.reduce((s, p) => s + cost(p), 0);
