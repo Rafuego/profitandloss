@@ -843,6 +843,10 @@ export default function App() {
     const iWho = findCol("freelancer", "contract", "description", "team", "payment method");
     const iType = findCol("type");
     const iRef = findCol("reference id", "reference", "ref id");
+    // Payment reports list every funding source, but studio dev spend lives on
+    // the Amex only — PayPal/Mastercard rows are personal and must never import.
+    // Transaction History exports have no payment-method column; they import fully.
+    const iMethod = findCol("payment method");
     if (iDate < 0 || iAmt < 0) return [];
     const rows: any[] = [];
     for (const line of lines.slice(1)) {
@@ -851,6 +855,7 @@ export default function App() {
       if (!isFinite(amount) || amount === 0) continue;
       const d = new Date((c[iDate] || "").replace(/"/g, ""));
       if (isNaN(d.getTime())) continue;
+      if (iMethod >= 0 && !/american express|amex/i.test(c[iMethod] || "")) continue;
       const who = (iWho >= 0 ? c[iWho] : "") || "Upwork";
       const rule = costRules.find((r: any) => who.toLowerCase().includes(r.matchText.toLowerCase()));
       const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
