@@ -864,6 +864,9 @@ export default function App() {
       // of creating a duplicate, so existing project assignments survive.
       const ref = iRef >= 0 ? (c[iRef] || "").replace(/\W/g, "") : "";
       const id = ref ? `upw-${ref}` : `upw-${month}-${Math.round(amount * 100)}`;
+      // A transaction that was split across projects lives as …-s1/-s2 child
+      // rows; re-importing must not re-create the parent and double the amount.
+      if (costs.some((x: any) => x.id.startsWith(id + "-s"))) continue;
       const existing = costs.find((x: any) => x.id === id);
       rows.push({
         id, who, amount, type: iType >= 0 ? c[iType] : "",
@@ -915,11 +918,13 @@ export default function App() {
     const allocated = parts.reduce((s: number, x: any) => s + Number(x.amount), 0);
     const left = Math.round((Number(d.amount) - allocated) * 100) / 100;
     const base = { vendor: d.vendor, category: d.category, month: d.month };
-    const rows = parts.map((s: any) => ({
-      ...base, id: crypto.randomUUID(), amount: Number(s.amount), accountId: s.accountId,
+    // Children keep the parent id as a prefix (…-s1, …-s2) so the CSV importer
+    // can recognize an already-split transaction and not re-create the parent.
+    const rows = parts.map((s: any, i: number) => ({
+      ...base, id: `${d.id}-s${i + 1}`, amount: Number(s.amount), accountId: s.accountId,
       notes: d.notes || "",
     }));
-    if (left > 0.01) rows.push({ ...base, id: crypto.randomUUID(), amount: left, accountId: null, notes: (d.notes || "") + " (unattributed remainder)" });
+    if (left > 0.01) rows.push({ ...base, id: `${d.id}-s0`, amount: left, accountId: null, notes: (d.notes || "") + " (unattributed remainder)" });
     const prev = costs;
     setCosts(cs => [...cs.filter((c: any) => c.id !== d.id), ...rows]);
     try {
