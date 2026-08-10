@@ -620,6 +620,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
+  // Sort/filter controls for the Accounts and Projects tabs
+  const [acctSort, setAcctSort] = useState("name");
+  const [acctSl, setAcctSl] = useState("all");
+  const [projSort, setProjSort] = useState("name");
+  const [projSl, setProjSl] = useState("all");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
   const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
   const [invoiceTab, setInvoiceTab] = useState<"overview" | "overdue" | "monthly">("overview");
@@ -1761,6 +1766,19 @@ export default function App() {
               return true;
             });
 
+            // Service-line filter + sort on top of the tab filter
+            const acctSorters: Record<string, (x: any, y: any) => number> = {
+              name: (x, y) => x.name.localeCompare(y.name),
+              value: (x, y) => acctVal(y) - acctVal(x) || x.name.localeCompare(y.name),
+              fee: (x, y) => (y.retainer + y.project) - (x.retainer + x.project) || x.name.localeCompare(y.name),
+              weight: (x, y) => (y.weight ?? 3) - (x.weight ?? 3) || x.name.localeCompare(y.name),
+              status: (x, y) => x.status.localeCompare(y.status) || x.name.localeCompare(y.name),
+              newest: (x, y) => (y.startDate || "").localeCompare(x.startDate || "") || x.name.localeCompare(y.name),
+            };
+            const tabList = tabFiltered
+              .filter(a => acctSl === "all" || acctSls(a).includes(acctSl))
+              .sort(acctSorters[acctSort] || acctSorters.name);
+
             // Counts mirror each tab's filter exactly
             const isActive = (a: any) => ["Active", "Launch", "Growth"].includes(a.status);
             const retainerCount = accounts.filter(a => !a.isInternal && a.type === "Retainer" && isActive(a)).length;
@@ -1785,9 +1803,24 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                    <button onClick={() => setAcctView("pods")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "pods" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Pods</button>
-                    <button onClick={() => setAcctView("list")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>List</button>
+                  <div className="flex items-center gap-2">
+                    <select value={acctSl} onChange={e => setAcctSl(e.target.value)}
+                      className={`border rounded-lg px-2.5 py-1.5 text-[11px] font-medium outline-none ${acctSl === "all" ? "bg-white border-gray-200 text-gray-500" : "bg-gray-900 border-gray-900 text-white"}`}>
+                      <option value="all">All service lines</option>
+                      {SERVICE_LINES.filter(sl => sl.id !== "ops" && sl.id !== "leadership").map(sl => <option key={sl.id} value={sl.id}>{sl.name}</option>)}
+                    </select>
+                    <select value={acctSort} onChange={e => setAcctSort(e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-gray-500 outline-none">
+                      <option value="name">Sort: A→Z</option>
+                      <option value="value">Sort: monthly value</option>
+                      <option value="fee">Sort: total fee</option>
+                      <option value="weight">Sort: weight</option>
+                      <option value="newest">Sort: newest start</option>
+                    </select>
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                      <button onClick={() => setAcctView("pods")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "pods" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Pods</button>
+                      <button onClick={() => setAcctView("list")} className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${acctView === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>List</button>
+                    </div>
                   </div>
                 </div>
                 {/* Collections snapshot from Mercury */}
@@ -1807,11 +1840,11 @@ export default function App() {
             if (acctView === "pods") return (
               <div className="p-8 pb-12">
                 <Header />
-                {tabFiltered.length === 0 && (
+                {tabList.length === 0 && (
                   <div className="text-sm text-gray-400 italic">No accounts in this category.</div>
                 )}
                 <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-                  {tabFiltered.map(a => {
+                  {tabList.map(a => {
                     const lead = team.find(p => p.id === a.leadId);
                     const sups = team.filter(p => a.supportIds.includes(p.id));
                     const mrr = acctVal(a);
@@ -1904,7 +1937,7 @@ export default function App() {
               {["Account", "Service Line", "Lead", "Support", "Status", "Retainer", "Flat Fee", "MRR", "Scope"].map(h => (
                 <div key={h} className="px-3 py-2 bg-gray-100 text-[9px] font-semibold tracking-wider uppercase text-gray-500 border-b border-gray-200 sticky top-0 z-10">{h}</div>
               ))}
-              {tabFiltered.map((a, i) => {
+              {tabList.map((a, i) => {
                 const bg = i % 2 === 0 ? "bg-white" : "bg-gray-50";
                 const mpr = monthlyProjectRev(a);
                 const live = isProjectLive(a);
@@ -1947,10 +1980,10 @@ export default function App() {
                 );
               })}
               {/* Totals */}
-              <div className="px-3 py-2 bg-gray-100 text-[11px] font-bold text-gray-900 border-b border-gray-200" style={{ gridColumn: "1 / 6" }}>Total ({tabFiltered.length} shown)</div>
-              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabFiltered.reduce((s, a) => s + a.retainer, 0))}</div>
-              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabFiltered.reduce((s, a) => s + a.project, 0))}</div>
-              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabFiltered.reduce((s, a) => s + acctVal(a), 0))}</div>
+              <div className="px-3 py-2 bg-gray-100 text-[11px] font-bold text-gray-900 border-b border-gray-200" style={{ gridColumn: "1 / 6" }}>Total ({tabList.length} shown)</div>
+              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabList.reduce((s, a) => s + a.retainer, 0))}</div>
+              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabList.reduce((s, a) => s + a.project, 0))}</div>
+              <div className="px-3 py-2 bg-gray-100 text-right text-xs font-bold text-emerald-600 border-b border-gray-200">{fmt(tabList.reduce((s, a) => s + acctVal(a), 0))}</div>
               <div className="px-3 py-2 bg-gray-100 border-b border-gray-200" />
             </div>
             </div>
@@ -1960,12 +1993,22 @@ export default function App() {
           {/* ══════════ FLAT-RATE PROJECTS VIEW ══════════ */}
           {view === "projects" && (() => {
             const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "";
-            const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && !a.isInternal);
+            const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && !a.isInternal)
+              .filter(a => projSl === "all" || acctSls(a).includes(projSl));
             const inFlight = flat.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
             const planning = flat.filter(a => a.status === "Pipeline");
 
             const econOf = (a: any) => projectEcon(a, team, accounts, costs);
+            const projSorters: Record<string, (x: any, y: any) => number> = {
+              name: (x, y) => x.name.localeCompare(y.name),
+              fee: (x, y) => y.project - x.project || x.name.localeCompare(y.name),
+              end: (x, y) => (x.endDate || "9999").localeCompare(y.endDate || "9999") || x.name.localeCompare(y.name),
+              profit: (x, y) => (econOf(y).profit ?? -Infinity) - (econOf(x).profit ?? -Infinity) || x.name.localeCompare(y.name),
+              margin: (x, y) => (econOf(y).marginPct ?? -Infinity) - (econOf(x).marginPct ?? -Infinity) || x.name.localeCompare(y.name),
+              elapsed: (x, y) => (econOf(y).elapsed ?? -1) - (econOf(x).elapsed ?? -1) || x.name.localeCompare(y.name),
+            };
+            const sortProj = (arr: any[]) => [...arr].sort(projSorters[projSort] || projSorters.name);
             const inFlightEcon = inFlight.map(a => ({ a, e: econOf(a) }));
             const kpiFee = inFlight.reduce((s, a) => s + a.project, 0);
             const kpiMrr = inFlight.reduce((s, a) => s + monthlyProjectRev(a), 0);
@@ -2178,9 +2221,27 @@ export default function App() {
 
             return (
               <div className="p-8 pb-12">
-                <div className="mb-7">
-                  <div className="text-2xl font-semibold text-gray-900 mb-1">Flat Rate Projects</div>
-                  <div className="text-xs text-gray-400">Budget vs. team cost over each project's timeline. Team cost = each person's monthly cost × their capacity share on the project.</div>
+                <div className="flex items-start justify-between mb-7 gap-4 flex-wrap">
+                  <div>
+                    <div className="text-2xl font-semibold text-gray-900 mb-1">Flat Rate Projects</div>
+                    <div className="text-xs text-gray-400">Budget vs. team cost over each project's timeline. Team cost = each person's monthly cost × their capacity share on the project.</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select value={projSl} onChange={e => setProjSl(e.target.value)}
+                      className={`border rounded-lg px-2.5 py-1.5 text-[11px] font-medium outline-none ${projSl === "all" ? "bg-white border-gray-200 text-gray-500" : "bg-gray-900 border-gray-900 text-white"}`}>
+                      <option value="all">All service lines</option>
+                      {SERVICE_LINES.filter(sl => sl.id !== "ops" && sl.id !== "leadership").map(sl => <option key={sl.id} value={sl.id}>{sl.name}</option>)}
+                    </select>
+                    <select value={projSort} onChange={e => setProjSort(e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-gray-500 outline-none">
+                      <option value="name">Sort: A→Z</option>
+                      <option value="fee">Sort: fee</option>
+                      <option value="end">Sort: ending soonest</option>
+                      <option value="profit">Sort: profit</option>
+                      <option value="margin">Sort: margin</option>
+                      <option value="elapsed">Sort: furthest along</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* KPIs */}
@@ -2204,7 +2265,7 @@ export default function App() {
                 <div className="text-xl font-semibold text-gray-900 mb-4">In Flight</div>
                 {inFlight.length === 0 && <div className="text-sm text-gray-400 italic mb-8">No active flat-rate projects. Add one with “+ Account” → type Project (or Hybrid) with dates and a team.</div>}
                 <div className="grid gap-4 mb-10" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
-                  {inFlight.map(a => <ProjectCard key={a.id} a={a} done={false} />)}
+                  {sortProj(inFlight).map(a => <ProjectCard key={a.id} a={a} done={false} />)}
                 </div>
 
                 {/* Planning / pipeline */}
@@ -2213,7 +2274,7 @@ export default function App() {
                     <div className="text-xl font-semibold text-gray-900 mb-1">Planning</div>
                     <div className="text-xs text-gray-400 mb-4">Not yet started — not counted in revenue or workload.</div>
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                      {planning.map((a, i) => (
+                      {sortProj(planning).map((a, i) => (
                         <div key={a.id} onClick={() => setSelected({ type: "account", data: a })}
                           className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50 transition-colors ${i < planning.length - 1 ? "border-b border-gray-100" : ""}`}>
                           <div className="flex items-center gap-2.5">
@@ -2321,7 +2382,7 @@ export default function App() {
                     <div className="text-xl font-semibold text-gray-900 mb-1">Completed</div>
                     <div className="text-xs text-gray-400 mb-4">{completed.length} project{completed.length !== 1 ? "s" : ""} · {fmtK(completed.reduce((s, a) => s + a.project, 0))} lifetime fees</div>
                     <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
-                      {completed.map(a => <ProjectCard key={a.id} a={a} done={true} />)}
+                      {sortProj(completed).map(a => <ProjectCard key={a.id} a={a} done={true} />)}
                     </div>
                   </div>
                 )}
