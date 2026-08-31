@@ -624,6 +624,7 @@ export default function App() {
   const [acctSort, setAcctSort] = useState("name");
   const [acctSl, setAcctSl] = useState("all");
   const [projSort, setProjSort] = useState("name");
+  const [projQuery, setProjQuery] = useState("");
   const [projSl, setProjSl] = useState("all");
   const [acctTab, setAcctTab] = useState<"retainer" | "projects" | "closed">("retainer");
   const [workloadTab, setWorkloadTab] = useState<"leads" | "symphony" | "product" | "pm" | "all">("leads");
@@ -1994,7 +1995,8 @@ export default function App() {
           {view === "projects" && (() => {
             const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "";
             const flat = accounts.filter(a => (a.type === "Project" || a.type === "Hybrid") && !a.isInternal)
-              .filter(a => projSl === "all" || acctSls(a).includes(projSl));
+              .filter(a => projSl === "all" || acctSls(a).includes(projSl))
+              .filter(a => !projQuery.trim() || a.name.toLowerCase().includes(projQuery.trim().toLowerCase()));
             const inFlight = flat.filter(a => ["Active", "Launch", "Growth"].includes(a.status));
             const completed = flat.filter(a => a.status === "Closed" || a.status === "Paused");
             const planning = flat.filter(a => a.status === "Pipeline");
@@ -2227,6 +2229,14 @@ export default function App() {
                     <div className="text-xs text-gray-400">Budget vs. team cost over each project's timeline. Team cost = each person's monthly cost × their capacity share on the project.</div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300 text-[12px]">⌕</span>
+                      <input value={projQuery} onChange={e => setProjQuery(e.target.value)} placeholder="Search projects…"
+                        className="bg-white border border-gray-200 rounded-lg pl-7 pr-7 py-1.5 text-[11px] font-medium text-gray-900 outline-none w-44 focus:border-gray-400 placeholder:text-gray-300" />
+                      {projQuery && (
+                        <button onClick={() => setProjQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 text-[11px]">✕</button>
+                      )}
+                    </div>
                     <select value={projSl} onChange={e => setProjSl(e.target.value)}
                       className={`border rounded-lg px-2.5 py-1.5 text-[11px] font-medium outline-none ${projSl === "all" ? "bg-white border-gray-200 text-gray-500" : "bg-gray-900 border-gray-900 text-white"}`}>
                       <option value="all">All service lines</option>
@@ -2263,7 +2273,7 @@ export default function App() {
 
                 {/* In flight */}
                 <div className="text-xl font-semibold text-gray-900 mb-4">In Flight</div>
-                {inFlight.length === 0 && <div className="text-sm text-gray-400 italic mb-8">No active flat-rate projects. Add one with “+ Account” → type Project (or Hybrid) with dates and a team.</div>}
+                {inFlight.length === 0 && <div className="text-sm text-gray-400 italic mb-8">{projQuery || projSl !== "all" ? "No in-flight projects match — completed matches show below." : "No active flat-rate projects. Add one with “+ Account” → type Project (or Hybrid) with dates and a team."}</div>}
                 <div className="grid gap-4 mb-10" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
                   {sortProj(inFlight).map(a => <ProjectCard key={a.id} a={a} done={false} />)}
                 </div>
