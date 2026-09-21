@@ -209,7 +209,10 @@ INIT_ACCOUNTS uses prefixed IDs (`a1`–`a13`, `a114`–`a122`, `a200`–`a220`,
 
 `middleware.ts` applies HTTP Basic Auth to every page and API route when the
 `APP_PASSWORD` env var is set (Vercel). Unset (local dev) = open. Username is
-ignored; the team shares one password. NOTE: this gates the UI and API only —
+ignored; the team shares one password. A second tier, `PODS_PASSWORD`, unlocks
+ONLY `/pods` — a shared single-view page (`app/pods/page.tsx` renders
+`<App lockedView="pods" />`: no nav, no detail sidebars, no edit modals; inline
+assignment dropdowns still work). Any other path 401s under that password. NOTE: this gates the UI and API only —
 the Supabase anon key + open RLS still allow direct DB access for anyone who
 extracts the key from the bundle; real lockdown would need Supabase Auth.
 

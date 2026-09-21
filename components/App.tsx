@@ -589,7 +589,7 @@ const KpiCard = ({ label, value, sub, color = "text-gray-900" }) => (
 // ═══════════════════════════════
 // MAIN
 // ═══════════════════════════════
-export default function App() {
+export default function App({ lockedView = null } = {}) {
   const [team, setTeam] = useState(INIT_TEAM);
   const [accounts, setAccounts] = useState(INIT_ACCOUNTS);
   const [depts, setDepts] = useState(INIT_DEPTS);
@@ -616,7 +616,7 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
-  const [view, setView] = useState("dashboard");
+  const [view, setView] = useState(lockedView || "dashboard");
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
@@ -1071,8 +1071,14 @@ export default function App() {
       {/* Main — left nav · content · detail panel */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ── Left navigation ── */}
-        <nav className="w-52 shrink-0 border-r border-gray-200 bg-gray-50/60 flex flex-col">
+        {/* ── Left navigation (hidden when locked to a single view) ── */}
+        {lockedView && (
+          <div className="w-52 shrink-0 border-r border-gray-200 bg-gray-50/60 px-5 pt-5">
+            <span className="text-base font-semibold text-gray-900 tracking-tight">Interlude</span>
+            <div className="text-[10px] text-gray-400 mt-1">Pods — shared view</div>
+          </div>
+        )}
+        {!lockedView && <nav className="w-52 shrink-0 border-r border-gray-200 bg-gray-50/60 flex flex-col">
           <div className="px-5 pt-5 pb-4">
             <span className="text-base font-semibold text-gray-900 tracking-tight">Interlude</span>
           </div>
@@ -1114,7 +1120,7 @@ export default function App() {
             <button onClick={() => setModal({ type: "person", data: { name: "", role: "", sl: "", type: "Full-Time", cadY: null, usdM: null, hrs: 160, lead: false } })}
               className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 text-[11px] font-semibold hover:bg-gray-50 transition-colors">+ Person</button>
           </div>
-        </nav>
+        </nav>}
 
         <div className="flex-1 overflow-auto">
 
@@ -2408,8 +2414,8 @@ export default function App() {
                   <div className="text-2xl font-semibold text-gray-900 mb-1">Pods</div>
                   <div className="text-xs text-gray-400">Cross-functional teams that own a book of accounts — each with its own P&L. One home pod per person, one owning pod per account.</div>
                 </div>
-                <button onClick={() => setModal({ type: "pod", data: { id: null, name: "", color: DEPT_COLORS[pods.length % DEPT_COLORS.length], leadId: null } })}
-                  className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ New Pod</button>
+                {!lockedView && <button onClick={() => setModal({ type: "pod", data: { id: null, name: "", color: DEPT_COLORS[pods.length % DEPT_COLORS.length], leadId: null } })}
+                  className="bg-gray-900 rounded-lg px-4 py-2 text-white text-[11px] font-semibold hover:bg-gray-800 transition-colors">+ New Pod</button>}
               </div>
 
               {pods.length === 0 && (
@@ -2439,7 +2445,7 @@ export default function App() {
                             <div className={`text-lg font-semibold ${pod.margin >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmtK(pod.margin)}</div>
                             <div className="text-[9px] text-gray-400">margin{pod.rev > 0 ? ` · ${pct(pod.marginPct)}` : ""}</div>
                           </div>
-                          <button onClick={() => setModal({ type: "pod", data: pod })} className="text-gray-300 hover:text-gray-500 text-sm">&#9998;</button>
+                          {!lockedView && <button onClick={() => setModal({ type: "pod", data: pod })} className="text-gray-300 hover:text-gray-500 text-sm">&#9998;</button>}
                         </div>
                       </div>
                       {/* P&L strip */}
@@ -3230,11 +3236,11 @@ export default function App() {
         </div>
 
         {/* Sidebar */}
-        <Sidebar selected={selected} team={team} accounts={accounts} onClose={() => setSelected(null)} onEdit={(type, data) => setModal({ type, data })} onAssign={assignAccount} />
+        {!lockedView && <Sidebar selected={selected} team={team} accounts={accounts} onClose={() => setSelected(null)} onEdit={(type, data) => setModal({ type, data })} onAssign={assignAccount} />}
       </div>
 
       {/* Edit modals */}
-      {modal?.type === "person" && (
+      {!lockedView && modal?.type === "person" && (
         <Modal title={modal.data.id ? modal.data.name : "New Team Member"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">
             <Inp label="Name" value={modal.data.name} onChange={v => setModal({ ...modal, data: { ...modal.data, name: v } })} ph="Full name" />
@@ -3275,7 +3281,7 @@ export default function App() {
         </Modal>
       )}
 
-      {modal?.type === "account" && (
+      {!lockedView && modal?.type === "account" && (
         <Modal title={modal.data.id ? modal.data.name : "New Account"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">
             <Inp label="Client Name" value={modal.data.name} onChange={v => setModal({ ...modal, data: { ...modal.data, name: v } })} ph="Acme Corp" />
@@ -3418,7 +3424,7 @@ export default function App() {
       )}
 
       {/* Department edit modal */}
-      {modal?.type === "cost" && (
+      {!lockedView && modal?.type === "cost" && (
         <Modal title={modal.data.id ? `Edit: ${modal.data.vendor}` : "New External Cost"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">
             <Inp label="Vendor" value={modal.data.vendor} onChange={v => setModal({ ...modal, data: { ...modal.data, vendor: v } })} ph="e.g. Upwork" />
@@ -3493,7 +3499,7 @@ export default function App() {
         </Modal>
       )}
 
-      {modal?.type === "pod" && (() => {
+      {!lockedView && modal?.type === "pod" && (() => {
         const podMembers = team.filter(p => p.podId === modal.data.id);
         const podAccts = accounts.filter(a => a.podId === modal.data.id);
         const memberOpts = team.filter(p => p.sl !== "leadership" && p.podId !== modal.data.id);
@@ -3561,7 +3567,7 @@ export default function App() {
         );
       })()}
 
-      {modal?.type === "dept" && (
+      {!lockedView && modal?.type === "dept" && (
         <Modal title={modal.data.id ? `Edit: ${modal.data.name}` : "New Department"} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-3.5">
             <Inp label="Department Name" value={modal.data.name} onChange={v => setModal({ ...modal, data: { ...modal.data, name: v } })} ph="e.g. Web Development" />
