@@ -2421,7 +2421,7 @@ export default function App() {
                 </div>
               )}
 
-              <div className="grid gap-4 mb-9" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))" }}>
+              <div className="grid gap-4 mb-9" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(430px, 1fr))" }}>
                 {podStats.map(pod => {
                   const cap = pod.members.filter(m => m.sl !== "leadership" && m.sl !== "ops").length * 5;
                   return (
@@ -2461,14 +2461,52 @@ export default function App() {
                             ))}
                           </div>
                         )}
-                        <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5 mt-2.5">Book · {pod.activeAccts.length} active</div>
-                        {pod.activeAccts.length === 0 ? <div className="text-[11px] text-gray-300 italic">No accounts yet</div> : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {pod.activeAccts.map(a => (
-                              <div key={a.id} onClick={() => setSelected({ type: "account", data: a })} className="text-[11px] font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-2 py-0.5 cursor-pointer hover:bg-gray-100">{a.name} <span className="text-gray-400">{fmtK(acctVal(a))}</span></div>
-                            ))}
-                          </div>
-                        )}
+                        {(() => {
+                          const covered = pod.activeAccts.filter(a => a.leadId).length;
+                          const podLeads = pod.members.filter(m => m.lead);
+                          const otherLeads = team.filter(p => p.lead && !podLeads.some(m => m.id === p.id));
+                          const book = [...pod.activeAccts].sort((x, y) => acctVal(y) - acctVal(x) || x.name.localeCompare(y.name));
+                          return (<>
+                            <div className="flex items-baseline justify-between mb-1.5 mt-2.5">
+                              <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Book · {pod.activeAccts.length} active</div>
+                              {pod.activeAccts.length > 0 && (
+                                <div className={`text-[9px] font-semibold ${covered === pod.activeAccts.length ? "text-emerald-600" : "text-amber-600"}`}>
+                                  {covered === pod.activeAccts.length ? "✓ all covered" : `${pod.activeAccts.length - covered} need a designer`}
+                                </div>
+                              )}
+                            </div>
+                            {pod.activeAccts.length === 0 ? <div className="text-[11px] text-gray-300 italic">No accounts yet</div> : (
+                              <div className="border border-gray-100 rounded-lg overflow-hidden">
+                                {book.map(a => {
+                                  const lead = team.find(p => p.id === a.leadId);
+                                  const helpers = [...a.supportIds, ...(a.devId ? [a.devId] : [])]
+                                    .map(id => team.find(p => p.id === id)).filter(Boolean);
+                                  return (
+                                    <div key={a.id} className={`flex items-center gap-2 px-2.5 py-1.5 border-b border-gray-100 last:border-0 ${lead ? "" : "bg-amber-50/60"}`}>
+                                      <span onClick={() => setSelected({ type: "account", data: a })}
+                                        className="text-[11px] font-medium text-gray-900 truncate flex-1 cursor-pointer hover:underline">{a.name}</span>
+                                      <span className="text-[10px] text-gray-400 shrink-0 w-12 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{acctVal(a) > 0 ? fmtK(acctVal(a)) : "—"}</span>
+                                      {lead ? (
+                                        <div className="flex items-center gap-0.5 shrink-0 w-[74px] justify-end">
+                                          {helpers.slice(0, 2).map(h => <Av key={h.id} name={h.name} size={18} sl={h.sl} />)}
+                                          {helpers.length > 2 && <span className="text-[9px] text-gray-400">+{helpers.length - 2}</span>}
+                                          <span title={`Lead: ${lead.name}`}><Av name={lead.name} size={20} sl={lead.sl} lead /></span>
+                                        </div>
+                                      ) : (
+                                        <select value="" onClick={e => e.stopPropagation()} onChange={e => e.target.value && assignAccount(e.target.value, a.id, "lead")}
+                                          className="shrink-0 w-[74px] bg-white border border-amber-300 rounded-md px-1 py-0.5 text-[9px] font-semibold text-amber-700 outline-none cursor-pointer">
+                                          <option value="">+ lead</option>
+                                          {podLeads.length > 0 && <optgroup label="This pod">{podLeads.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>}
+                                          <optgroup label={podLeads.length ? "Other leads" : "Leads"}>{otherLeads.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>
+                                        </select>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>);
+                        })()}
                       </div>
                     </div>
                   </div>
