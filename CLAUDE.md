@@ -216,6 +216,30 @@ assignment dropdowns still work). Any other path 401s under that password. NOTE:
 the Supabase anon key + open RLS still allow direct DB access for anyone who
 extracts the key from the bundle; real lockdown would need Supabase Auth.
 
+## Data Sync Rules (source-of-truth hierarchy)
+
+The tracker mirrors external systems. When sources disagree, authority is:
+
+1. **Mercury** (live API) — payments, collections, overdue. Never overridden by hand.
+2. **Notion "Retained Clients" DB** (`collection://7d215377-a131-491b-bc5e-04debc5b8a07`,
+   mirrors the Symphony admin) — retainer book: amounts, Active/Churning/Ending/Paused.
+   The "Client Tier Breakdown" page's in-flight table governs project PMs + weights.
+3. **Ignition** (via Slack #deals-won once wired, or Rafay's screenshots) — won deals:
+   client, fee, retainer-vs-flat. Retainer deal values are annual: divide by 12.
+4. **Rafay in chat** — team roster and pay, always; and any override of the above.
+
+**Auto-apply without asking** (weekly "Weekly Notion → Tracker sync" task + ad-hoc syncs):
+retainer amount corrections, Paused↔Active flips stated by the source, project PM/weight
+updates, churn/ending notes, new accounts **with sourced fees**.
+
+**Always flag, never auto-apply:** closing/deleting accounts, fee changes on existing
+flat-rate projects, anything touching team pay or cost rows, new accounts with unknown
+fees (create at $0 + "FEE TBD"), contradictions between sources.
+
+**Standing hygiene checks each sync:** active projects past end_date; newest `costs`
+row older than ~3 weeks (needs a fresh Amex payment-report export); Mercury overdue
+growth; accounts with no lead.
+
 ## Deployment
 
 Push to `main` → Vercel auto-deploys. No manual steps needed. Build takes ~1–2 minutes to go live.
