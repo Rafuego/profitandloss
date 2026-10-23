@@ -147,6 +147,26 @@ export async function GET() {
       if (p === MAX_PAGES - 1) truncated = true;
     }
 
+    // Direct bank credits (ACH/wire in) that never went through AR invoicing.
+    // Used ONLY for accounts with no invoice match, so nothing double-counts —
+    // an invoice payment also appears in /transactions, but those accounts
+    // resolve via their invoices first and never reach this fallback.
+    const directIn: Record<string, { total: number; last: string | null; count: number }> = {};
+    try {
+      const tx = await mget(`/transactions?limit=500&order=desc`, token);
+      for (const t of tx.transactions ?? []) {
+        const amt = Number(t.amount ?? 0);
+        if (amt <= 0) continue;
+        if (t.status && !["sent", "posted", "complete", "completed"].includes(String(t.status).toLowerCase())) continue;
+        const k = akey(t.counterpartyName || t.counterpartyNickname || "");
+        if (!k) continue;
+        const d = String(t.postedAt || t.createdAt || "").slice(0, 10);
+        const b = directIn[k] || (directIn[k] = { total: 0, last: null, count: 0 });
+        b.total += amt; b.count++;
+        if (!b.last || d > b.last) b.last = d;
+      }
+    } catch { /* bank-ledger scan is best-effort; invoices remain the primary source */ }
+
     // ── Per-account payment rollup ──────────────────────────────────────────
     // One Mercury customer can span several engagements (e.g. "Alcove" bills a
     // retainer AND a website project). An account may therefore claim specific
@@ -197,6 +217,15 @@ export async function GET() {
           if (matched.length) {
             matched.forEach(i => { i.accountId = a.id; i.accountName = a.name; });
             byAccount[a.id] = { ...roll(matched), name: a.name, source: "name" };
+            continue;
+          }
+          // Last resort: money arrived by direct ACH/wire with no invoice ever
+          // created (e.g. Ceres' $12.5K deposit, Sep 2026). Surface it so a
+          // paid-but-never-invoiced client doesn't look like a non-payer.
+          const dk = directIn[k];
+          if (dk) {
+            byAccount[a.id] = { outstanding: 0, overdue: 0, oldestDue: null, paid: dk.total,
+              lastPaid: dk.last, unpaid: 0, total: dk.count, name: a.name, source: "bank" };
           }
         }
       }
