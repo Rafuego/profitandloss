@@ -30,7 +30,10 @@ async function mget(path: string, token: string) {
   return res.json();
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Debug/claims helper: ?customer=<name> adds that customer's FULL invoice
+  // list to the response (read-only; used when assigning mercury_invoices claims).
+  const customerQ = new URL(req.url).searchParams.get("customer");
   const token = (process.env.MERCURY_API_TOKEN || "").trim();
   if (!token) return NextResponse.json({ connected: false });
 
@@ -231,7 +234,7 @@ export async function GET() {
       }
     } catch { /* per-account rollup is best-effort; byCustomer still works */ }
 
-    const payload = {
+    const payload: any = {
       connected: true,
       fetchedAt: new Date().toISOString(),
       counts: { total, inFlight: inFlight.length, paid: paidCount, cancelled },
@@ -244,6 +247,11 @@ export async function GET() {
       paidByMonth, // { "YYYY-MM": { total, count } } — paid invoices by invoice month
       truncated,
     };
+
+    if (customerQ) {
+      const qk = akey(customerQ);
+      payload.customerInvoices = allInvoices.filter(i => akey(i.customer) === qk);
+    }
 
     // Persist as the fallback snapshot, at most every SNAPSHOT_EVERY_MS so the
     // write doesn't add latency to every page load. Never let a snapshot
