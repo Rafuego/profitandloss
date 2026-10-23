@@ -77,9 +77,15 @@ export async function GET() {
       inferenceresearchincblairai: "inferencehealth",
       giantstep: "giantstepvc",
       "1921ai": "1921",
-      atriavc: "atria",
       neruhealth: "neruhealth",
       naryavc: "narya", // Mercury bills "Narya VC"; the tracker has only the project
+      lorimerventures: "lorimer",
+      mcjvc: "mcj",
+      aeonindustrial: "aeon",
+      specteraerospace: "specteraero",
+      // Atria's only Mercury invoice is the fund-deck deposit — route the
+      // customer to the deck project, not the dormant paused retainer row
+      atriavc: "atriadeck",
     };
     const akey = (s: string) => { const k = nkey(s); return ALIAS[k] || k; };
     const today = new Date().toISOString().slice(0, 10);
