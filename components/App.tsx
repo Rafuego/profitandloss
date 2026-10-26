@@ -2578,6 +2578,17 @@ export default function App({ lockedView = null } = {}) {
             const acctByName: Record<string, any> = {};
             accounts.forEach(a => { acctByName[a.name.toLowerCase().replace(/[^a-z0-9]/g, "")] = a; });
             const matchAcct = (name: string) => acctByName[(name || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
+            // Which account an invoice belongs to, honouring the route's claim
+            // semantics: a route-stamped accountId wins; otherwise name-match,
+            // EXCEPT when that account claims explicit invoice numbers — then an
+            // unclaimed invoice (e.g. Framework's separate photography job) must
+            // not attach to it just because the customer name matches.
+            const acctForInv = (inv: any) => {
+              if (inv.accountId) return accounts.find(x => x.id === inv.accountId) || null;
+              const m = matchAcct(inv.customer);
+              if (m && (m.mercuryInvoices || "").trim()) return null;
+              return m;
+            };
             const statusStyle: Record<string, string> = {
               Paid: "bg-emerald-50 text-emerald-600",
               Unpaid: "bg-amber-50 text-amber-600",
@@ -2690,7 +2701,7 @@ export default function App({ lockedView = null } = {}) {
                           ))}
                         </div>
                         {sorted.map((inv: any, i: number) => {
-                          const acct = matchAcct(inv.customer);
+                          const acct = acctForInv(inv);
                           return (
                             <div key={inv.id || i} className="grid px-5 py-3 border-b border-gray-100 items-center" style={{ gridTemplateColumns: "1.6fr 0.8fr 1fr 1fr 1.4fr" }}>
                               <div className="text-[13px] font-medium text-gray-900">{inv.customer}</div>
