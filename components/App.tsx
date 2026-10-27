@@ -617,6 +617,8 @@ export default function App({ lockedView = null } = {}) {
   const [nid, setNid] = useState(20);
   const [deptNid, setDeptNid] = useState(10);
   const [view, setView] = useState(lockedView || "dashboard");
+  // Dashboard drill-down: which month-revenue tile is open as a modal
+  const [monthDetail, setMonthDetail] = useState<null | "retainers" | "deposits" | "signed">(null);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
@@ -1177,6 +1179,9 @@ export default function App({ lockedView = null } = {}) {
             const signedRet = signedRetainers.reduce((s, a) => s + Number(a.retainer || 0), 0);
 
             const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
+            // Parse YYYY-MM-DD as a LOCAL date — new Date("2026-10-20") is UTC
+            // midnight and renders as the previous day in US timezones.
+            const fmtDay = (d: string) => { const [y, m, dd] = d.slice(0, 10).split("-").map(Number); return new Date(y, m - 1, dd).toLocaleDateString("en-US", { month: "short", day: "numeric" }); };
 
             // One flat attention feed — most urgent first. Everything else lives on its own tab.
             const attention: { key: string; dot: string; text: any; val?: any; tone?: string; onClick: () => void }[] = [];
@@ -1212,7 +1217,7 @@ export default function App({ lockedView = null } = {}) {
             });
             endingSoon.slice(0, 3).forEach(a => attention.push({
               key: `end-${a.id}`, dot: "bg-gray-300",
-              text: <>{a.name} wraps {new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</>,
+              text: <>{a.name} wraps {fmtDay(a.endDate)}</>,
               val: fmtK(a.project), onClick: go("projects"),
             }));
             const ATT_CAP = 8;
@@ -1266,18 +1271,18 @@ export default function App({ lockedView = null } = {}) {
                 <div className="bg-white border border-gray-200 rounded-2xl px-7 py-5 mb-3">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-4">{monthShort} revenue</div>
                   <div className="flex flex-wrap gap-x-12 gap-y-5">
-                    <div onClick={go("accounts", () => setAcctTab("retainer"))} className="cursor-pointer">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Symphony retainers</div>
+                    <div onClick={() => setMonthDetail("retainers")} className="cursor-pointer group rounded-xl px-3 py-2 -mx-3 -my-2 hover:bg-gray-50 transition-colors">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Symphony retainers<span className="normal-case tracking-normal opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"> →</span></div>
                       <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(retainerBooked)}<span className="text-[12px] font-medium text-gray-400">/mo</span></div>
                       <div className="text-[10px] text-gray-400 mt-1.5">{retainerBook.length} active · {mercuryReady ? `${fmtK(pmType?.retainer || 0)} collected in ${monthShort}` : "Mercury not connected"}</div>
                     </div>
-                    <div onClick={go("projects")} className="cursor-pointer">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Flat-rate deposits</div>
+                    <div onClick={() => setMonthDetail("deposits")} className="cursor-pointer group rounded-xl px-3 py-2 -mx-3 -my-2 hover:bg-gray-50 transition-colors">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Flat-rate deposits<span className="normal-case tracking-normal opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"> →</span></div>
                       <div className="text-[22px] leading-none font-semibold text-gray-900">{mercuryReady ? fmtK(pmType?.project || 0) : "—"}</div>
                       <div className="text-[10px] text-gray-400 mt-1.5">{mercuryReady ? `collected in ${monthShort} · ${fmtK(flightCollected)} of ${fmtK(flightContracted)} in-flight book` : "Mercury not connected"}</div>
                     </div>
-                    <div onClick={go("accounts", () => setAcctTab("projects"))} className="cursor-pointer">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Signed in {monthShort}</div>
+                    <div onClick={() => setMonthDetail("signed")} className="cursor-pointer group rounded-xl px-3 py-2 -mx-3 -my-2 hover:bg-gray-50 transition-colors">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Signed in {monthShort}<span className="normal-case tracking-normal opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"> →</span></div>
                       <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(signedFees)}{signedRet > 0 && <span className="text-[12px] font-medium text-gray-400"> + {fmtK(signedRet)}/mo</span>}</div>
                       <div className="text-[10px] text-gray-400 mt-1.5">{signedProjects.length === 0 && signedRetainers.length === 0 ? "no new accounts started this month" : [signedProjects.length ? `${signedProjects.length} flat-rate project${signedProjects.length === 1 ? "" : "s"}` : "", signedRetainers.length ? `${signedRetainers.length} new retainer${signedRetainers.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")}</div>
                     </div>
@@ -1303,6 +1308,95 @@ export default function App({ lockedView = null } = {}) {
                     <div className="px-4 py-2.5 text-[11px] text-gray-400">+{attExtra} more</div>
                   )}
                 </div>
+
+                {/* Drill-down modal for the month-revenue tiles */}
+                {monthDetail && (() => {
+                  const close = () => setMonthDetail(null);
+                  const Chip = ({ tone, children }: any) => (
+                    <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full shrink-0 ${tone}`} style={{ fontVariantNumeric: "tabular-nums" }}>{children}</span>
+                  );
+                  let title: any, value: any, sub: any, rows: any, footLabel: string, footGo: () => void;
+
+                  if (monthDetail === "retainers") {
+                    title = "Symphony retainers";
+                    value = <>{fmtK(retainerBooked)}<span className="text-[14px] font-medium text-gray-400">/mo</span></>;
+                    sub = `${retainerBook.length} active · ${mercuryReady ? `${fmtK(pmType?.retainer || 0)} collected in ${monthShort}` : "Mercury not connected"}`;
+                    footLabel = "Open Accounts"; footGo = go("accounts", () => setAcctTab("retainer"));
+                    rows = [...retainerBook].sort((a, b) => b.retainer - a.retainer).map(a => {
+                      const pay = payFor(a);
+                      const paidThis = pay?.lastPaid && pay.lastPaid.slice(0, 7) === nowMonth;
+                      return (
+                        <div key={a.id} className="flex items-center gap-2.5 px-5 py-2.5 border-b border-gray-100 last:border-0">
+                          <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
+                          {paidThis ? <Chip tone="bg-emerald-50 text-emerald-600">paid {fmtDay(pay.lastPaid)}</Chip>
+                            : pay?.status === "overdue" ? <Chip tone="bg-red-50 text-red-500">overdue {pay.overdueDays}d</Chip>
+                            : <Chip tone="bg-gray-100 text-gray-400">{mercuryReady ? `not yet in ${monthShort}` : "—"}</Chip>}
+                          <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-16 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(a.retainer)}<span className="text-[10px] font-medium text-gray-400">/mo</span></span>
+                        </div>
+                      );
+                    });
+                  } else if (monthDetail === "deposits") {
+                    title = "Flat-rate deposits";
+                    value = mercuryReady ? fmtK(pmType?.project || 0) : "—";
+                    sub = mercuryReady ? `collected in ${monthShort} · ${fmtK(flightCollected)} of ${fmtK(flightContracted)} collected across the in-flight book` : "Mercury not connected";
+                    footLabel = "Open Projects"; footGo = go("projects");
+                    rows = [...liveProjects].sort((a, b) => b.project - a.project).map(a => {
+                      const pay = payFor(a);
+                      const paid = pay?.paid || 0;
+                      const pct = a.project > 0 ? paid / a.project : 0;
+                      return (
+                        <div key={a.id} className="flex items-center gap-2.5 px-5 py-2.5 border-b border-gray-100 last:border-0">
+                          <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
+                          {!mercuryReady ? <Chip tone="bg-gray-100 text-gray-400">—</Chip>
+                            : pct >= 1 ? <Chip tone="bg-emerald-50 text-emerald-600">fully paid</Chip>
+                            : pct >= 0.5 ? <Chip tone="bg-gray-100 text-gray-500">{Math.round(pct * 100)}%{pay?.lastPaid ? ` · ${fmtDay(pay.lastPaid)}` : ""}</Chip>
+                            : pct > 0 ? <Chip tone="bg-amber-50 text-amber-600">{Math.round(pct * 100)}% — under deposit</Chip>
+                            : <Chip tone="bg-red-50 text-red-500">nothing collected</Chip>}
+                          <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(paid)}<span className="text-[10px] font-medium text-gray-400"> of {fmtK(a.project)}</span></span>
+                        </div>
+                      );
+                    });
+                  } else {
+                    const signedAll = [
+                      ...signedProjects.map(a => ({ a, kind: "flat" })),
+                      ...signedRetainers.map(a => ({ a, kind: "ret" })),
+                    ].sort((x, y) => (y.a.signedDate || y.a.startDate || "").localeCompare(x.a.signedDate || x.a.startDate || ""));
+                    title = `Signed in ${monthShort}`;
+                    value = <>{fmtK(signedFees)}{signedRet > 0 && <span className="text-[14px] font-medium text-gray-400"> + {fmtK(signedRet)}/mo</span>}</>;
+                    sub = signedAll.length === 0 ? "no new accounts signed this month" : `${signedAll.length} new account${signedAll.length === 1 ? "" : "s"} · from the Ignition close feed`;
+                    footLabel = "Open Accounts"; footGo = go("accounts", () => setAcctTab("projects"));
+                    rows = signedAll.length === 0
+                      ? <div className="px-5 py-5 text-[11px] text-gray-300 italic">Nothing signed yet in {monthShort}.</div>
+                      : signedAll.map(({ a, kind }) => (
+                        <div key={a.id} className="flex items-center gap-2.5 px-5 py-2.5 border-b border-gray-100 last:border-0">
+                          <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
+                          <span className="text-[10px] text-gray-400 shrink-0">{(a.signedDate || a.startDate) ? `signed ${fmtDay(a.signedDate || a.startDate)}` : ""}</span>
+                          <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{kind === "ret" ? <>{fmtK(a.retainer)}<span className="text-[10px] font-medium text-gray-400">/mo</span></> : fmtK(a.project)}</span>
+                        </div>
+                      ));
+                  }
+
+                  return (
+                    <div className="fixed inset-0 z-50 bg-black/25 flex items-start justify-center pt-[9vh] px-4" onClick={close}>
+                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[540px] max-h-[78vh] flex flex-col overflow-hidden" onClick={(e: any) => e.stopPropagation()}>
+                        <div className="px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">{title}</div>
+                              <div className="text-[28px] leading-none font-semibold tracking-tight text-gray-900">{value}</div>
+                              <div className="text-[11px] text-gray-400 mt-2">{sub}</div>
+                            </div>
+                            <button onClick={close} className="text-gray-300 hover:text-gray-600 text-lg leading-none p-1 -m-1">✕</button>
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto">{rows}</div>
+                        <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+                          <button onClick={() => { close(); footGo(); }} className="text-[11px] font-semibold text-gray-400 hover:text-gray-700">{footLabel} →</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
