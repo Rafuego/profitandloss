@@ -1159,41 +1159,47 @@ export default function App({ lockedView = null } = {}) {
             const unassignedTotal = unassignedCosts.reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
 
             const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
-            // Thin meter: gray track, status-colored fill (capacity, elapsed, share)
-            const Meter = ({ pct, tone = "bg-gray-900" }: any) => (
-              <div className="w-14 h-[5px] rounded-full bg-gray-100 overflow-hidden shrink-0">
-                <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(3, Math.min(100, pct))}%` }} />
-              </div>
-            );
-            const Section = ({ title, count, dot, action, onAction, children }: any) => (
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-                  {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />}
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{title}</div>
-                  {count != null && count > 0 && <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-gray-100 text-gray-500">{count}</span>}
-                  <div className="flex-1" />
-                  {action && <button onClick={onAction} className="text-[10px] font-semibold text-gray-400 hover:text-gray-700">{action} →</button>}
-                </div>
-                {children}
-              </div>
-            );
-            const Row = ({ onClick, children }: any) => (
-              <div onClick={onClick} className={`flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}>
-                {children}
-              </div>
-            );
-            const Name = ({ children }: any) => <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{children}</span>;
-            const Val = ({ children, tone = "text-gray-900" }: any) => <span className={`text-[12px] font-semibold shrink-0 ${tone}`} style={{ fontVariantNumeric: "tabular-nums" }}>{children}</span>;
-            const Sub = ({ children }: any) => <span className="text-[10px] text-gray-400 shrink-0 w-8 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{children}</span>;
-            const Empty = ({ children }: any) => <div className="px-4 py-4 text-[11px] text-gray-300 italic">{children}</div>;
-            const maxOverdue = Math.max(1, ...overdueAccts.map((r: any) => r.overdue));
-            const maxSlRev = Math.max(1, ...slPods.map(sl => sl.rev));
-            const spendByAcct = Object.entries(costs.reduce((m: any, c: any) => {
-              if (c.accountId) { const a = accounts.find(x => x.id === c.accountId); if (a) m[a.name] = (m[a.name] || 0) + Number(c.amount || 0); }
-              return m;
-            }, {})).sort((a: any, b: any) => b[1] - a[1]);
-            const maxSpend = Math.max(1, ...spendByAcct.map(([, v]: any) => v));
-            const todoCount = (unassignedCosts.length ? 1 : 0) + losing.length + endingSoon.length + (retainersToPlace.length ? 1 : 0);
+
+            // One flat attention feed — most urgent first. Everything else lives on its own tab.
+            const attention: { key: string; dot: string; text: any; val?: any; tone?: string; onClick: () => void }[] = [];
+            overdueAccts.forEach((r: any) => attention.push({
+              key: `od-${r.name}`, dot: "bg-red-500",
+              text: <>{r.name} is overdue{r.oldestDue ? ` · ${Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000))}d` : ""}</>,
+              val: fmtK(r.overdue), tone: "text-red-500",
+              onClick: go("invoices", () => setInvoiceTab("overdue")),
+            }));
+            losing.forEach(({ a, e }) => attention.push({
+              key: `ob-${a.id}`, dot: "bg-red-500", text: <>{a.name} is over budget</>,
+              val: fmtK(e.profit), tone: "text-red-500", onClick: go("projects"),
+            }));
+            hot.slice(0, 3).forEach(({ p, pts }) => attention.push({
+              key: `cap-${p.id}`, dot: pts >= 5 ? "bg-red-500" : "bg-amber-400",
+              text: <>{p.name} is {pts >= 5 ? "at" : "near"} capacity</>,
+              val: `${pts} / 5`, tone: pts >= 5 ? "text-red-500" : "text-amber-500", onClick: go("workload", () => setWorkloadTab("all")),
+            }));
+            if (hot.length > 3) attention.push({
+              key: "cap-more", dot: "bg-amber-400",
+              text: <span className="text-gray-400">{hot.length - 3} more at or near capacity</span>,
+              onClick: go("workload", () => setWorkloadTab("all")),
+            });
+            if (unassignedCosts.length > 0) attention.push({
+              key: "costs", dot: "bg-amber-400",
+              text: <>Assign {unassignedCosts.length} external cost{unassignedCosts.length === 1 ? "" : "s"} to accounts</>,
+              val: fmtK(unassignedTotal), onClick: go("costs"),
+            });
+            if (retainersToPlace.length > 0) attention.push({
+              key: "pods", dot: "bg-gray-300",
+              text: <>Place {retainersToPlace.length} retainer{retainersToPlace.length === 1 ? "" : "s"} into a pod</>,
+              onClick: go("pods"),
+            });
+            endingSoon.slice(0, 3).forEach(a => attention.push({
+              key: `end-${a.id}`, dot: "bg-gray-300",
+              text: <>{a.name} wraps {new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</>,
+              val: fmtK(a.project), onClick: go("projects"),
+            }));
+            const ATT_CAP = 8;
+            const attShown = attention.slice(0, ATT_CAP);
+            const attExtra = attention.length - attShown.length;
 
             return (
               <div className="p-8 pb-12 max-w-[1180px]">
@@ -1236,128 +1242,26 @@ export default function App({ lockedView = null } = {}) {
                       </div>
                     </div>
                   </div>
-                  {/* Where revenue goes: team cost · external · margin (2px gaps) */}
-                  {totals.rev > 0 && totals.margin > 0 && (
-                    <div className="mt-5">
-                      <div className="flex h-[7px] rounded-full overflow-hidden" style={{ gap: 2 }}>
-                        <div className="bg-gray-400 rounded-full" style={{ width: `${(totals.people / totals.rev) * 100}%` }} />
-                        <div className="bg-amber-400 rounded-full" style={{ width: `${(totals.vendor / totals.rev) * 100}%` }} />
-                        <div className="bg-emerald-500 rounded-full" style={{ width: `${(totals.margin / totals.rev) * 100}%` }} />
-                      </div>
-                      <div className="flex gap-4 mt-2">
-                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-400" />Team {fmtK(totals.people)}</span>
-                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-amber-400" />External {fmtK(totals.vendor)}</span>
-                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-emerald-500" />Margin {fmtK(totals.margin)}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="flex flex-wrap gap-3 mt-1 items-start">
-                  {/* Attention column — status accents mark these as "act on me" */}
-                  <div className="flex-1 min-w-[330px] flex flex-col gap-3">
-                  <Section title="Collections" count={overdueAccts.length} dot={overdueAccts.length ? "bg-red-500" : "bg-emerald-500"} action="Invoices" onAction={go("invoices", () => setInvoiceTab("overdue"))}>
-                    {overdueAccts.length === 0 && <Empty>{mercuryReady ? "Nothing overdue. Lovely." : "Mercury not connected."}</Empty>}
-                    {overdueAccts.slice(0, 6).map((r: any) => (
-                      <Row key={r.name} onClick={go("invoices", () => setInvoiceTab("overdue"))}>
-                        <Name>{r.name}</Name>
-                        <Meter pct={(r.overdue / maxOverdue) * 100} tone="bg-red-400" />
-                        <Val tone="text-red-500">{fmtK(r.overdue)}</Val>
-                        <Sub>{r.oldestDue ? `${Math.max(0, Math.round((Date.now() - new Date(r.oldestDue).getTime()) / 86400000))}d` : ""}</Sub>
-                      </Row>
-                    ))}
-                  </Section>
-
-                  <Section title="To do" count={todoCount} dot={todoCount ? "bg-amber-400" : "bg-emerald-500"}>
-                    {todoCount === 0 && <Empty>All clear.</Empty>}
-                    {unassignedCosts.length > 0 && (
-                      <Row onClick={go("costs")}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                        <Name>Assign {unassignedCosts.length} external cost{unassignedCosts.length === 1 ? "" : "s"} to accounts</Name>
-                        <Val>{fmtK(unassignedTotal)}</Val>
-                      </Row>
-                    )}
-                    {losing.map(({ a, e }) => (
-                      <Row key={a.id} onClick={go("projects")}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                        <Name>{a.name} is over budget</Name>
-                        <Val tone="text-red-500">{fmtK(e.profit)}</Val>
-                      </Row>
-                    ))}
-                    {endingSoon.slice(0, Math.max(2, 8 - losing.length - (unassignedCosts.length ? 1 : 0))).map(a => (
-                      <Row key={a.id} onClick={go("projects")}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-                        <Name>{a.name} wraps {new Date(a.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Name>
-                        <Val>{fmtK(a.project)}</Val>
-                      </Row>
-                    ))}
-                    {(() => { const cap = Math.max(2, 8 - losing.length - (unassignedCosts.length ? 1 : 0)); const extra = endingSoon.length - cap; return extra > 0 ? (
-                      <Row onClick={go("projects")}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-200 shrink-0" />
-                        <Name><span className="text-gray-400">+{extra} more wrapping soon</span></Name>
-                      </Row>
-                    ) : null; })()}
-                    {retainersToPlace.length > 0 && (
-                      <Row onClick={go("pods")}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-                        <Name>Place {retainersToPlace.length} retainer{retainersToPlace.length === 1 ? "" : "s"} into a pod</Name>
-                      </Row>
-                    )}
-                  </Section>
-
-                  <Section title="Team capacity" count={hot.length} dot={hot.some(h => h.pts >= 5) ? "bg-red-500" : hot.length ? "bg-amber-400" : "bg-emerald-500"} action="Workload" onAction={go("workload")}>
-                    {hot.length === 0 && <Empty>No one is near capacity.</Empty>}
-                    {hot.slice(0, 6).map(({ p, pts }) => (
-                      <Row key={p.id} onClick={go("workload", () => setWorkloadTab("all"))}>
-                        <Name>{p.name}</Name>
-                        <Meter pct={(pts / 5) * 100} tone={pts >= 5 ? "bg-red-400" : "bg-amber-400"} />
-                        <Val tone={pts >= 5 ? "text-red-500" : "text-amber-500"}>{pts}</Val>
-                        <Sub>/ 5</Sub>
-                      </Row>
-                    ))}
-                  </Section>
-
+                {/* Needs attention — the only list on the page. Everything else is one click away on its tab. */}
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mt-1 max-w-[640px]">
+                  <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 border-b border-gray-100">
+                    <span className={`w-1.5 h-1.5 rounded-full ${attention.length ? "bg-amber-400" : "bg-emerald-500"}`} />
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Needs attention</div>
+                    {attention.length > 0 && <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-gray-100 text-gray-500">{attention.length}</span>}
                   </div>
-                  {/* Snapshot column — neutral ink, meters carry the comparison */}
-                  <div className="flex-1 min-w-[330px] flex flex-col gap-3">
-                  <Section title="Service line P&L" action="P&L" onAction={go("pnl")}>
-                    {slPods.map(sl => (
-                      <Row key={sl.id} onClick={go("pnl")}>
-                        <Name>{sl.name}</Name>
-                        <Meter pct={(sl.rev / maxSlRev) * 100} />
-                        <Val>{fmtK(sl.rev)}</Val>
-                        <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full shrink-0 w-14 text-center ${sl.margin >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{sl.margin >= 0 ? "+" : ""}{fmtK(sl.margin)}</span>
-                      </Row>
-                    ))}
-                  </Section>
-
-                  <Section title="Projects in flight" count={projEcons.length} action="Projects" onAction={go("projects")}>
-                    {projEcons.length === 0 && <Empty>No active flat-rate projects.</Empty>}
-                    {projEcons.sort((x, y) => y.a.project - x.a.project).slice(0, 6).map(({ a, e }) => (
-                      <Row key={a.id} onClick={go("projects")}>
-                        <Name>{a.name}</Name>
-                        {e.elapsed != null && <Meter pct={e.elapsed * 100} tone={e.elapsed >= 1 ? "bg-red-400" : "bg-gray-900"} />}
-                        <Val>{fmtK(a.project)}</Val>
-                        <Sub>{e.elapsed != null ? `${Math.round(e.elapsed * 100)}%` : ""}</Sub>
-                      </Row>
-                    ))}
-                  </Section>
-
-                  <Section title="External spend" action="Costs" onAction={go("costs")}>
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-baseline justify-between">
-                      <span className="text-[11px] text-gray-400">Run rate · 3-mo avg</span>
-                      <span className="text-[15px] font-semibold text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(costStats.trailingAvg)}<span className="text-[10px] font-medium text-gray-400">/mo</span></span>
+                  {attention.length === 0 && <div className="px-4 py-4 text-[11px] text-gray-300 italic">{mercuryReady ? "All clear. Nothing needs you today." : "All clear — Mercury not connected, so collections aren\u2019t checked."}</div>}
+                  {attShown.map(it => (
+                    <div key={it.key} onClick={it.onClick} className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${it.dot}`} />
+                      <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{it.text}</span>
+                      {it.val != null && <span className={`text-[12px] font-semibold shrink-0 ${it.tone || "text-gray-900"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{it.val}</span>}
                     </div>
-                    {spendByAcct.length === 0 && <Empty>No spend attributed yet.</Empty>}
-                    {spendByAcct.slice(0, 5).map(([name, v]: any) => (
-                      <Row key={name} onClick={go("costs")}>
-                        <Name>{name}</Name>
-                        <Meter pct={(v / maxSpend) * 100} tone="bg-amber-400" />
-                        <Val>{fmtK(v)}</Val>
-                      </Row>
-                    ))}
-                  </Section>
-                  </div>
+                  ))}
+                  {attExtra > 0 && (
+                    <div className="px-4 py-2.5 text-[11px] text-gray-400">+{attExtra} more</div>
+                  )}
                 </div>
               </div>
             );
