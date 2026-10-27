@@ -619,6 +619,8 @@ export default function App({ lockedView = null } = {}) {
   const [view, setView] = useState(lockedView || "dashboard");
   // Dashboard drill-down: which month-revenue tile is open as a modal
   const [monthDetail, setMonthDetail] = useState<null | "retainers" | "deposits" | "signed">(null);
+  // Which month the Signed drill-down is browsing (YYYY-MM; null = current)
+  const [signedMonth, setSignedMonth] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [acctView, setAcctView] = useState<"list" | "pods">("pods");
@@ -1220,7 +1222,7 @@ export default function App({ lockedView = null } = {}) {
               text: <>{a.name} wraps {fmtDay(a.endDate)}</>,
               val: fmtK(a.project), onClick: go("projects"),
             }));
-            const ATT_CAP = 8;
+            const ATT_CAP = 10;
             const attShown = attention.slice(0, ATT_CAP);
             const attExtra = attention.length - attShown.length;
 
@@ -1281,7 +1283,7 @@ export default function App({ lockedView = null } = {}) {
                       <div className="text-[22px] leading-none font-semibold text-gray-900">{mercuryReady ? fmtK(pmType?.project || 0) : "—"}</div>
                       <div className="text-[10px] text-gray-400 mt-1.5">{mercuryReady ? `collected in ${monthShort} · ${fmtK(flightCollected)} of ${fmtK(flightContracted)} in-flight book` : "Mercury not connected"}</div>
                     </div>
-                    <div onClick={() => setMonthDetail("signed")} className="cursor-pointer group rounded-xl px-3 py-2 -mx-3 -my-2 hover:bg-gray-50 transition-colors">
+                    <div onClick={() => { setSignedMonth(null); setMonthDetail("signed"); }} className="cursor-pointer group rounded-xl px-3 py-2 -mx-3 -my-2 hover:bg-gray-50 transition-colors">
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Signed in {monthShort}<span className="normal-case tracking-normal opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"> →</span></div>
                       <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(signedFees)}{signedRet > 0 && <span className="text-[12px] font-medium text-gray-400"> + {fmtK(signedRet)}/mo</span>}</div>
                       <div className="text-[10px] text-gray-400 mt-1.5">{signedProjects.length === 0 && signedRetainers.length === 0 ? "no new accounts started this month" : [signedProjects.length ? `${signedProjects.length} flat-rate project${signedProjects.length === 1 ? "" : "s"}` : "", signedRetainers.length ? `${signedRetainers.length} new retainer${signedRetainers.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")}</div>
@@ -1290,22 +1292,22 @@ export default function App({ lockedView = null } = {}) {
                 </div>
 
                 {/* Needs attention — the only list on the page. Everything else is one click away on its tab. */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mt-1 max-w-[640px]">
-                  <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-                    <span className={`w-1.5 h-1.5 rounded-full ${attention.length ? "bg-amber-400" : "bg-emerald-500"}`} />
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Needs attention</div>
-                    {attention.length > 0 && <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-gray-100 text-gray-500">{attention.length}</span>}
-                  </div>
+                <div className="bg-white border border-gray-200 rounded-2xl px-7 py-5">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Needs attention{attention.length > 0 && <span className="text-gray-300 tracking-normal"> · {attention.length}</span>}</div>
                   {attention.length === 0 && <div className="px-4 py-4 text-[11px] text-gray-300 italic">{mercuryReady ? "All clear. Nothing needs you today." : "All clear — Mercury not connected, so collections aren\u2019t checked."}</div>}
-                  {attShown.map(it => (
-                    <div key={it.key} onClick={it.onClick} className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition-colors">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${it.dot}`} />
-                      <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{it.text}</span>
-                      {it.val != null && <span className={`text-[12px] font-semibold shrink-0 ${it.tone || "text-gray-900"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{it.val}</span>}
+                  {attShown.length > 0 && (
+                    <div className="grid sm:grid-cols-2 gap-x-14 sm:grid-flow-col" style={{ gridTemplateRows: `repeat(${Math.ceil(attShown.length / 2)}, auto)` }}>
+                      {attShown.map(it => (
+                        <div key={it.key} onClick={it.onClick} className="flex items-center gap-2.5 py-[7px] px-3 -mx-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors min-w-0">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${it.dot}`} />
+                          <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{it.text}</span>
+                          {it.val != null && <span className={`text-[12px] font-semibold shrink-0 ${it.tone || "text-gray-900"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{it.val}</span>}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                   {attExtra > 0 && (
-                    <div className="px-4 py-2.5 text-[11px] text-gray-400">+{attExtra} more</div>
+                    <div className="text-[10px] text-gray-400 mt-2">+{attExtra} more</div>
                   )}
                 </div>
 
@@ -1349,31 +1351,62 @@ export default function App({ lockedView = null } = {}) {
                           <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
                           {!mercuryReady ? <Chip tone="bg-gray-100 text-gray-400">—</Chip>
                             : pct >= 1 ? <Chip tone="bg-emerald-50 text-emerald-600">fully paid</Chip>
-                            : pct >= 0.5 ? <Chip tone="bg-gray-100 text-gray-500">{Math.round(pct * 100)}%{pay?.lastPaid ? ` · ${fmtDay(pay.lastPaid)}` : ""}</Chip>
-                            : pct > 0 ? <Chip tone="bg-amber-50 text-amber-600">{Math.round(pct * 100)}% — under deposit</Chip>
+                            : pct > 0 ? <Chip tone="bg-amber-50 text-amber-600">{Math.round(pct * 100)}%{pay?.lastPaid ? ` · ${fmtDay(pay.lastPaid)}` : ""}</Chip>
                             : <Chip tone="bg-red-50 text-red-500">nothing collected</Chip>}
                           <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(paid)}<span className="text-[10px] font-medium text-gray-400"> of {fmtK(a.project)}</span></span>
                         </div>
                       );
                     });
                   } else {
-                    const signedAll = [
-                      ...signedProjects.map(a => ({ a, kind: "flat" })),
-                      ...signedRetainers.map(a => ({ a, kind: "ret" })),
-                    ].sort((x, y) => (y.a.signedDate || y.a.startDate || "").localeCompare(x.a.signedDate || x.a.startDate || ""));
-                    title = `Signed in ${monthShort}`;
-                    value = <>{fmtK(signedFees)}{signedRet > 0 && <span className="text-[14px] font-medium text-gray-400"> + {fmtK(signedRet)}/mo</span>}</>;
-                    sub = signedAll.length === 0 ? "no new accounts signed this month" : `${signedAll.length} new account${signedAll.length === 1 ? "" : "s"} · from the Ignition close feed`;
+                    // Browsable by month — signed dates come from the Ignition
+                    // close feed; months before Aug 2026 fall back to start dates.
+                    const selM = signedMonth || nowMonth;
+                    const mShift = (m: string, d: number) => { const [y, mm] = m.split("-").map(Number); const x = new Date(y, mm - 1 + d, 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`; };
+                    const mLabel = (m: string) => { const [y, mm] = m.split("-").map(Number); return new Date(y, mm - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" }); };
+                    const book = accounts.filter(a => !a.isInternal);
+                    const isFlat = (a: any) => (a.type === "Project" || a.type === "Hybrid") && Number(a.project || 0) > 0;
+                    const isRet = (a: any) => (a.type === "Retainer" || a.type === "Hybrid") && Number(a.retainer || 0) > 0;
+                    const inMonth = book.filter(a => signedIn(a) === selM).sort((x, y) => (y.signedDate || y.startDate || "").localeCompare(x.signedDate || x.startDate || ""));
+                    const flatTot = inMonth.filter(isFlat).reduce((s, a) => s + Number(a.project || 0), 0);
+                    const retTot = inMonth.filter(isRet).reduce((s, a) => s + Number(a.retainer || 0), 0);
+                    const agg: Record<string, { flat: number; ret: number; n: number }> = {};
+                    book.forEach(a => {
+                      const m = signedIn(a); if (!m || m > nowMonth) return;
+                      const g = agg[m] || (agg[m] = { flat: 0, ret: 0, n: 0 });
+                      if (isFlat(a)) g.flat += Number(a.project || 0);
+                      if (isRet(a)) g.ret += Number(a.retainer || 0);
+                      g.n++;
+                    });
+                    const histMonths = Object.keys(agg).sort().reverse().slice(0, 6);
+                    title = (
+                      <span className="inline-flex items-center gap-1">
+                        <button onClick={() => setSignedMonth(mShift(selM, -1))} className="text-[14px] leading-none text-gray-300 hover:text-gray-600 px-1">‹</button>
+                        <span>Signed · {mLabel(selM)}</span>
+                        <button onClick={() => { if (selM < nowMonth) setSignedMonth(mShift(selM, 1)); }} className={`text-[14px] leading-none px-1 ${selM < nowMonth ? "text-gray-300 hover:text-gray-600" : "text-gray-100 cursor-default"}`}>›</button>
+                      </span>
+                    );
+                    value = <>{fmtK(flatTot)}{retTot > 0 && <span className="text-[14px] font-medium text-gray-400"> + {fmtK(retTot)}/mo</span>}</>;
+                    sub = inMonth.length === 0 ? `nothing signed in ${mLabel(selM)}` : `${inMonth.length} account${inMonth.length === 1 ? "" : "s"} · from the Ignition close feed${selM < "2026-08" ? " (older months use start dates)" : ""}`;
                     footLabel = "Open Accounts"; footGo = go("accounts", () => setAcctTab("projects"));
-                    rows = signedAll.length === 0
-                      ? <div className="px-5 py-5 text-[11px] text-gray-300 italic">Nothing signed yet in {monthShort}.</div>
-                      : signedAll.map(({ a, kind }) => (
-                        <div key={a.id} className="flex items-center gap-2.5 px-5 py-2.5 border-b border-gray-100 last:border-0">
-                          <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
-                          <span className="text-[10px] text-gray-400 shrink-0">{(a.signedDate || a.startDate) ? `signed ${fmtDay(a.signedDate || a.startDate)}` : ""}</span>
-                          <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{kind === "ret" ? <>{fmtK(a.retainer)}<span className="text-[10px] font-medium text-gray-400">/mo</span></> : fmtK(a.project)}</span>
-                        </div>
-                      ));
+                    rows = (
+                      <>
+                        {inMonth.map(a => (
+                          <div key={a.id} className="flex items-center gap-2.5 px-5 py-2.5 border-b border-gray-100 last:border-0">
+                            <span className="text-[12px] font-medium text-gray-900 truncate flex-1">{a.name}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0">{(a.signedDate || a.startDate) ? `signed ${fmtDay(a.signedDate || a.startDate)}` : ""}</span>
+                            <span className="text-[12px] font-semibold text-gray-900 shrink-0 w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{isRet(a) ? <>{fmtK(a.retainer)}<span className="text-[10px] font-medium text-gray-400">/mo</span></> : fmtK(a.project)}</span>
+                          </div>
+                        ))}
+                        <div className="px-5 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">By month</div>
+                        {histMonths.map(m => (
+                          <div key={m} onClick={() => setSignedMonth(m)} className={`flex items-center gap-2.5 px-5 py-2 cursor-pointer transition-colors ${m === selM ? "bg-gray-50" : "hover:bg-gray-50"}`}>
+                            <span className={`text-[11px] font-medium flex-1 ${m === selM ? "text-gray-900" : "text-gray-500"}`}>{mLabel(m)}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0">{agg[m].n} account{agg[m].n === 1 ? "" : "s"}</span>
+                            <span className="text-[11px] font-semibold text-gray-900 shrink-0 w-28 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtK(agg[m].flat)}{agg[m].ret > 0 && <span className="text-[9px] font-medium text-gray-400"> + {fmtK(agg[m].ret)}/mo</span>}</span>
+                          </div>
+                        ))}
+                      </>
+                    );
                   }
 
                   return (
