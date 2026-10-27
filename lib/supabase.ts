@@ -56,6 +56,7 @@ export type Account = {
   retainer: number;
   project: number;         // flat fee for Project/Hybrid types
   startDate: string | null; // project start date (YYYY-MM-DD)
+  signedDate?: string | null; // contract signed date (YYYY-MM-DD) — Ignition close date
   endDate: string | null;   // project end date (YYYY-MM-DD)
   weight: number;           // designer capacity weight (1–5 pts, default 3)
   depositPaid: boolean;     // legacy; collections now come from Mercury
@@ -169,6 +170,7 @@ export async function fetchAccounts(): Promise<Account[]> {
     retainer: Number(r.retainer),
     project: Number(r.project),
     startDate: r.start_date || null,
+    signedDate: r.signed_date || null,
     endDate: r.end_date || null,
     weight: r.weight != null ? Number(r.weight) : 3,
     depositPaid: r.deposit_paid ?? false,
@@ -243,6 +245,9 @@ export async function upsertAccount(a: Account) {
     retainer: a.retainer,
     project: a.project,
     start_date: a.startDate || null,
+    // Only sent when set, so saves keep working until the signed_date
+    // migration has run (clearing a signed date needs the column anyway)
+    ...(a.signedDate ? { signed_date: a.signedDate } : {}),
     end_date: a.endDate || null,
     weight: a.weight ?? 3,
     deposit_paid: a.depositPaid ?? false,

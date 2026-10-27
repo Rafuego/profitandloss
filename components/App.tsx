@@ -711,7 +711,10 @@ export default function App({ lockedView = null } = {}) {
         setTeam(prev); // revert on failure
       }
     } else {
-      if (!d.id) { d = { ...d, id: crypto.randomUUID() }; }
+      // A brand-new account is a contract that just closed — stamp today as the
+      // signed date unless one was entered, so the dashboard's "Signed in <month>"
+      // logs it even when the project starts later.
+      if (!d.id) { d = { ...d, id: crypto.randomUUID(), signedDate: d.signedDate || new Date().toISOString().slice(0, 10) }; }
       // Keep legacy single sl in sync with the multi-select (first line = primary)
       d = { ...d, sls: acctSls(d), sl: acctSls(d)[0] || "" };
       const prev = accounts;
@@ -1165,9 +1168,12 @@ export default function App({ lockedView = null } = {}) {
             const retainerBooked = retainerBook.reduce((s, a) => s + Number(a.retainer || 0), 0);
             const flightContracted = liveProjects.reduce((s, a) => s + Number(a.project || 0), 0);
             const flightCollected = liveProjects.reduce((s, a) => s + (mercury?.byAccount?.[a.id]?.paid || 0), 0);
-            const signedProjects = liveProjects.filter(a => (a.startDate || "").slice(0, 7) === nowMonth);
+            // Signed = Ignition close date (signedDate, stamped by the sync /
+            // on creation); startDate is only a fallback for older accounts
+            const signedIn = (a: any) => ((a.signedDate || a.startDate || "")).slice(0, 7);
+            const signedProjects = liveProjects.filter(a => signedIn(a) === nowMonth);
             const signedFees = signedProjects.reduce((s, a) => s + Number(a.project || 0), 0);
-            const signedRetainers = retainerBook.filter(a => (a.startDate || "").slice(0, 7) === nowMonth);
+            const signedRetainers = retainerBook.filter(a => signedIn(a) === nowMonth);
             const signedRet = signedRetainers.reduce((s, a) => s + Number(a.retainer || 0), 0);
 
             const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
@@ -3316,6 +3322,7 @@ export default function App({ lockedView = null } = {}) {
             {(modal.data.type === "Retainer" || modal.data.type === "Hybrid") && (
               <Inp label="Monthly Retainer (USD)" value={modal.data.retainer} onChange={v => setModal({ ...modal, data: { ...modal.data, retainer: v } })} type="number" />
             )}
+            <Inp label="Signed Date (Ignition close — feeds the dashboard's monthly signings)" value={modal.data.signedDate || ""} onChange={v => setModal({ ...modal, data: { ...modal.data, signedDate: v || null } })} type="date" />
             {/* Flat fee + dates — shown for Project and Hybrid */}
             {(modal.data.type === "Project" || modal.data.type === "Hybrid") && (() => {
               const missingDates = !modal.data.startDate || !modal.data.endDate;
