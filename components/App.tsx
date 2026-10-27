@@ -1158,6 +1158,18 @@ export default function App({ lockedView = null } = {}) {
             const unassignedCosts = costs.filter((c: any) => !c.accountId);
             const unassignedTotal = unassignedCosts.reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
 
+            // Month revenue band: Symphony book vs flat-rate deposits vs new signings
+            const monthShort = new Date().toLocaleDateString("en-US", { month: "short" });
+            const pmType = mercury?.paidByMonthType?.[nowMonth];
+            const retainerBook = accounts.filter(a => !a.isInternal && (a.type === "Retainer" || a.type === "Hybrid") && ["Active", "Launch", "Growth"].includes(a.status) && Number(a.retainer) > 0);
+            const retainerBooked = retainerBook.reduce((s, a) => s + Number(a.retainer || 0), 0);
+            const flightContracted = liveProjects.reduce((s, a) => s + Number(a.project || 0), 0);
+            const flightCollected = liveProjects.reduce((s, a) => s + (mercury?.byAccount?.[a.id]?.paid || 0), 0);
+            const signedProjects = liveProjects.filter(a => (a.startDate || "").slice(0, 7) === nowMonth);
+            const signedFees = signedProjects.reduce((s, a) => s + Number(a.project || 0), 0);
+            const signedRetainers = retainerBook.filter(a => (a.startDate || "").slice(0, 7) === nowMonth);
+            const signedRet = signedRetainers.reduce((s, a) => s + Number(a.retainer || 0), 0);
+
             const go = (v: string, fn?: () => void) => () => { setView(v); fn?.(); };
 
             // One flat attention feed — most urgent first. Everything else lives on its own tab.
@@ -1240,6 +1252,28 @@ export default function App({ lockedView = null } = {}) {
                         <div className={`text-[22px] leading-none font-semibold ${collections?.overdue > 0 ? "text-red-500" : "text-gray-900"}`}>{collections ? fmtK(collections.overdue) : "—"}</div>
                         <div className="text-[10px] text-gray-400 mt-1.5">{collections ? `${collections.overdueCount} client${collections.overdueCount === 1 ? "" : "s"} · ${fmtK(collections.outstanding)} out` : "not connected"}</div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Month revenue — what's booked, what's landed, what's newly signed */}
+                <div className="bg-white border border-gray-200 rounded-2xl px-7 py-5 mb-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-4">{monthShort} revenue</div>
+                  <div className="flex flex-wrap gap-x-12 gap-y-5">
+                    <div onClick={go("accounts", () => setAcctTab("retainer"))} className="cursor-pointer">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Symphony retainers</div>
+                      <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(retainerBooked)}<span className="text-[12px] font-medium text-gray-400">/mo</span></div>
+                      <div className="text-[10px] text-gray-400 mt-1.5">{retainerBook.length} active · {mercuryReady ? `${fmtK(pmType?.retainer || 0)} collected in ${monthShort}` : "Mercury not connected"}</div>
+                    </div>
+                    <div onClick={go("projects")} className="cursor-pointer">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Flat-rate deposits</div>
+                      <div className="text-[22px] leading-none font-semibold text-gray-900">{mercuryReady ? fmtK(pmType?.project || 0) : "—"}</div>
+                      <div className="text-[10px] text-gray-400 mt-1.5">{mercuryReady ? `collected in ${monthShort} · ${fmtK(flightCollected)} of ${fmtK(flightContracted)} in-flight book` : "Mercury not connected"}</div>
+                    </div>
+                    <div onClick={go("accounts", () => setAcctTab("projects"))} className="cursor-pointer">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Signed in {monthShort}</div>
+                      <div className="text-[22px] leading-none font-semibold text-gray-900">{fmtK(signedFees)}{signedRet > 0 && <span className="text-[12px] font-medium text-gray-400"> + {fmtK(signedRet)}/mo</span>}</div>
+                      <div className="text-[10px] text-gray-400 mt-1.5">{signedProjects.length === 0 && signedRetainers.length === 0 ? "no new accounts started this month" : [signedProjects.length ? `${signedProjects.length} flat-rate project${signedProjects.length === 1 ? "" : "s"}` : "", signedRetainers.length ? `${signedRetainers.length} new retainer${signedRetainers.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")}</div>
                     </div>
                   </div>
                 </div>

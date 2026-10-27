@@ -176,9 +176,12 @@ export async function GET(req: Request) {
     // invoice numbers via accounts.mercury_invoices; those invoices are then
     // excluded from every other account's name-matched pool.
     const byAccount: Record<string, any> = {};
+    // Paid invoices by month, split by the matched account's type — lets the
+    // dashboard show "collected from retainers vs flat-rate deposits" per month.
+    const paidByMonthType: Record<string, { retainer: number; project: number; other: number }> = {};
     try {
       const { data: accts } = await supabase
-        .from("accounts").select("id, name, mercury_invoices");
+        .from("accounts").select("id, name, type, mercury_invoices");
       if (accts) {
         const claimedBy: Record<string, string> = {}; // invoice number -> account id
         for (const a of accts) {
@@ -231,6 +234,20 @@ export async function GET(req: Request) {
               lastPaid: dk.last, unpaid: 0, total: dk.count, name: a.name, source: "bank" };
           }
         }
+        // Monthly split now that every matchable invoice carries an accountId.
+        // Hybrid accounts bill project work, so they bucket with flat rate —
+        // same grouping the dashboard uses for its in-flight project list.
+        const typeOf: Record<string, string> = {};
+        for (const a of accts) typeOf[a.id] = a.type || "";
+        for (const i of allInvoices) {
+          if (i.status !== "Paid") continue;
+          const m = (i.invoiceDate || i.dueDate || "").slice(0, 7);
+          if (!m) continue;
+          const t = typeOf[i.accountId] || "";
+          const bucket = t === "Retainer" ? "retainer" : (t === "Project" || t === "Hybrid") ? "project" : "other";
+          const pm = paidByMonthType[m] || (paidByMonthType[m] = { retainer: 0, project: 0, other: 0 });
+          pm[bucket] += i.amount;
+        }
       }
     } catch { /* per-account rollup is best-effort; byCustomer still works */ }
 
@@ -245,6 +262,7 @@ export async function GET(req: Request) {
       byCustomer, // per-client rollup (Invoices tab + collections totals)
       byAccount,  // per-account rollup, honouring explicit invoice claims
       paidByMonth, // { "YYYY-MM": { total, count } } — paid invoices by invoice month
+      paidByMonthType, // { "YYYY-MM": { retainer, project, other } } — same, split by account type
       truncated,
     };
 
