@@ -12,6 +12,10 @@ export function middleware(req: NextRequest) {
   const expected = (process.env.APP_PASSWORD || "").trim();
   if (!expected) return NextResponse.next();
 
+  // The Ignition webhook authenticates with its own shared secret
+  // (x-webhook-secret), so Zapier must not be challenged for Basic Auth.
+  if (req.nextUrl.pathname === "/api/ignition-hook") return NextResponse.next();
+
   const podsPass = (process.env.PODS_PASSWORD || "").trim();
   const path = req.nextUrl.pathname;
 
